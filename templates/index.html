@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SailingPD Config Wizard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: 'Segoe UI', system-ui, sans-serif; }
+  .step-circle { width:2rem; height:2rem; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.8rem; flex-shrink:0; }
+  .step-done   { background:#10b981; color:#fff; }
+  .step-active { background:#2563eb; color:#fff; }
+  .step-todo   { background:#cbd5e1; color:#64748b; }
+  .why-box { background:#eff6ff; border-left:4px solid #3b82f6; }
+  .field-group { margin-bottom:1.25rem; }
+  .field-label { font-size:.875rem; font-weight:600; color:#374151; margin-bottom:.35rem; display:block; }
+  .field-hint  { font-size:.75rem; color:#6b7280; margin-top:.25rem; }
+  .form-input  { width:100%; border:1px solid #d1d5db; border-radius:.5rem; padding:.5rem .75rem; font-size:.9rem; outline:none; transition:border-color .15s; }
+  .form-input:focus { border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.15); }
+  select.form-input { background:#fff; }
+  .toggle-row  { display:flex; align-items:center; justify-content:space-between; padding:.5rem 0; border-bottom:1px solid #f1f5f9; }
+  .toggle-row:last-child { border-bottom:none; }
+  .toggle-label { font-size:.875rem; color:#374151; }
+  .toggle-hint  { font-size:.75rem; color:#6b7280; }
+  input[type=checkbox] { width:1.1rem; height:1.1rem; accent-color:#2563eb; cursor:pointer; }
+  .badge { display:inline-block; padding:.15rem .5rem; border-radius:.25rem; font-size:.7rem; font-weight:700; }
+  .badge-opt  { background:#fef3c7; color:#92400e; }
+  .badge-req  { background:#fee2e2; color:#991b1b; }
+  .csv-preview { font-family:monospace; font-size:.72rem; background:#1e293b; color:#e2e8f0; border-radius:.5rem; padding:1rem; overflow:auto; max-height:250px; white-space:pre; }
+  .nav-step { display:flex; align-items:center; gap:.6rem; padding:.55rem .75rem; border-radius:.5rem; cursor:pointer; transition:background .15s; }
+  .nav-step:hover { background:#f1f5f9; }
+  .nav-step.active { background:#eff6ff; }
+  .save-flash { position:fixed; top:1.5rem; right:1.5rem; z-index:999; padding:.75rem 1.5rem; border-radius:.75rem; font-weight:600; font-size:.9rem; transition:opacity .4s; }
+</style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+<!-- ── Header ───────────────────────────────────────────────────────── -->
+<header class="bg-slate-900 text-white px-6 py-4 flex items-center gap-4 shadow-lg">
+  <img src="/api/image/icon" alt="SPD" class="w-7 h-7 object-contain flex-shrink-0" style="filter:invert(1)" onerror="this.style.display='none'">
+  <div>
+    <h1 class="text-xl font-bold tracking-wide">SailingPD Config Wizard</h1>
+    <p class="text-slate-400 text-xs" id="hdr-dir">Installatiemap laden…</p>
+  </div>
+  <div class="ml-auto flex items-center gap-3">
+    <span id="config-badge" class="hidden badge badge-opt">Bestaande config geladen</span>
+    <button onclick="saveAll()" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-lg font-semibold text-sm transition">
+      💾 Alles opslaan
+    </button>
+  </div>
+</header>
+
+<div class="flex min-h-[calc(100vh-68px)]">
+
+<!-- ── Sidebar ──────────────────────────────────────────────────────── -->
+<aside class="w-64 bg-white border-r border-slate-200 py-6 px-3 flex-shrink-0">
+  <p class="text-xs uppercase font-semibold text-slate-400 px-2 mb-3">Configuratiestappen</p>
+  <nav id="step-nav" class="space-y-1"></nav>
+</aside>
+
+<!-- ── Main content ─────────────────────────────────────────────────── -->
+<main class="flex-1 p-8 overflow-y-auto">
+  <div id="loading" class="flex items-center justify-center h-64">
+    <div class="text-center text-slate-500">
+      <div class="text-4xl mb-3">⚓</div>
+      <p class="text-lg font-medium">Configuratie laden…</p>
+    </div>
+  </div>
+  <div id="wizard" class="hidden max-w-3xl mx-auto space-y-6">
+    <!-- steps rendered here by JS -->
+  </div>
+  <!-- navigation buttons -->
+  <div id="nav-btns" class="hidden max-w-3xl mx-auto flex justify-between mt-8">
+    <button id="btn-prev" onclick="prevStep()"
+      class="px-6 py-2.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 font-semibold text-sm transition">
+      ← Vorige
+    </button>
+    <div class="flex gap-3">
+      <button id="btn-next" onclick="nextStep()"
+        class="px-6 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition">
+        Volgende →
+      </button>
+      <button id="btn-save" onclick="startSPD()" class="hidden px-6 py-2.5 rounded-lg bg-green-600 hover:bg-green-500 text-white font-semibold text-sm transition">
+        ▶ SailingPD starten
+      </button>
+    </div>
+  </div>
+</main>
+</div>
+
+<!-- ── Flash message ─────────────────────────────────────────────────── -->
+<div id="flash" class="save-flash hidden"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════════════════
+let cfg = {};
+let currentStep = 0;
+const TOTAL_STEPS = 11;
+const completedSteps = new Set();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BOOT — load config then render
+// ═══════════════════════════════════════════════════════════════════════════
+async function boot() {
+  const r = await fetch('/api/config');
+  const data = await r.json();
+  cfg = data;
+  document.getElementById('hdr-dir').textContent = data.sailing_dir || '';
+  if (data.config_exists) {
+    document.getElementById('config-badge').classList.remove('hidden');
+  }
+  document.getElementById('loading').classList.add('hidden');
+  document.getElementById('wizard').classList.remove('hidden');
+  document.getElementById('nav-btns').classList.remove('hidden');
+  buildNav();
+  showStep(0);
+}
+
+// ─── helper: get / set nested config ─────────────────────────────────────
+function get(section, key, def = '') {
+  return (cfg.boatspecifics?.[section]?.[key] ?? def).toString().trim();
+}
+function getP(section, key, def = '') {
+  return (cfg.processlist?.[section]?.[key] ?? def).toString().trim();
+}
+function getW(section, key, def = '') {
+  return (cfg.sendoverwifi?.[section]?.[key] ?? def).toString().trim();
+}
+function set(section, key, val) {
+  if (!cfg.boatspecifics) cfg.boatspecifics = {};
+  if (!cfg.boatspecifics[section]) cfg.boatspecifics[section] = {};
+  cfg.boatspecifics[section][key] = val;
+}
+function setP(section, key, val) {
+  if (!cfg.processlist) cfg.processlist = {};
+  if (!cfg.processlist[section]) cfg.processlist[section] = {};
+  cfg.processlist[section][key] = val;
+}
+function setW(section, key, val) {
+  if (!cfg.sendoverwifi) cfg.sendoverwifi = {};
+  if (!cfg.sendoverwifi[section]) cfg.sendoverwifi[section] = {};
+  cfg.sendoverwifi[section][key] = val;
+}
+function yesno(v) { return v && v.toUpperCase() === 'Y'; }
+function yn(bool) { return bool ? 'Y' : 'N'; }
+
+// ─── step metadata ────────────────────────────────────────────────────────
+const STEPS = [
+  { title: 'Welkom',             icon: '👋' },
+  { title: 'Activiteit & Opstarten', icon: '🎯' },
+  { title: 'Bootgegevens',       icon: '⛵' },
+  { title: 'NMEA Verbinding',    icon: '🔌' },
+  { title: 'Snelheidspolar',     icon: '📊' },
+  { title: 'Correcties',         icon: '🔧' },
+  { title: 'NMEA Uitvoer',       icon: '📡' },
+  { title: 'WiFi & Webserver',   icon: '🌐' },
+  { title: 'Trim Advies',        icon: '💬' },
+  { title: 'Weergave',           icon: '🖥️' },
+  { title: 'Opslaan',            icon: '💾' },
+];
+
+function buildNav() {
+  const nav = document.getElementById('step-nav');
+  nav.innerHTML = STEPS.map((s, i) => `
+    <div class="nav-step ${i===currentStep?'active':''}" id="nav-${i}" onclick="showStep(${i})">
+      <div class="step-circle step-todo" id="circle-${i}">${i+1}</div>
+      <div>
+        <div class="text-sm font-medium text-slate-700">${s.icon} ${s.title}</div>
+      </div>
+    </div>`).join('');
+}
+
+function updateNav() {
+  STEPS.forEach((_, i) => {
+    const navEl    = document.getElementById(`nav-${i}`);
+    const circleEl = document.getElementById(`circle-${i}`);
+    navEl.classList.toggle('active', i === currentStep);
+    const done   = completedSteps.has(i) && i !== currentStep;
+    const active = i === currentStep;
+    circleEl.className = 'step-circle ' + (done ? 'step-done' : active ? 'step-active' : 'step-todo');
+    circleEl.textContent = done ? '✓' : (i + 1);
+  });
+  document.getElementById('btn-prev').classList.toggle('invisible', currentStep === 0);
+  document.getElementById('btn-next').classList.toggle('hidden', currentStep === TOTAL_STEPS-1);
+  document.getElementById('btn-save').classList.toggle('hidden', currentStep !== TOTAL_STEPS-1);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// STEP RENDERERS
+// ═══════════════════════════════════════════════════════════════════════════
+function showStep(i) {
+  currentStep = i;
+  updateNav();
+  const el = document.getElementById('wizard');
+  el.innerHTML = stepRenderers[i]();
+  attachListeners(i);
+  window.scrollTo({top:0});
+}
+
+function prevStep() { if (currentStep > 0) showStep(currentStep - 1); }
+function nextStep() {
+  if (currentStep < TOTAL_STEPS - 1) {
+    completedSteps.add(currentStep);
+    showStep(currentStep + 1);
+  }
+}
+
+// ─── UI helpers ───────────────────────────────────────────────────────────
+function card(title, body, badge='') {
+  return `<div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+    <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center gap-3">
+      <h2 class="text-lg font-bold text-slate-800">${title}</h2>${badge}
+    </div>
+    <div class="px-6 py-5">${body}</div>
+  </div>`;
+}
+
+function why(text) {
+  return `<div class="why-box rounded-lg p-4 mb-5 text-sm text-blue-900">${text}</div>`;
+}
+
+function textField(id, label, val, hint='', type='text', extra='') {
+  return `<div class="field-group">
+    <label class="field-label" for="${id}">${label}</label>
+    <input class="form-input" id="${id}" type="${type}" value="${escHtml(val)}" ${extra}>
+    ${hint ? `<p class="field-hint">${hint}</p>` : ''}
+  </div>`;
+}
+
+function selectField(id, label, val, options, hint='') {
+  const opts = options.map(([v,l]) =>
+    `<option value="${v}" ${val===v?'selected':''}>${l}</option>`).join('');
+  return `<div class="field-group">
+    <label class="field-label" for="${id}">${label}</label>
+    <select class="form-input" id="${id}">${opts}</select>
+    ${hint ? `<p class="field-hint">${hint}</p>` : ''}
+  </div>`;
+}
+
+function toggleRow(id, label, checked, hint='') {
+  return `<div class="toggle-row">
+    <div>
+      <div class="toggle-label">${label}</div>
+      ${hint ? `<div class="toggle-hint">${hint}</div>` : ''}
+    </div>
+    <input type="checkbox" id="${id}" ${checked?'checked':''}>
+  </div>`;
+}
+
+function numField(id, label, val, min, max, step=1, hint='') {
+  return `<div class="field-group">
+    <label class="field-label" for="${id}">${label}</label>
+    <input class="form-input" id="${id}" type="number" value="${val}" min="${min}" max="${max}" step="${step}">
+    ${hint ? `<p class="field-hint">${hint}</p>` : ''}
+  </div>`;
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function sectionHeader(text) {
+  return `<h3 class="font-semibold text-slate-600 text-sm uppercase tracking-wide mt-6 mb-3 border-b border-slate-100 pb-1">${text}</h3>`;
+}
+
+// ─── onChange binding helper ───────────────────────────────────────────────
+function bind(id, section, key, transform) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const t = el.type;
+  if (t === 'checkbox') {
+    el.addEventListener('change', () => set(section, key, yn(el.checked)));
+  } else {
+    el.addEventListener('input', () => set(section, key, transform ? transform(el.value) : el.value));
+  }
+}
+function bindP(id, section, key) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener(el.type==='checkbox'?'change':'input', () =>
+    setP(section, key, el.type==='checkbox' ? yn(el.checked) : el.value));
+}
+function bindW(id, section, key) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener(el.type==='checkbox'?'change':'input', () =>
+    setW(section, key, el.type==='checkbox' ? yn(el.checked) : el.value));
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// STEP 0 — Welkom
+// ═══════════════════════════════════════════════════════════════════════════
+function renderStep0() {
+  const outputChannels = [
+    ['🖥️', 'Eigen scherm (Python-venster)',
+      'Het native dashboard op de RPi-monitor — kleurrijk, snel, volledig overzicht. Niet beschikbaar in headless-modus.'],
+    ['🌐', 'Webserver (browser)',
+      'Tablets en telefoons op het netwerk openen het dashboard via de browser (http://[ip-rpi]:9090).'],
+    ['📡', 'UDP broadcast',
+      'Stuurt data naar andere apps op het netwerk (Navionics, iSailor, eigen displays).'],
+    ['🔗', 'NMEA seriële/netwerk uitgang',
+      'Stuurt berekende NMEA-berichten terug naar chartplotters en andere instrumenten.'],
+    ['💬', 'Spraak (tekst-naar-spraak)',
+      'Gesproken trim adviezen via de audioutgang van de RPi.'],
+    ['📁', 'SPDlog CSV-bestand',
+      'Slaat alle berekeningen op in een CSV-log voor latere analyse.'],
+    ['📋', 'NMEA kopiebestanden',
+      'Sla kopieën op van ingaand/uitgaand NMEA-verkeer voor debugging.'],
+  ];
+
+  return card('👋 Welkom bij SailingPD',
+    `<div class="space-y-6">
+
+      <div class="bg-blue-600 text-white rounded-xl p-6">
+        <h3 class="text-lg font-bold mb-2">Wat is SailingPD?</h3>
+        <p class="text-blue-100 text-sm leading-relaxed">
+          SailingPD is een <strong class="text-white">sailing performance dashboard</strong> voor racende zeilers.
+          De app draait op een <strong class="text-white">Raspberry Pi 4 of 5</strong> aan boord,
+          leest live NMEA-instrumentdata en berekent real-time
+          <strong class="text-white">performance%, laylines, trim adviezen en windverschuivingen</strong>.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+          <div class="text-2xl mb-2">🔌</div>
+          <h4 class="font-semibold text-slate-800 mb-1">Wat heb je nodig?</h4>
+          <ul class="text-sm text-slate-600 space-y-1">
+            <li>• Raspberry Pi 4 of 5</li>
+            <li>• NMEA-instrumenten aan boord<br>(GPS, windmeter, log, kompas)</li>
+            <li>• Verbinding via WiFi/LAN of serieel</li>
+            <li>• Snelheidspolar van je boot</li>
+          </ul>
+        </div>
+        <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+          <div class="text-2xl mb-2">📐</div>
+          <h4 class="font-semibold text-slate-800 mb-1">Hoe werkt het?</h4>
+          <ul class="text-sm text-slate-600 space-y-1">
+            <li>• Ontvangt live NMEA-data</li>
+            <li>• Berekent True Wind, performance%, VMG</li>
+            <li>• Vergelijkt met je polartabel</li>
+            <li>• Geeft trim adviezen en alerts</li>
+          </ul>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="font-semibold text-slate-700 mb-3">📤 De 7 uitvoerkanalen van SailingPD</h3>
+        <div class="space-y-2">
+          ${outputChannels.map(([icon, title, desc]) => `
+            <div class="flex items-start gap-3 p-3 rounded-lg border border-slate-200 bg-white">
+              <span class="text-xl flex-shrink-0 mt-0.5">${icon}</span>
+              <div>
+                <div class="font-semibold text-slate-800 text-sm">${title}</div>
+                <div class="text-xs text-slate-500 mt-0.5">${desc}</div>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div class="bg-green-50 border border-green-200 rounded-xl p-4">
+          <div class="text-xl mb-1">🖥️ Met scherm</div>
+          <p class="text-sm text-green-800">RPi is aangesloten op een monitor. SailingPD toont zijn eigen dashboard-venster én is bereikbaar via de browser.</p>
+        </div>
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <div class="text-xl mb-1">📡 Headless (zonder scherm)</div>
+          <p class="text-sm text-amber-800">RPi heeft geen monitor. Alleen webserver, UDP, spraak en logs zijn actief. Stel dit in bij de stap <em>Weergave</em>.</p>
+        </div>
+      </div>
+
+      <div class="bg-slate-100 rounded-xl p-4 text-sm text-slate-600">
+        <strong class="text-slate-800">Over deze wizard:</strong> Doorloop de stappen in volgorde.
+        Elke stap legt uit waarom een instelling nodig is. Aan het einde sla je alles op in de juiste
+        configuratiebestanden. Je kunt altijd teruggaan zonder instellingen te verliezen.
+      </div>
+
+    </div>`
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// STEP 1 — Activiteit
+// ═══════════════════════════════════════════════════════════════════════════
+function renderStep1() {
+  const act = get('General','activity','NMEA');
+  const activities = [
+    { val:'NMEA',               icon:'⛵', label:'Live zeilen (NMEA)',
+      desc:'De app leest live NMEA-data van GPS, windmeter, log en koers. Gebruik dit op het water.' },
+    { val:'replay',             icon:'🔁', label:'Replay van logbestand',
+      desc:'Speel een eerder opgeslagen NMEA-logbestand opnieuw af. Handig voor analyse na de race.' },
+    { val:'performancematrix',  icon:'📈', label:'Performance matrix bouwen <span class="badge badge-opt" style="font-size:.65rem">Geavanceerd</span>',
+      desc:'Bouw een performance matrix op basis van eerder opgeslagen PDlog-bestanden (SPDlog CSV). Alleen relevant als u al een seizoen gelogde data heeft.' },
+    { val:'checkperfwind',      icon:'🔍', label:'Performance / wind check <span class="badge badge-opt" style="font-size:.65rem">Geavanceerd</span>',
+      desc:'Analyseer performance per windhoek en windsterkte uit PDlog-bestanden. Alleen relevant als u al gelogde data heeft.' },
+  ];
+
+  const cards = activities.map(a => `
+    <label class="flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all
+                  ${act===a.val ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-white hover:border-blue-300'}">
+      <input type="radio" name="activity" value="${a.val}" ${act===a.val?'checked':''} class="mt-1 accent-blue-600">
+      <div>
+        <div class="font-semibold text-slate-800 flex items-center gap-2">${a.icon} ${a.label}</div>
+        <div class="text-sm text-slate-500 mt-1">${a.desc}</div>
+      </div>
+    </label>`).join('');
+
+  return card('🎯 Stap 2 — Activiteit & Opstarten',
+    why(`<strong>Waarom dit?</strong> De activiteit bepaalt welke functies van SailingPD actief zijn.
+         Kies "Live zeilen" voor gebruik aan boord, "Replay" om oude logs te analyseren,
+         of een post-processing modus voor diepere analyse.`) +
+    `<div class="space-y-3">${cards}</div>` +
+    sectionHeader('Gedrag bij opstarten') +
+    toggleRow('f-speech-en', 'Spraak ingeschakeld bij start',
+      yesno(getP('Starting specials','Speech enabled','N')),
+      'Schakel tekst-naar-spraak in zodra de app start. Zet dit uit bij eerste installatie — u kunt het later aanzetten als alles werkt.') +
+    toggleRow('f-noquestions', 'Geen vragen bij start (onbeheerd)',
+      yesno(getP('Starting specials','Noquestionsasked','N')),
+      'Slaat bevestigingsvragen over. Handig als de RPi automatisch opstart bij het aanzetten van de boot.') +
+    toggleRow('f-dummy', 'Dummy wind (testmodus)',
+      yesno(getP('Starting specials','Dummywind','N')),
+      'Genereert fictieve winddata zonder NMEA-bron. Alleen voor testen op kantoor of thuis.')
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// STEP 2 — Bootgegevens
+// ═══════════════════════════════════════════════════════════════════════════
+function renderStep2() {
+  const act = get('General','activity','NMEA');
+  const isReplay = act === 'replay';
+  return card('⛵ Stap 3 — Bootgegevens',
+    why(`<strong>Waarom dit?</strong> De bootnaam verschijnt in logs en weergaven.
+         De windmeterhoogte is nodig voor de berekening van de True Wind Angle (upwash-correctie):
+         hoe hoger de mast, hoe meer de windhoek wordt beïnvloed door het zeil.
+         De Leeway K-factor is een bootspecifieke constante voor de berekening van afdrift.`) +
+    textField('f-boatname','Bootnaam', get('Boatdata','boat name',''), 'Naam die in logs en displays verschijnt') +
+    selectField('f-prefspeed','Voorkeursnelheid', get('Boatdata','preferred speed','SOG'),
+      [['SOG','SOG — GPS-snelheid (over de grond)'],['STW','STW — Snelheid door het water (log)']],
+      'SOG is nauwkeuriger bij stroom; STW bij kalm water.') +
+    numField('f-windhgt','Windmeter hoogte (meter)', get('Boatdata','windsensor height','17.5'), 0, 50, 0.5,
+      'Hoogte van de windmeter boven de waterlijn in meters.') +
+    numField('f-leeway','Leeway K-factor', get('Boatdata','leeway K','10'), 0, 50, 0.5,
+      'Bootspecifieke constante voor afdriftberekening. Weet u het niet? Laat staan op 10 — dat is een goede standaard voor de meeste kielbootjes.') +
+    selectField('f-color','Kleurenschema', get('Mode','color','Y'),
+      [['Y','Kleur (aanbevolen)'],['N','Zwart-wit']],
+      '') +
+    (isReplay ? selectField('f-replay','Replaymodus', get('Mode','replay','N'),
+      [['Y','Ja — replay van logbestand'],['N','Nee — live modus']]) : '') +
+
+    sectionHeader('Bootfoto in dashboard') +
+    `<div class="grid grid-cols-2 gap-6">
+      <div>
+        <p class="field-label mb-2">Huidige foto <span class="badge badge-opt">250×412 px · GIF</span></p>
+        <div class="rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 flex items-center justify-center overflow-hidden"
+             style="width:125px;height:206px">
+          <img id="img-background-preview" src="/api/image/background?t=${Date.now()}"
+               style="max-width:125px;max-height:206px;object-fit:contain"
+               onerror="this.style.display='none';document.getElementById('img-background-placeholder').style.display='flex'"
+               alt="Bootfoto">
+          <div id="img-background-placeholder" class="hidden flex-col items-center text-slate-400 text-xs text-center p-3">
+            <span class="text-3xl mb-1">📷</span>
+            Geen foto
+          </div>
+        </div>
+      </div>
+      <div class="flex flex-col justify-center">
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-900 mb-4">
+          <strong>Eisen:</strong>
+          <ul class="mt-2 space-y-1 list-none">
+            <li>📐 Doelformaat: <strong>250 × 412 pixels</strong> (staand)</li>
+            <li>🖼️ Uitvoerformaat: <strong>GIF</strong> (256 kleuren)</li>
+            <li>📁 Uploaden als: JPG, PNG, GIF, BMP of WEBP</li>
+            <li>⚖️ Max bestandsgrootte: <strong>5 MB</strong></li>
+            <li>🔄 Automatisch geschaald met behoud van verhouding</li>
+            <li>📍 Opgeslagen als: <code>systemfiles/background.gif</code></li>
+          </ul>
+        </div>
+        <label class="cursor-pointer bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold text-center transition">
+          📂 Foto kiezen &amp; uploaden
+          <input type="file" id="upload-background" accept="image/*" class="hidden" onchange="uploadImage('background',this)">
+        </label>
+        <p id="upload-background-msg" class="text-sm mt-2 hidden"></p>
+      </div>
+    </div>`
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// STEP 3 — NMEA Verbinding
+// ═══════════════════════════════════════════════════════════════════════════
+function renderStep3() {
+  const ch = get('NMEAconnection','channel','network');
+  const proto = get('NMEAnetwork','Type','UDP');
+  return card('🔌 Stap 4 — NMEA Verbinding',
+    why(`<strong>Waarom dit?</strong> SailingPD moet NMEA-data ontvangen van boordinstrumenten
+         (GPS, windmeter, log, kompas). Dit kan via een seriële kabel (RS-232/USB)
+         of via een netwerk (WiFi/LAN via TCP of UDP). Kies de verbinding die overeenkomt
+         met hoe uw instrumenten zijn aangesloten.`) +
+    selectField('f-channel','Verbindingstype', ch,
+      [['network','Netwerk (UDP/TCP via WiFi of LAN)'],['serial','Serieel (RS-232 of USB)']]) +
+
+    `<div id="section-network" class="${ch==='network'?'':'hidden'}">` +
+      sectionHeader('Netwerkinstellingen') +
+      selectField('f-ntype','Protocol', proto,
+        [['UDP','UDP (broadcast, meest gebruikt)'],['TCP','TCP (directe verbinding)']],
+        'UDP is standaard voor NMEA-multiplexers en SignalK.') +
+      textField('f-nip','IP-adres / Hostname', get('NMEAnetwork','NMEA_IP','localhost'),
+        'Gebruik "localhost" als de bron op dezelfde computer draait. UDP broadcast: 255.255.255.255') +
+      numField('f-nport','Poort', get('NMEAnetwork','NMEA_PORT','5000'), 1, 65535, 1,
+        'Veelgebruikte poorten: 10110 (standaard NMEA), 5000 (SailingPD-default), 7000.') +
+    `</div>` +
+
+    `<div id="section-serial" class="${ch==='serial'?'':'hidden'}">` +
+      sectionHeader('Seriële instellingen') +
+      textField('f-sport','Poortnaam', get('Serial','port','COM1'),
+        'Op de RPi: /dev/ttyUSB0 (USB-adapter) of /dev/ttyAMA0 (GPIO serieel).') +
+      selectField('f-sbaud','Baudrate', get('Serial','speed','4800'),
+        [['4800','4800 (klassiek NMEA)'],['9600','9600'],['38400','38400'],['115200','115200']]) +
+      selectField('f-sbits','Databits', get('Serial','bits','8'),
+        [['8','8 bits'],['7','7 bits']]) +
+      selectField('f-sparity','Pariteit', get('Serial','parity','N'),
+        [['N','Geen'],['E','Even'],['O','Oneven']]) +
+      selectField('f-sstop','Stopbits', get('Serial','stopbits','1'),
+        [['1','1'],['2','2']]) +
+    `</div>` +
+
+    `<div class="bg-slate-50 border border-slate-200 rounded-xl p-4 mt-6 mb-2 text-sm text-slate-600">
+      <strong class="text-slate-800">Invoerverwerking</strong> — kalibratie- en filterinstellingen.
+      <span class="text-slate-500">Voor de meeste gebruikers zijn de standaardwaarden prima. Pas alleen aan als u meetproblemen ondervindt.</span>
+    </div>` +
+    numField('f-awsmul','AWS (schijnbare windsnelheid) correctiefactor', get('Inputcontrol','AWS multiply','1.05'), 0.5, 2.0, 0.01,
+      'Kalibratiecorrectie voor de windmeter. 1.00 = geen correctie; 1.05 = windmeter leest 5% te laag. Laat op 1.05 staan als u het niet weet.') +
+    numField('f-awfilt','Windhoekfilter (cycli)', get('Inputcontrol','AWfilter','2'), 1, 20, 1,
+      'Middeling van de windhoek over dit aantal metingen. Hogere waarde = rustiger beeld maar trager reagerend.') +
+    numField('f-nhz','NMEA frequentie (Hz)', get('Inputcontrol','NMEA Hz','1'), 1, 10, 1,
+      'Aantal NMEA-berichten per seconde van uw instrumenten. Oudere instrumenten: 1 Hz. Nieuwere: soms 5 of 10 Hz.') +
+    textField('f-xdroll','Slagzijsensor naam (optioneel)', get('Inputcontrol','XDR_roll',''),
+      'NMEA 2000-boten met een attitude-sensor (bijv. in chartplotter of Airmar PB200) sturen slagzijdata mee. Vul de sensornaam in zoals die in uw NMEA-stream verschijnt (bijv. "ROLL"). Oudere of eenvoudigere boten zonder bewegingssensor: laat leeg.') +
+    textField('f-xdpitch','Stamphoeksensor naam (optioneel)', get('Inputcontrol','XDR_pitch',''),
+      'Stamphoek (voor/achter) van dezelfde attitude-sensor (bijv. "PITCH"). Laat leeg als u geen bewegingssensor heeft.')
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// STEP 4 — Snelheidspolar
+// ═══════════════════════════════════════════════════════════════════════════
+function renderStep4() {
+  const files = cfg.files?.polars || [];
+  const fileList = files.length ? files.map(f =>
+    `<div class="flex items-center gap-3 p-3 rounded-lg border border-slate-200 bg-slate-50">
+      <span class="text-slate-700 text-sm flex-1">📄 ${escHtml(f)}</span>
+      <button onclick="previewCsv('polars','${escHtml(f)}')"
+        class="text-xs text-blue-600 hover:underline">Bekijk</button>
+    </div>`).join('') :
+    `<p class="text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm">
+      Geen polarbestanden gevonden in de <code>polars/</code> map.
+      Upload hieronder een bestand of sla het op via de teksteditor.
+    </p>`;
+
+  return card('📊 Stap 5 — Snelheidspolar',
+    why(`<strong>Waarom dit?</strong> De polartabel bevat de theoretische topsnelheid voor elke
+         combinatie van windhoek (TWA) en windsterkte (TWS). SailingPD berekent de performance%
+         door de werkelijke snelheid te vergelijken met de polarwaarde.
+         <br><br><strong>Formaat:</strong> CSV-bestand met puntkomma als scheidingsteken.
+         Eerste rijen: aantal TWS en TWA kolommen. Dan een matrix van snelheden in knopen.`) +
+    `<div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4 text-sm text-amber-900">
+      ⚠️ <strong>Gebruik de polar van uw eigen boot.</strong>
+      De bestanden hieronder zijn voorbeelden van de ontwikkelaar — zij zijn niet geschikt voor uw boot.
+      Vraag de polar op bij de ontwerper of importeur van uw boot, of maak er zelf één aan.
+    </div>` +
+    `<div class="space-y-2 mb-5">${fileList}</div>` +
+    sectionHeader('Bestand uploaden of aanmaken') +
+    `<div class="field-group">
+      <label class="field-label">Bestandsnaam</label>
+      <input class="form-input" id="polar-name" placeholder="mijnboot-polar.csv" value="">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Inhoud (CSV)</label>
+      <textarea class="form-input font-mono text-xs" id="polar-content" rows="8"
+        placeholder="number of TWS :;6;;;;\nnumber of TWA :;10;;;;\n1;6;10;14;20;24;TWS\n;;;TWA\n..."></textarea>
+      <p class="field-hint">Puntkomma als scheidingsteken. Getallen met komma als decimaalteken.</p>
+    </div>
+    <button onclick="saveCsvFile('polars')"
+      class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold">
+      Polar opslaan
+    </button>` +
+    `<div id="csv-preview-area" class="hidden mt-5">
+      <h4 class="font-semibold text-sm text-slate-700 mb-2">Voorvertoning:</h4>
+      <div class="csv-preview" id="csv-preview-content"></div>
+    </div>`
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// STEP 5 — Correcties (optioneel)
+// ═══════════════════════════════════════════════════════════════════════════
+function renderStep5() {
+  const useHeeledStw = yesno(get('Inputfiles','heeled STW','N'));
+  const useHeeledDev = yesno(get('Inputfiles','heeled Dev','N'));
+
+  function csvPanel(folder, title, hint) {
+    const files = cfg.files?.[folder] || [];
+    const list = files.length ? files.map(f =>
+      `<div class="flex items-center gap-2 p-2 rounded border border-slate-200 bg-slate-50 text-sm">
+        <span class="flex-1">📄 ${escHtml(f)}</span>
+        <button onclick="previewCsv('${folder}','${escHtml(f)}')" class="text-blue-600 hover:underline text-xs">Bekijk</button>
+      </div>`).join('') :
+      `<p class="text-sm text-slate-500 italic">Geen bestanden gevonden.</p>`;
+    return `<div class="mb-6">
+      <h4 class="font-semibold text-slate-700 mb-1">${title}</h4>
+      <p class="text-xs text-slate-500 mb-2">${hint}</p>
+      <div class="space-y-1 mb-3">${list}</div>
+      <div class="flex gap-2">
+        <input class="form-input text-sm" id="name-${folder}" placeholder="bestand.csv" style="max-width:220px">
+        <button onclick="previewCsvForEdit('${folder}')" class="border border-slate-300 px-3 py-1.5 rounded-lg text-sm hover:bg-slate-50">Bewerk</button>
+        <button onclick="saveCsvFile('${folder}')" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-blue-500">Opslaan</button>
+      </div>
+    </div>`;
+  }
+
+  return card('🔧 Stap 6 — Correcties',
+    `<span class="badge badge-opt">Optioneel</span>` +
+    why(`<strong>Waarom dit?</strong> Correctietabellen verhogen de nauwkeurigheid:
+         <ul class="list-disc ml-5 mt-2 space-y-1">
+         <li><strong>Kompasdeviatie</strong>: corrigeert de systematische fout van uw kompas per koershoek.</li>
+         <li><strong>STW-correctie</strong>: compenseert meetfouten in de log bij verschillende snelheden.</li>
+         <li><strong>Hiel-polar</strong>: geeft de doelhoek voor optimale performance bij elke TWA/TWS combinatie.</li>
+         </ul>
+         Zonder correcties werkt SailingPD ook, maar minder nauwkeurig.`) +
+
+    sectionHeader('Kompasdeviatie') +
+    toggleRow('f-heeldev', 'Hielafhankelijke deviatie gebruiken',
+      useHeeledDev, 'Gebruikt 2D deviatie-tabel die ook afhankelijk is van slagzijhoek.') +
+    csvPanel('deviation', 'Deviatiebestand', 'CSV met deviatie per kompaskoers (en optioneel per slagzij).') +
+
+    sectionHeader('STW Correctie') +
+    toggleRow('f-heelstw', 'Hielafhankelijke STW-correctie gebruiken',
+      useHeeledStw, 'Gebruikt 2D correctietabel die ook afhankelijk is van slagzijhoek.') +
+    csvPanel('stwcorrection', 'STW-correctiebestand', 'CSV met correctiefactoren per snelheid (en optioneel per slagzij).') +
+
+    sectionHeader('Hiel Polar') +
+    csvPanel('heelpolars', 'Hiel polarbestand', 'CSV met doelslagzijhoek per TWA en TWS (zelfde formaat als snelheidspolar).') +
+
+    `<div id="csv-preview-area2" class="hidden mt-5">
+      <div class="flex justify-between items-center mb-2">
+        <h4 class="font-semibold text-sm text-slate-700">Bestandsinhoud (bewerkbaar):</h4>
+        <button onclick="saveCsvFromPreview2()" class="bg-green-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-green-500">💾 Opslaan</button>
+      </div>
+      <textarea class="csv-preview w-full" id="csv-preview-content2" rows="12"
+        style="background:#1e293b;color:#e2e8f0;border:none;resize:vertical"></textarea>
+    </div>`
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// STEP 6 — NMEA Uitvoer
+// ═══════════════════════════════════════════════════════════════════════════
+function renderStep6() {
+  const sentences = [
+    ['VTG','VTG — Koers over de grond + snelheid'],
+    ['MTW','MTW — Watertemperatuur'],
+    ['MWV','MWV — Windhoek en snelheid'],
+    ['VHW','VHW — Koers + log snelheid'],
+    ['VLW','VLW — Log afstand'],
+    ['RMB','RMB — Navigatiedata naar waypoint'],
+    ['GLL','GLL — Positie (lat/lon)'],
+    ['BOD','BOD — Peiling naar bestemming'],
+    ['BWC','BWC — Peiling en afstand naar waypoint'],
+    ['BWR','BWR — Peiling en afstand (loxodroom)'],
+    ['RPM','RPM — Motor toerental (voor performance)'],
+    ['XDR','XDR — Transducer data'],
+    ['NKEP','NKEP — Navtex/Keel extended performance'],
+    ['MVW','MVW — SailingPD uitgebreide winddata'],
+    ['MVP','MVP — SailingPD uitgebreide performancedata'],
+    ['DIY','DIY — Eigen samengesteld NMEA-bericht'],
+  ];
+  const toggles = sentences.map(([k,l]) =>
+    toggleRow(`f-out-${k}`, l, yesno(get('NMEAoutput',k,'N')))).join('');
+
+  const outputFiles = [
+    ['SPDlog','SPDlog — Uitgebreide CSV-log van alle berekeningen'],
+    ['NMEAout copy','NMEAin kopie — Kopie van uitgaand NMEA-bestand'],
+    ['NMEAin copy','NMEAout kopie — Kopie van inkomend NMEA-bestand'],
+    ['AISin copy','AISin kopie — Kopie van inkomend AIS-bestand'],
+  ];
+  const fileToggles = outputFiles.map(([k,l]) =>
+    toggleRow(`f-ofile-${k.replace(' ','-')}`, l, yesno(get('Outputfiles',k,'N')))).join('');
+
+  return card('📡 Stap 7 — NMEA Uitvoer',
+    why(`<strong>Waarom dit?</strong> SailingPD kan berekende waarden terugsturen als NMEA-berichten
+         naar chart plotters, VHF, AIS-displays en andere instrumenten.
+         Activeer alleen de berichten die uw plotters of displays nodig hebben.
+         Te veel berichten kunnen de databus overbelasten.
+         <br><br>💡 <strong>Weet u niet welke berichten uw plotter nodig heeft?</strong>
+         Laat dan alles uitgeschakeld — de app werkt gewoon en u kunt dit altijd later aanpassen.`) +
+    sectionHeader('NMEA-berichten activeren') +
+    `<div class="rounded-xl border border-slate-200 px-4 py-2">${toggles}</div>` +
+    sectionHeader('Logbestanden') +
+    `<div class="rounded-xl border border-slate-200 px-4 py-2">${fileToggles}</div>` +
+    sectionHeader('NMEA Seriële uitgang (optioneel)') +
+    textField('f-soutport','Uitgangspoort', get('Serialout','portout','none'),
+      'Poortnaam voor NMEA-uitvoer via serieel. "none" = geen seriële uitgang.') +
+    selectField('f-soutbaud','Baudrate uitgang', get('Serialout','speedout','4800'),
+      [['4800','4800'],['9600','9600'],['38400','38400'],['115200','115200']]) +
+    sectionHeader('Uitvoerfilters') +
+    numField('f-perffilt','Performance filter (cycli)', get('Outputcontrol','perf filter','4'), 1, 60, 1,
+      'Gemiddelde performance over dit aantal cycli. Hogere waarde = stabielere waarde.') +
+    numField('f-genfilt','Algemeen filter (cycli)', get('Outputcontrol','general filter','16'), 1, 60, 1,
+      'Gemiddelde algemene data over dit aantal cycli.')
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// STEP 7 — WiFi & Webserver
+// ═══════════════════════════════════════════════════════════════════════════
+function renderStep7() {
+  const udpOn   = yesno(getW('Output','UDPmessages','N'));
+  const webOn   = yesno(getW('Output','Webserver','N'));
+  const udpMsgs = ['layline','perf','wind','current','angles','trimadvice'];
+  const udpLabels = {
+    layline:'Layline data', perf:'Performance percentages', wind:'Wind data',
+    current:'Stroomdata', angles:'Hoeken (AWA, TWA, etc.)', trimadvice:'Trim adviezen'
+  };
+  const udpToggles = udpMsgs.map(k =>
+    toggleRow(`f-udp-${k}`, udpLabels[k], yesno(getW('UDPmessages',k,'N')))).join('');
+
+  return card('🌐 Stap 8 — WiFi & Webserver',
+    why(`<strong>Waarom dit?</strong> SailingPD heeft een ingebouwde webserver waarmee
+         tablets en smartphones aan boord het performance dashboard kunnen weergeven.
+         Via UDP broadcast worden data rondgestuurd naar andere apps (bijv. Navionics, iSailor).
+         De webserver draait normaal op poort 9090; open dan <code>http://[ip-rpi]:9090</code> in uw browser.
+         <br><br>💡 <strong>IP-adres van de RPi vinden:</strong> typ <code>hostname -I</code> in een terminal op de RPi,
+         of kijk in de lijst van aangesloten apparaten op uw router.`) +
+    sectionHeader('UDP broadcast') +
+    toggleRow('f-udp-on','UDP broadcast inschakelen', udpOn,
+      'Stuurt data rondgestuurd over WiFi naar andere apparaten.') +
+    `<div id="udp-settings" class="${udpOn?'':'opacity-50 pointer-events-none'}">` +
+      textField('f-udp-ip','UDP IP (broadcast)', getW('Output','UDPip','255.255.255.255'),
+        '255.255.255.255 = broadcast naar alle apparaten op het netwerk.') +
+      numField('f-udp-port','UDP poort', getW('Output','UDPport','7000'), 1, 65535, 1,
+        'Ontvangst-app moet op dezelfde poort luisteren.') +
+      numField('f-udp-interval','Verzendinterval (seconden)', get('Outputcontrol','UDP interval','10'), 1, 60, 1,
+        'Hoe vaak data wordt verstuurd. Lager = vaker, meer netwerklast.') +
+      sectionHeader('Welke data via UDP?') +
+      `<div class="rounded-xl border border-slate-200 px-4 py-2">${udpToggles}</div>` +
+    `</div>` +
+
+    sectionHeader('Ingebouwde webserver') +
+    toggleRow('f-web-on','Webserver inschakelen', webOn,
+      'Tablets en telefoons kunnen het dashboard openen via de browser.') +
+    `<div id="web-settings" class="${webOn?'':'opacity-50 pointer-events-none'}">` +
+      textField('f-web-ip','Webserver IP (bind adres)', getW('Output','Webservername','0.0.0.0'),
+        '0.0.0.0 = bereikbaar op alle netwerkinterfaces van de RPi.') +
+      numField('f-web-port','Webserver poort', getW('Output','Webserverport','9090'), 1, 65535, 1,
+        'Open dan http://[ip-van-rpi]:9090 in de browser.') +
+    `</div>` +
+
+    sectionHeader('Multiview broadcast (meerdere schermen)') +
+    textField('f-mv-ip','Multiview broadcast IP', get('Outputcontrol','Multiview_IP','255.255.255.255'),
+      'Voor het gelijktijdig voeden van meerdere schermen.') +
+    numField('f-mv-port','Multiview poort', get('Outputcontrol','Multiview_PORT','10110'), 1, 65535, 1)
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// STEP 8 — Trim Advies
+// ═══════════════════════════════════════════════════════════════════════════
+function renderStep8() {
+  const advices = [
+    ['tack perf', 'Overstag performance-check',
+      'Waarschuw als performance na een overstag te lang laag blijft.'],
+    ['big heel', 'Teveel slagzij',
+      'Waarschuw als de boot verder overhelt dan de doelhoek + drempelwaarde.'],
+    ['few heel', 'Te weinig slagzij',
+      'Waarschuw als de boot minder overhelt dan de doelhoek - drempelwaarde.'],
+    ['off course', 'Van koers',
+      'Waarschuw als de werkelijke koers meer dan de ingestelde grens afwijkt van de gewenste koers.'],
+    ['rudderangle', 'Roerhoek te groot',
+      'Waarschuw als het roer te ver wordt geslagen (bootspecifieke indicator voor gebrek aan balans).'],
+    ['pinching', 'Te hoog aan de wind',
+      'Waarschuw als de boot te dicht bij de wind vaart (hogere TWA dan optimaal).'],
+    ['too deep', 'Te diep van de wind',
+      'Waarschuw als de boot te ver van de wind vaart (lagere TWA dan optimaal).'],
+    ['more twist', 'Meer twist',
+      'Waarschuw als het zeil meer twist nodig heeft.'],
+    ['less twist', 'Minder twist',
+      'Waarschuw als het zeil minder twist nodig heeft.'],
+    ['outer sheet', 'Buitenste schoot',
+      'Advies voor genua-schoot instelling.'],
+    ['perf low', 'Lage performance',
+      'Waarschuw als de performance onder de ingestelde drempelwaarde daalt.'],
+    ['high pitch', 'Hoge stamphoek',
+      'Waarschuw als de stamphoek boven de drempelwaarde uitkomt.'],
+    ['shiftmsg', 'Windverschuiving bericht',
+      'Stuur een bericht bij significante windverschuiving.'],
+    ['speak advice', 'Spraakberichten',
+      'Spreek de adviezen uit via tekst-naar-spraak (via de audio-uitgang van de RPi). Zet dit uit als u voor het eerst installeert — u kunt het later aanzetten als alles werkt.'],
+  ];
+  const toggles = advices.map(([k,l,h]) =>
+    toggleRow(`f-ta-${k.replace(' ','-')}`, l, yesno(get('Trimadvice',k,'N')), h)).join('');
+
+  return card('💬 Stap 9 — Trim Advies',
+    why(`<strong>Waarom dit?</strong> SailingPD analyseert continu de zeiltrim en geeft
+         gerichte adviezen op het scherm (en optioneel via spraak). Activeer alleen de
+         adviezen die relevant zijn voor uw boot en zeilstijl.`) +
+    `<div class="rounded-xl border border-slate-200 px-4 py-2 mb-5">${toggles}</div>` +
+    sectionHeader('Drempelwaarden') +
+    numField('f-tacktime','Overstag hersteltijd (seconden)', get('Trimadvice','tack time','30'), 5, 120, 5,
+      'Wacht dit aantal seconden na een overstag voordat performance wordt gemeten.') +
+    numField('f-heeldelta','Slagzij drempel (graden)', get('Trimadvice','heel delta','5'), 1, 20, 1,
+      'Afwijking van doelhoek voordat een advies wordt gegeven.') +
+    numField('f-offbtw','Koersafwijking drempel (graden)', get('Trimadvice','off BTW','10'), 1, 30, 1,
+      'Koersafwijking van de gewenste koers voordat "van koers" wordt gegeven.') +
+    numField('f-rudderhi','Roerhoek drempel (graden)', get('Trimadvice','rudderanglehigh','5'), 1, 25, 1,
+      'Roerhoek waarboven het roer als "te groot geslagen" wordt beschouwd.') +
+    numField('f-perflim','Performance drempel (%)', get('Trimadvice','perf limit','95'), 50, 100, 1,
+      'Performance-% waaronder het advies "lage performance" wordt gegeven.') +
+    numField('f-pitchlim','Stamp drempel (graden)', get('Trimadvice','pitch limit','5'), 1, 20, 1,
+      'Stamphoek waarboven het advies "hoge stamphoek" wordt gegeven.') +
+    numField('f-speech','Spraakinterval (seconden)', get('Outputcontrol','speech interval','5'), 1, 60, 1,
+      'Minimale tijd tussen twee gesproken adviezen.') +
+    sectionHeader('Windverschuiving & Stroom drempelwaarden') +
+    numField('f-windshift','Windverschuiving drempel (graden)', getP('Thresholds','windshift','5'), 1, 30, 1,
+      'Minimale windhoekverandering om als "verschuiving" te tellen. Gekoppeld aan het "Windverschuiving bericht" advies hierboven.') +
+    numField('f-curangle','Stroomhoek drempel (graden)', getP('Thresholds','currentangle','5'), 1, 30, 1,
+      'Minimale stroomhoek om stroom als significant te beschouwen.') +
+    numField('f-curspeed','Stroomsnelheid drempel (knopen)', getP('Thresholds','currentspeed','0.5'), 0.1, 5, 0.1,
+      'Minimale stroomsnelheid om stroom als significant te beschouwen.')
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// STEP 9 — Weergave (processlist.ini)
+// ═══════════════════════════════════════════════════════════════════════════
+function renderStep9() {
+  const isHeadless = cfg.headless === true;
+  const dimClass = isHeadless ? 'opacity-40 pointer-events-none' : '';
+
+  return card('🖥️ Stap 10 — Weergave',
+    sectionHeader('Schermloze modus (headless)') +
+    `<div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <div class="font-semibold text-slate-800 text-sm">Headless modus inschakelen</div>
+          <div class="text-xs text-slate-600 mt-1">
+            Heeft de RPi <strong>geen monitor</strong>? Zet dit aan.
+            Het native Python-venster wordt dan <em>niet</em> gestart —
+            alleen webserver, UDP, spraak en logs blijven actief.
+            Maakt/verwijdert <code class="bg-white px-1 rounded">systemfiles/headless.txt</code>.
+          </div>
+        </div>
+        <input type="checkbox" id="f-headless" ${isHeadless?'checked':''} style="flex-shrink:0;margin-top:2px">
+      </div>
+    </div>` +
+
+    why(`<strong>Waarom dit?</strong> Het hoofdscherm van SailingPD gebruikt een eigen
+         Python-venster (niet de browser). Hier stelt u het lettertype, de venstergrootte
+         en drempelwaarden in voor dat venster. Deze instellingen zijn alleen van toepassing
+         als SailingPD <em>niet</em> in headless-modus draait.`) +
+
+    `<div id="screen-settings" class="${dimClass}">` +
+      sectionHeader('Lettertype') +
+      textField('f-font','Lettertype', getP('Font','fonttype','Consolas'),
+        'Monospace lettertypen werken het beste: Consolas, Courier New, Menlo.') +
+      numField('f-fontsize','Lettergrootte', getP('Font','fontsize','18'), 8, 40, 1) +
+      sectionHeader('Vensterdimensies') +
+      numField('f-winhor','Breedte (pixels)', getP('Geometry','window-hor','1220'), 400, 3840, 10,
+        'Breedte van het SailingPD-venster. Typisch: 1920 (Full HD), 1280 (HD), 1024 (kleine schermen).') +
+      numField('f-winver','Hoogte (pixels)', getP('Geometry','window-ver','760'), 300, 2160, 10,
+        'Hoogte van het SailingPD-venster. Typisch: 1080 (Full HD), 720 (HD), 600 (kleine schermen).') +
+    `</div>`
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// STEP 10 — Samenvatting & Opslaan
+// ═══════════════════════════════════════════════════════════════════════════
+function renderStep10() {
+  const act = get('General','activity','?');
+  const boat = get('Boatdata','boat name','?');
+  const ch = get('NMEAconnection','channel','?');
+  const webOn = yesno(getW('Output','Webserver','N'));
+  const webPort = getW('Output','Webserverport','9090');
+
+  const summaryRows = [
+    ['Activiteit',        act],
+    ['Bootnaam',          boat],
+    ['NMEA verbinding',   ch === 'network'
+      ? `${get('NMEAnetwork','Type')} → ${get('NMEAnetwork','NMEA_IP')}:${get('NMEAnetwork','NMEA_PORT')}`
+      : `Serieel ${get('Serial','port')} @ ${get('Serial','speed')} baud`],
+    ['Webserver',         webOn ? `Aan — poort ${webPort}` : 'Uit'],
+    ['Spraakadviezen',    yesno(get('Trimadvice','speak advice','N')) ? 'Aan' : 'Uit'],
+    ['Headless modus',    cfg.headless ? 'Aan (geen scherm)' : 'Uit (met scherm)'],
+  ];
+
+  const rows = summaryRows.map(([k,v]) =>
+    `<tr class="border-b border-slate-100">
+      <td class="py-2 pr-6 text-sm font-medium text-slate-500 whitespace-nowrap">${k}</td>
+      <td class="py-2 text-sm text-slate-800 font-semibold">${escHtml(v)}</td>
+    </tr>`).join('');
+
+  return card('💾 Stap 11 — Opslaan',
+    why(`<strong>Klaar!</strong> Controleer de samenvatting en klik op <em>Configuratie opslaan</em>.
+         Daarna kunt u SailingPD direct starten via de groene knop rechtsonder.`) +
+    `<table class="w-full mb-6">${rows}</table>` +
+    `<div id="save-result" class="hidden mb-4 p-4 rounded-xl font-semibold text-sm"></div>` +
+    `<div class="flex items-center gap-4 flex-wrap">
+      <button onclick="saveAll()"
+        class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-xl font-bold text-base transition shadow">
+        💾 Configuratie opslaan
+      </button>
+      <span class="text-slate-500 text-sm">Slaat de configuratie op in de SailingPD-installatiemap.</span>
+    </div>`
+  );
+}
+
+const stepRenderers = [
+  renderStep0, renderStep1, renderStep2, renderStep3,
+  renderStep4, renderStep5, renderStep6, renderStep7,
+  renderStep8, renderStep9, renderStep10
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// LISTENERS — wire form → state
+// ═══════════════════════════════════════════════════════════════════════════
+function attachListeners(step) {
+  if (step === 1) {
+    document.querySelectorAll('input[name=activity]').forEach(r => {
+      r.addEventListener('change', () => set('General','activity', r.value));
+    });
+    bindP('f-speech-en',  'Starting specials', 'Speech enabled');
+    bindP('f-noquestions','Starting specials',  'Noquestionsasked');
+    bindP('f-dummy',      'Starting specials',  'Dummywind');
+  }
+  if (step === 2) {
+    bind('f-boatname',  'Boatdata',  'boat name');
+    bind('f-prefspeed', 'Boatdata',  'preferred speed');
+    bind('f-windhgt',   'Boatdata',  'windsensor height');
+    bind('f-leeway',    'Boatdata',  'leeway K');
+    bind('f-color',     'Mode',      'color');
+    bind('f-replay',    'Mode',      'replay');
+  }
+  if (step === 3) {
+    const chSel = document.getElementById('f-channel');
+    function toggleChannel(v) {
+      document.getElementById('section-network').classList.toggle('hidden', v==='serial');
+      document.getElementById('section-serial').classList.toggle('hidden', v==='network');
+    }
+    chSel.addEventListener('change', () => {
+      set('NMEAconnection','channel',chSel.value);
+      toggleChannel(chSel.value);
+    });
+    bind('f-ntype',   'NMEAnetwork',   'Type');
+    bind('f-nip',     'NMEAnetwork',   'NMEA_IP');
+    bind('f-nport',   'NMEAnetwork',   'NMEA_PORT');
+    bind('f-sport',   'Serial',        'port');
+    bind('f-sbaud',   'Serial',        'speed');
+    bind('f-sbits',   'Serial',        'bits');
+    bind('f-sparity', 'Serial',        'parity');
+    bind('f-sstop',   'Serial',        'stopbits');
+    bind('f-awsmul',  'Inputcontrol',  'AWS multiply');
+    bind('f-awfilt',  'Inputcontrol',  'AWfilter');
+    bind('f-nhz',     'Inputcontrol',  'NMEA Hz');
+    bind('f-xdroll',  'Inputcontrol',  'XDR_roll');
+    bind('f-xdpitch', 'Inputcontrol',  'XDR_pitch');
+  }
+  if (step === 5) {
+    bind('f-heeldev', 'Inputfiles', 'heeled Dev');
+    bind('f-heelstw', 'Inputfiles', 'heeled STW');
+  }
+  if (step === 6) {
+    const sentences = ['MTW','RMB','VTG','GLL','BOD','BWC','BWR','MWV','VHW','VLW','RPM','XDR','NKEP','SMDPRFW','SMDPRFP','MVW','MVP','DIY'];
+    sentences.forEach(k => bind(`f-out-${k}`, 'NMEAoutput', k));
+    const outfiles = ['SPDlog','NMEAout copy','NMEAin copy','AISin copy'];
+    outfiles.forEach(k => bind(`f-ofile-${k.replace(' ','-')}`, 'Outputfiles', k));
+    bind('f-soutport',  'Serialout',     'portout');
+    bind('f-soutbaud',  'Serialout',     'speedout');
+    bind('f-perffilt',  'Outputcontrol', 'perf filter');
+    bind('f-genfilt',   'Outputcontrol', 'general filter');
+  }
+  if (step === 7) {
+    const udpCb = document.getElementById('f-udp-on');
+    udpCb.addEventListener('change', () => {
+      setW('Output','UDPmessages', yn(udpCb.checked));
+      document.getElementById('udp-settings').style.opacity = udpCb.checked ? '1':'0.5';
+      document.getElementById('udp-settings').style.pointerEvents = udpCb.checked ? '':'none';
+    });
+    const webCb = document.getElementById('f-web-on');
+    webCb.addEventListener('change', () => {
+      setW('Output','Webserver', yn(webCb.checked));
+      document.getElementById('web-settings').style.opacity = webCb.checked ? '1':'0.5';
+      document.getElementById('web-settings').style.pointerEvents = webCb.checked ? '':'none';
+    });
+    bindW('f-udp-ip',     'Output', 'UDPip');
+    bindW('f-udp-port',   'Output', 'UDPport');
+    bind('f-udp-interval','Outputcontrol','UDP interval');
+    ['layline','perf','wind','current','angles','trimadvice'].forEach(k =>
+      bindW(`f-udp-${k}`, 'UDPmessages', k));
+    bindW('f-web-ip',   'Output', 'Webservername');
+    bindW('f-web-port', 'Output', 'Webserverport');
+    bind('f-mv-ip',   'Outputcontrol', 'Multiview_IP');
+    bind('f-mv-port', 'Outputcontrol', 'Multiview_PORT');
+  }
+  if (step === 8) {
+    const advKeys = ['tack perf','big heel','few heel','off course','rudderangle','pinching',
+      'too deep','more twist','less twist','outer sheet','perf low','high pitch','shiftmsg','speak advice'];
+    advKeys.forEach(k => bind(`f-ta-${k.replace(' ','-')}`, 'Trimadvice', k));
+    bind('f-tacktime',  'Trimadvice',    'tack time');
+    bind('f-heeldelta', 'Trimadvice',    'heel delta');
+    bind('f-offbtw',    'Trimadvice',    'off BTW');
+    bind('f-rudderhi',  'Trimadvice',    'rudderanglehigh');
+    bind('f-perflim',   'Trimadvice',    'perf limit');
+    bind('f-pitchlim',   'Trimadvice',    'pitch limit');
+    bind('f-speech',     'Outputcontrol', 'speech interval');
+    bindP('f-windshift', 'Thresholds',   'windshift');
+    bindP('f-curangle',  'Thresholds',   'currentangle');
+    bindP('f-curspeed',  'Thresholds',   'currentspeed');
+  }
+  if (step === 9) {
+    const headlessCb = document.getElementById('f-headless');
+    headlessCb.addEventListener('change', () => {
+      cfg.headless = headlessCb.checked;
+      const screenDiv = document.getElementById('screen-settings');
+      screenDiv.className = headlessCb.checked ? 'opacity-40 pointer-events-none' : '';
+    });
+    bindP('f-font',     'Font',     'fonttype');
+    bindP('f-fontsize', 'Font',     'fontsize');
+    bindP('f-winhor',   'Geometry', 'window-hor');
+    bindP('f-winver',   'Geometry', 'window-ver');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CSV helpers
+// ═══════════════════════════════════════════════════════════════════════════
+let currentCsvFolder = '';
+let currentCsvFile   = '';
+
+// ─── image upload ─────────────────────────────────────────────────────────
+async function uploadImage(name, inputEl) {
+  const file = inputEl.files[0];
+  if (!file) return;
+  const msgEl = document.getElementById(`upload-${name}-msg`);
+  msgEl.className = 'text-sm mt-2 text-slate-500';
+  msgEl.textContent = '⏳ Bezig met uploaden en omzetten…';
+  msgEl.classList.remove('hidden');
+
+  const form = new FormData();
+  form.append('file', file);
+  try {
+    const r = await fetch(`/api/image/${name}`, { method: 'POST', body: form });
+    const d = await r.json();
+    if (d.success) {
+      msgEl.className = 'text-sm mt-2 text-green-700 font-semibold';
+      msgEl.textContent = '✓ ' + d.message;
+      const preview = document.getElementById(`img-${name}-preview`);
+      if (preview) {
+        preview.src = `/api/image/${name}?t=${Date.now()}`;
+        preview.style.display = '';
+        const ph = document.getElementById(`img-${name}-placeholder`);
+        if (ph) ph.style.display = 'none';
+      }
+    } else {
+      msgEl.className = 'text-sm mt-2 text-red-700';
+      msgEl.textContent = '✗ ' + (d.error || 'Onbekende fout');
+    }
+  } catch (e) {
+    msgEl.className = 'text-sm mt-2 text-red-700';
+    msgEl.textContent = '✗ Verbindingsfout: ' + e.message;
+  }
+  inputEl.value = '';
+}
+
+async function previewCsv(folder, filename) {
+  const r = await fetch(`/api/csv/${folder}/${encodeURIComponent(filename)}`);
+  const d = await r.json();
+  const area = document.getElementById('csv-preview-area');
+  if (area) {
+    area.classList.remove('hidden');
+    document.getElementById('csv-preview-content').textContent = d.content;
+    document.getElementById('polar-name').value = filename;
+    document.getElementById('polar-content').value = d.content;
+  }
+}
+
+async function previewCsvForEdit(folder) {
+  const nameEl = document.getElementById(`name-${folder}`);
+  const filename = nameEl?.value;
+  if (!filename) { flash('Voer eerst een bestandsnaam in.', false); return; }
+  currentCsvFolder = folder;
+  currentCsvFile   = filename;
+  const r = await fetch(`/api/csv/${folder}/${encodeURIComponent(filename)}`);
+  if (!r.ok) {
+    document.getElementById('csv-preview-content2').value = '';
+  } else {
+    const d = await r.json();
+    document.getElementById('csv-preview-content2').value = d.content;
+  }
+  document.getElementById('csv-preview-area2').classList.remove('hidden');
+}
+
+async function saveCsvFile(folder) {
+  let nameEl = document.getElementById('polar-name') || document.getElementById(`name-${folder}`);
+  let contentEl = document.getElementById('polar-content');
+  const filename = nameEl?.value?.trim();
+  const content  = contentEl?.value ?? '';
+  if (!filename) { flash('Voer een bestandsnaam in.', false); return; }
+  const r = await fetch(`/api/csv/${folder}/${encodeURIComponent(filename)}`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({content})
+  });
+  const d = await r.json();
+  if (d.success) {
+    flash('Bestand opgeslagen!', true);
+    const lr = await fetch(`/api/csv/${folder}`);
+    const ld = await lr.json();
+    if (cfg.files) cfg.files[folder] = ld.files;
+  } else {
+    flash('Fout: ' + (d.error || 'onbekend'), false);
+  }
+}
+
+async function saveCsvFromPreview2() {
+  const content = document.getElementById('csv-preview-content2').value;
+  const folder  = currentCsvFolder;
+  const filename = currentCsvFile;
+  if (!folder || !filename) { flash('Geen bestand geselecteerd.', false); return; }
+  const r = await fetch(`/api/csv/${folder}/${encodeURIComponent(filename)}`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({content})
+  });
+  const d = await r.json();
+  flash(d.success ? 'Bestand opgeslagen!' : ('Fout: ' + d.error), d.success);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SAVE ALL
+// ═══════════════════════════════════════════════════════════════════════════
+async function saveAll() {
+  const r = await fetch('/api/config', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      boatspecifics: cfg.boatspecifics,
+      processlist:   cfg.processlist,
+      sendoverwifi:  cfg.sendoverwifi,
+      headless:      cfg.headless,
+    })
+  });
+  const d = await r.json();
+  flash(d.success ? '✓ ' + d.message : '✗ Fout: ' + (d.error || '?'), d.success);
+  const res = document.getElementById('save-result');
+  if (res) {
+    res.classList.remove('hidden');
+    res.className = `save-result ${d.success ? 'bg-green-100 text-green-800 border border-green-300' : 'bg-red-100 text-red-800 border border-red-300'} p-4 rounded-xl font-semibold text-sm mb-4`;
+    res.textContent = d.success ? '✓ ' + d.message : '✗ Fout: ' + (d.error || 'onbekend');
+  }
+}
+
+async function startSPD() {
+  const r = await fetch('/api/start', { method:'POST' });
+  const d = await r.json();
+  flash(d.success ? '▶ SailingPD gestart!' : '✗ ' + (d.error || '?'), d.success);
+}
+
+async function saveAndStart() {
+  const r = await fetch('/api/config', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      boatspecifics: cfg.boatspecifics,
+      processlist:   cfg.processlist,
+      sendoverwifi:  cfg.sendoverwifi,
+      headless:      cfg.headless,
+    })
+  });
+  const d = await r.json();
+  if (!d.success) {
+    flash('✗ Opslaan mislukt: ' + (d.error || '?'), false);
+    return;
+  }
+  const r2 = await fetch('/api/start', { method:'POST' });
+  const d2 = await r2.json();
+  const res = document.getElementById('save-result');
+  if (res) {
+    res.classList.remove('hidden');
+    res.className = `save-result ${d2.success ? 'bg-green-100 text-green-800 border border-green-300' : 'bg-red-100 text-red-800 border border-red-300'} p-4 rounded-xl font-semibold text-sm mb-4`;
+    res.textContent = d2.success ? '✓ Configuratie opgeslagen en SailingPD gestart!' : '✗ Opgeslagen, maar starten mislukt: ' + (d2.error || '?');
+  }
+  flash(d2.success ? '✓ SailingPD gestart!' : '✗ ' + (d2.error || '?'), d2.success);
+}
+
+// ─── flash message ────────────────────────────────────────────────────────
+function flash(msg, ok) {
+  const el = document.getElementById('flash');
+  el.textContent = msg;
+  el.className = `save-flash ${ok ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`;
+  el.style.opacity = '1';
+  setTimeout(() => { el.style.opacity = '0'; }, 3000);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+boot();
+</script>
+</body>
+</html>
