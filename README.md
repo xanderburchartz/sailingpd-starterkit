@@ -2,6 +2,8 @@
 
 Een browser-gebaseerde configuratiewizard voor [SailingPD](https://github.com/xanderburchartz/sailingpd) — het sailing performance dashboard voor racende zeilers op een Raspberry Pi.
 
+![Welkomscherm](docs/screenshot-welcome.png)
+
 ---
 
 ## Wat doet het?
@@ -23,6 +25,11 @@ De Config Wizard leidt u stapsgewijs door alle instellingen van SailingPD. U hoe
 | 9 | Trim Advies | Trim-adviezen en drempelwaarden |
 | 10 | Weergave | Headless modus, lettertype en vensterdimensies |
 | 11 | Opslaan & Starten | Samenvatting, configuratie opslaan, SailingPD starten |
+
+| | |
+|--|--|
+| ![Activiteit](docs/screenshot-activity.png) | ![NMEA Verbinding](docs/screenshot-nmea-input.png) |
+| ![Trim Advies](docs/screenshot-trimadvice.png) | ![Opslaan](docs/screenshot-save.png) |
 
 ---
 
