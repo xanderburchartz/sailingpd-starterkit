@@ -1,133 +1,80 @@
-# SailingPD Config Wizard
+# SailingPD Starter Kit
 
-Een browser-gebaseerde configuratiewizard voor [SailingPD](https://github.com/xanderburchartz/sailingpd) — het sailing performance dashboard voor racende zeilers op een Raspberry Pi.
+**Maak [SailingPD](https://www.capolavoro.nl/manual-sailingpd) toegankelijk voor iedereen** — zonder `.ini`-bestanden te bewerken.
 
-![Welkomscherm](docs/screenshot-welcome.png)
+Deze starter kit bundelt twee dingen die het opstarten met SailingPD een stuk eenvoudiger maken:
 
----
+1. **Config-wizard** — een browser-wizard die je stap voor stap door alle instellingen leidt, met uitleg in gewone taal, een woordenlijst, een "Test verbinding & detecteer sensoren"-knop, en een basismodus die alleen de essentiële stappen toont. Werkt op **Windows, Linux en Raspberry Pi**.
+2. **Web-menu** — een overzichtspagina op poort 9090 waarmee je met één klik door alle SailingPD-dashboardpagina's bladert, elk met een **thumbnail** en korte toelichting.
 
-## Wat doet het?
+![Web-menu](docs/menu-screenshot.png)
 
-De Config Wizard leidt u stapsgewijs door alle instellingen van SailingPD. U hoeft geen `.ini`-bestanden handmatig te bewerken. De wizard legt bij elke stap uit waarom een instelling nodig is en schrijft aan het einde de juiste configuratiebestanden weg.
-
-**11 stappen:**
-
-| # | Stap | Inhoud |
-|---|------|--------|
-| 1 | Welkom | Uitleg over SailingPD en de wizard |
-| 2 | Activiteit & Opstarten | Live zeilen, replay, of analyse; gedrag bij opstarten |
-| 3 | Bootgegevens | Bootnaam, windmeterhoogte, Leeway K-factor, bootfoto |
-| 4 | NMEA Verbinding | Netwerk (UDP/TCP) of serieel; kalibratie-instellingen |
-| 5 | Snelheidspolar | Polar uploaden of aanmaken |
-| 6 | Correcties | Kompasdeviatie, STW-correctie, hiel polar (optioneel) |
-| 7 | NMEA Uitvoer | Welke NMEA-berichten en logbestanden SailingPD genereert |
-| 8 | WiFi & Webserver | UDP broadcast en ingebouwde webserver |
-| 9 | Trim Advies | Trim-adviezen en drempelwaarden |
-| 10 | Weergave | Headless modus, lettertype en vensterdimensies |
-| 11 | Opslaan & Starten | Samenvatting, configuratie opslaan, SailingPD starten |
-
-| | |
-|--|--|
-| ![Activiteit](docs/screenshot-activity.png) | ![NMEA Verbinding](docs/screenshot-nmea-input.png) |
-| ![Trim Advies](docs/screenshot-trimadvice.png) | ![Opslaan](docs/screenshot-save.png) |
+> Onafhankelijke add-on. SailingPD zelf is gemaakt door Thomas ten Kortenaar (capolavoro.nl); deze kit is daar geen officieel onderdeel van maar werkt er bovenop.
 
 ---
 
-## Vereisten
+## Wat heb je nodig?
 
-- **Raspberry Pi 4 of 5** met SailingPD geïnstalleerd
-- **Python 3.9+** (standaard aanwezig op Raspberry Pi OS)
-- Geen internetverbinding nodig na installatie
-
----
-
-## Installatie
-
-1. Zet de map `config-wizard/` in uw SailingPD-installatiemap:
-
-```
-sailingpd-vX.X.X/
-├── config-wizard/      ← hier
-├── boatspecifics/
-├── systemfiles/
-├── sailingPD
-└── ...
-```
-
-2. Maak het startscript uitvoerbaar:
-
-```bash
-chmod +x config-wizard/start.sh
-```
+- **SailingPD** geïnstalleerd (download bij [capolavoro.nl](https://www.capolavoro.nl/manual-sailingpd)) — Windows 10/11, 64-bit Linux, of Raspberry Pi.
+- **Python 3.9+** (op Windows: [python.org](https://www.python.org/downloads/), vink *"Add Python to PATH"* aan; op Linux/Raspberry Pi meestal al aanwezig).
+- Geen internet nodig na installatie.
 
 ---
 
-## Starten
+## Installeren
 
-```bash
-cd sailingpd-vX.X.X/config-wizard
-./start.sh
-```
+1. Download deze starter kit (groene **Code**-knop → *Download ZIP*, of `git clone`).
+2. Pak de map **`sailingpd-starterkit`** uit **in je SailingPD-installatiemap**, naast `sailingPD` en `web_root/`:
 
-De eerste keer wordt automatisch een Python virtual environment aangemaakt en worden de benodigde packages (Flask, Pillow) geïnstalleerd.
+   ```
+   sailingpd-vX.X.X/
+   ├── sailingPD            (of sailingPD.exe op Windows)
+   ├── web_root/
+   ├── boatspecifics/
+   └── sailingpd-starterkit/   ← hier
+   ```
 
-Open daarna in de browser op de RPi:
+3. Draai de installer:
+   - **Windows** — dubbelklik `sailingpd-starterkit\install.bat`
+   - **Linux / Raspberry Pi** — `./sailingpd-starterkit/install.sh`
 
-```
-http://localhost:5001
-```
-
-Of vanaf een ander apparaat op hetzelfde netwerk:
-
-```
-http://[ip-van-rpi]:5001
-```
-
-> **Tip:** het IP-adres van de RPi vindt u met `hostname -I` in een terminal.
+De installer plaatst de wizard in je SailingPD-map en zet het web-menu als startpagina (de originele webpagina blijft bereikbaar op `/dials.html`).
 
 ---
 
-## Configuratiebestanden
+## Gebruiken
 
-De wizard schrijft naar drie bestanden in de SailingPD-installatiemap:
+1. **Start de wizard**
+   - Windows: dubbelklik `config-wizard\start.bat`
+   - Linux/Pi: `./config-wizard/start.sh`
 
-| Bestand | Inhoud |
-|---------|--------|
-| `boatspecifics/boatspecifics.ini` | Bootgegevens, NMEA-verbinding, trim-instellingen |
-| `systemfiles/processlist.ini` | Opstartgedrag, weergave, drempelwaarden |
-| `systemfiles/sendoverwifi.ini` | WiFi, UDP en webserver-instellingen |
-| `systemfiles/headless.txt` | Aanwezig = headless modus aan |
+   Open daarna **http://localhost:5001** in je browser. De eerste keer maakt het script automatisch een Python-omgeving aan.
 
-CSV-bestanden (polars, deviatie, etc.) worden direct opgeslagen wanneer u ze aanmaakt of uploadt in de betreffende stap.
+2. **Doorloop de wizard** (activiteit, boot, NMEA-verbinding, polar…) en klik aan het eind op **SailingPD starten**.
 
----
-
-## SailingPD starten vanuit de wizard
-
-Op de laatste stap kunt u SailingPD direct starten via de groene knop **▶ SailingPD starten**. De wizard blijft bereikbaar — SailingPD draait als een losstaand achtergrondproces.
+3. **Open het dashboard-menu** op **http://localhost:9090/** en kies je favoriete weergave.
 
 ---
 
-## Technische details
+## Wat zit er in?
 
-| | |
-|-|-|
-| Backend | Python / Flask |
-| Frontend | Vanilla JavaScript, Tailwind CSS (CDN) |
-| Poort | 5001 (instelbaar via `PORT` omgevingsvariabele) |
-| Dependencies | `flask>=3.0.0`, `Pillow>=10.0.0` |
-| Geen build-stap nodig | — |
+| Map | Inhoud |
+|-----|--------|
+| `config-wizard/` | De configuratie-wizard (Flask). Bewerkt de echte SailingPD-configbestanden. |
+| `web-menu/` | De menu-startpagina + thumbnails, die in `web_root/` worden geplaatst. |
+| `install.sh` / `install.bat` | Installers voor Linux/Pi en Windows. |
 
----
-
-## Versies
-
-| Versie | Datum | Wijzigingen |
-|--------|-------|-------------|
-| v0.1.0 | 2026-05-21 | Eerste release — volledige 11-stappen wizard |
+De thumbnails in het menu zijn momentopnamen. Wijzigen de dashboardpagina's of wil je ze verversen met je eigen data? Maak nieuwe met een headless browser (bijv. `chromium --headless=new --screenshot=... http://localhost:9090/SPDfull.html`) en verklein ze naar ~480px breed in `web_root/thumbs/`.
 
 ---
 
-## Licentie
+## Terugdraaien
 
-Dit project is een add-on voor SailingPD en wordt verspreid onder dezelfde voorwaarden als SailingPD zelf.
+- Web-menu terug naar de originele pagina: kopieer in `web_root/` het bestand `index.html.orig-spa` terug over `index.html`.
+- Wizard verwijderen: verwijder de map `config-wizard/`.
+
+---
+
+## Licentie & dank
+
+Deze kit is een onafhankelijke add-on voor SailingPD en wordt gedeeld onder dezelfde voorwaarden als SailingPD zelf. Met dank aan Thomas ten Kortenaar voor SailingPD.

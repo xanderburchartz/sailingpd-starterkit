@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SailingPD — Pagina's</title>
+<style>
+  :root{
+    --bg:#eef2f7; --panel:#ffffff; --ink:#0f172a; --muted:#64748b;
+    --line:#e2e8f0; --accent:#2563eb; --accent-ink:#1d4ed8; --full:#059669;
+    --chip:#f1f5f9; --chip-ink:#334155; --thumbbg:#f8fafc;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{ --bg:#0b1220; --panel:#151d2e; --ink:#e8edf5; --muted:#94a3b8;
+      --line:#243149; --accent:#3b82f6; --accent-ink:#93c5fd; --full:#34d399;
+      --chip:#1e293b; --chip-ink:#cbd5e1; --thumbbg:#0b1220; }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);
+    line-height:1.45;padding:1.25rem;max-width:1100px;margin:0 auto;}
+  header{margin:.5rem 0 1.5rem}
+  h1{font-size:1.6rem;margin:0 0 .25rem;display:flex;align-items:center;gap:.5rem}
+  .sub{color:var(--muted);font-size:.95rem;margin:0}
+  .topbar{display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap}
+  .wizlink{font-size:.85rem;color:var(--accent-ink);text-decoration:none;border:1px solid var(--line);
+    background:var(--panel);padding:.45rem .8rem;border-radius:.6rem;white-space:nowrap}
+  .wizlink:hover{border-color:var(--accent)}
+  h2{font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);
+    margin:1.9rem 0 .8rem;font-weight:700}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:.9rem}
+  .card{display:flex;flex-direction:column;text-decoration:none;color:inherit;background:var(--panel);
+    border:1px solid var(--line);border-radius:.9rem;overflow:hidden;
+    transition:border-color .15s,transform .1s,box-shadow .15s}
+  .card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.10)}
+  .thumb{display:block;width:100%;aspect-ratio:3/2;object-fit:cover;object-position:top left;
+    background:var(--thumbbg);border-bottom:1px solid var(--line)}
+  .body{padding:.85rem 1.05rem}
+  .card .t{font-weight:700;font-size:1.02rem;display:flex;align-items:center;gap:.5rem;margin-bottom:.15rem}
+  .card .file{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.72rem;color:var(--muted);
+    margin-bottom:.5rem;word-break:break-all}
+  .card .d{font-size:.85rem;color:var(--muted)}
+  .featured{border:2px solid var(--full)}
+  .featured .t{font-size:1.15rem}
+  .badge{display:inline-block;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+    padding:.12rem .45rem;border-radius:.35rem;background:var(--chip);color:var(--chip-ink);margin-left:.35rem}
+  .chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.2rem}
+  .chip{text-decoration:none;background:var(--chip);color:var(--chip-ink);border:1px solid var(--line);
+    padding:.4rem .7rem;border-radius:.6rem;font-size:.85rem;font-weight:600}
+  .chip:hover{border-color:var(--accent);color:var(--accent-ink)}
+  .note{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--accent);
+    border-radius:.6rem;padding:.8rem 1rem;font-size:.85rem;color:var(--muted);margin:.4rem 0 0}
+  footer{color:var(--muted);font-size:.78rem;margin:2.2rem 0 .5rem;text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <div class="topbar">
+    <div>
+      <h1>⚓ SailingPD — pagina's</h1>
+      <p class="sub">Kies hieronder welk dashboard je wilt openen. Alles draait lokaal op deze server (werkt zonder internet).</p>
+    </div>
+    <a class="wizlink" id="wizlink" href="#">⚙️ Instellingen (wizard)</a>
+  </div>
+</header>
+
+<h2>Volledig overzicht</h2>
+<div class="grid">
+  <a class="card featured" href="SPDfull.html">
+    <img class="thumb" src="thumbs/SPDfull.jpg" alt="Voorbeeld van het volledige dashboard" loading="lazy">
+    <div class="body">
+      <div class="t">🧭 Volledig dashboard <span class="badge">standaard</span></div>
+      <div class="file">SPDfull.html</div>
+      <div class="d">Álle grootheden in tekst — wind, koers, snelheid, performance, GEO-wind, stroom, doelhoeken (t-UA/t-DA), heave/pitch/yaw — plus de bedieningsknoppen. Het meest complete beeld, identiek aan het "eigen venster" van de app.</div>
+    </div>
+  </a>
+</div>
+
+<h2>Live dashboards (updaten realtime)</h2>
+<div class="grid">
+  <a class="card" href="SPDperfandadvice.html">
+    <img class="thumb" src="thumbs/SPDperfandadvice.jpg" alt="Voorbeeld performance + advies" loading="lazy">
+    <div class="body">
+      <div class="t">📈 Performance + advies</div>
+      <div class="file">SPDperfandadvice.html</div>
+      <div class="d">Performance-cijfers samen met tekstueel trim-advies. Fijn als je vooral op snelheid en trim wilt sturen.</div>
+    </div>
+  </a>
+  <a class="card" href="SPDperfincldials.html">
+    <img class="thumb" src="thumbs/SPDperfincldials.jpg" alt="Voorbeeld performance met wijzers" loading="lazy">
+    <div class="body">
+      <div class="t">📊 Performance + wijzers</div>
+      <div class="file">SPDperfincldials.html</div>
+      <div class="d">Performance-overzicht met wijzerplaten erbij voor snel aflezen.</div>
+    </div>
+  </a>
+  <a class="card" href="SPDperfjustdials.html">
+    <img class="thumb" src="thumbs/SPDperfjustdials.jpg" alt="Voorbeeld performance-wijzers" loading="lazy">
+    <div class="body">
+      <div class="t">⏱️ Alleen performance-wijzers</div>
+      <div class="file">SPDperfjustdials.html</div>
+      <div class="d">Strak en rustig: uitsluitend de performance-meters.</div>
+    </div>
+  </a>
+  <a class="card" href="SPDadviceanddials.html">
+    <img class="thumb" src="thumbs/SPDadviceanddials.jpg" alt="Voorbeeld advies met wijzers" loading="lazy">
+    <div class="body">
+      <div class="t">💬 Advies + wijzers</div>
+      <div class="file">SPDadviceanddials.html</div>
+      <div class="d">Tekstueel trim-advies gecombineerd met wijzerplaten.</div>
+    </div>
+  </a>
+  <a class="card" href="SPDdialsTWAUADA.html">
+    <img class="thumb" src="thumbs/SPDdialsTWAUADA.jpg" alt="Voorbeeld wind- en doelhoeken" loading="lazy">
+    <div class="body">
+      <div class="t">🎯 Wind- &amp; doelhoeken</div>
+      <div class="file">SPDdialsTWAUADA.html</div>
+      <div class="d">Wijzers rond de windhoek (TWA) en de optimale doelhoeken aan/afwind (UA/DA) — voor hoek- en koersgevoel.</div>
+    </div>
+  </a>
+  <a class="card" href="SPDdoubledials.html">
+    <img class="thumb" src="thumbs/SPDdoubledials.jpg" alt="Voorbeeld dubbele wijzers" loading="lazy">
+    <div class="body">
+      <div class="t">🔵 Dubbele wijzers</div>
+      <div class="file">SPDdoubledials.html</div>
+      <div class="d">Grote, dubbele wijzerplaten — goed afleesbaar op afstand in de kuip.</div>
+    </div>
+  </a>
+  <a class="card" href="dials.html">
+    <img class="thumb" src="thumbs/dials.jpg" alt="Voorbeeld dials-app" loading="lazy">
+    <div class="body">
+      <div class="t">✨ Dials-app (modern)</div>
+      <div class="file">dials.html</div>
+      <div class="d">De moderne, grafische dials-app (voorheen de standaardpagina op deze poort).</div>
+    </div>
+  </a>
+</div>
+
+<h2>Wijzerplaten — offline varianten</h2>
+<div class="note">
+  Deze pagina's tonen wijzerplaten (gauges) en laden hun meters <strong>lokaal</strong> — ideaal aan boord.
+  Ze verschillen alleen in hoevéél wijzers je tegelijk ziet (21 → 32). De <strong>voice</strong>-versie spreekt het advies ook uit.
+</div>
+<div class="grid" style="margin-top:.8rem">
+  <a class="card" href="SPDdials_offline.html">
+    <img class="thumb" src="thumbs/SPDdials_offline.jpg" alt="Voorbeeld offline wijzers" loading="lazy">
+    <div class="body">
+      <div class="t">🕹️ Offline wijzers (basis)</div>
+      <div class="file">SPDdials_offline.html</div>
+      <div class="d">Basis wijzerplaten-dashboard, volledig lokaal.</div>
+    </div>
+  </a>
+  <a class="card" href="SPD_32_dials_offline_voice.html">
+    <img class="thumb" src="thumbs/SPD_32_dials_offline_voice.jpg" alt="Voorbeeld 32 wijzers met spraak" loading="lazy">
+    <div class="body">
+      <div class="t">🔊 32 wijzers + spraak</div>
+      <div class="file">SPD_32_dials_offline_voice.html</div>
+      <div class="d">De meest uitgebreide wijzerplaat-versie, met gesproken trim-advies via de audio-uitgang.</div>
+    </div>
+  </a>
+</div>
+<div style="margin-top:.9rem">
+  <div class="d" style="font-size:.82rem;color:var(--muted);margin-bottom:.4rem">Zelfde stijl, andere dichtheid (aantal wijzers naar smaak):</div>
+  <div class="chips">
+    <a class="chip" href="SPD_21_dials_offline.html">21 wijzers</a>
+    <a class="chip" href="SPD_25_dials_offline.html">25 wijzers</a>
+    <a class="chip" href="SPD_27_dials_offline.html">27 wijzers</a>
+    <a class="chip" href="SPD_28_dials_offline.html">28 wijzers</a>
+    <a class="chip" href="SPD_29_dials_offline.html">29 wijzers</a>
+    <a class="chip" href="SPD_32_dials_offline.html">32 wijzers</a>
+  </div>
+</div>
+
+<footer>SailingPD · geserveerd op poort 9090 · deze menupagina werkt offline</footer>
+
+<script>
+  // Wizard draait op dezelfde host, poort 5001
+  var w = document.getElementById('wizlink');
+  w.href = location.protocol + '//' + location.hostname + ':5001/';
+</script>
+</body>
+</html>

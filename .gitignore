@@ -1,8 +1,9 @@
-.venv/
-__pycache__/
+# Python venv (wordt bij de eerste start automatisch aangemaakt)
+config-wizard/.venv/
+**/__pycache__/
 *.pyc
-*.pyo
-.DS_Store
-*.egg-info/
-dist/
-build/
+
+# Lokale backups & logs
+*.bak
+*.bak-*
+*.log
