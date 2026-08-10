@@ -9,6 +9,8 @@ Deze starter kit bundelt twee dingen die het opstarten met SailingPD een stuk ee
 
 ![Web-menu](docs/menu-screenshot.png)
 
+![De config-wizard in de eenvoudige (basis)modus](docs/wizard-screenshot.png)
+
 > Onafhankelijke add-on. SailingPD zelf is gemaakt door Thomas ten Kortenaar (capolavoro.nl); deze kit is daar geen officieel onderdeel van maar werkt er bovenop.
 
 ---
