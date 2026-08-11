@@ -116,11 +116,11 @@ Op de laatste stap kunt u SailingPD direct starten via de groene knop **▶ Sail
 
 | | |
 |-|-|
-| Backend | Python / Flask |
-| Frontend | Vanilla JavaScript, Tailwind CSS (CDN) |
+| Backend | Python / Flask (Multi-threaded) |
+| Frontend | Vanilla JavaScript, Standalone Offline CSS |
 | Poort | 5001 (instelbaar via `PORT` omgevingsvariabele) |
 | Dependencies | `flask>=3.0.0`, `Pillow>=10.0.0` |
-| Geen build-stap nodig | — |
+| Offline geschiktheid | 100% lokaal (geen externe CDN of internetverbinding vereist) |
 
 ---
 
@@ -128,6 +128,7 @@ Op de laatste stap kunt u SailingPD direct starten via de groene knop **▶ Sail
 
 | Versie | Datum | Wijzigingen |
 |--------|-------|-------------|
+| v0.1.1 | 2026-08-11 | **Bugfix & Optimalisatie Release**:<br>- **Windows Opslag Bugfix**: Knop `#btn-save` verplicht gekoppeld aan `saveAndStart()` en slimme `_find_sailing_dir` mappendetectie toegevoegd.<br>- **100% Offline CSS**: Externe Tailwind CDN vervangen door lokaal gegenereerde Tailwind-CSS (CLI-build v3.4.17, alle gebruikte klassen gedekt; hergenereer-instructies staan in `templates/index.html`).<br>- **Performance**: Flask multi-threading ingeschakeld (`threaded=True`) en NMEA test socket timeout verkort.<br>- **Beveiliging**: Path traversal opschoning op alle CSV endpoints.<br>- **Scripting**: `python3-venv` controle in `start.sh` toegevoegd. |
 | v0.1.0 | 2026-05-21 | Eerste release — volledige 11-stappen wizard |
 
 ---

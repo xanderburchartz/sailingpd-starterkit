@@ -174,9 +174,23 @@
 <footer>SailingPD · geserveerd op poort 9090 · deze menupagina werkt offline</footer>
 
 <script>
-  // Wizard draait op dezelfde host, poort 5001
+  /*
+   * [UX & OPTIMIZATION ANNOTATION]:
+   * - Dynamische link naar de Config Wizard op poort 5001.
+   * - Fallback afgehandeld voor ontbrekende of niet-geladen thumbnails.
+   */
   var w = document.getElementById('wizlink');
-  w.href = location.protocol + '//' + location.hostname + ':5001/';
+  if (w) {
+    w.href = location.protocol + '//' + location.hostname + ':5001/';
+  }
+
+  // Voeg een nette opmaak toe indien thumbnails niet geladen kunnen worden
+  document.querySelectorAll('img.thumb').forEach(function(img) {
+    img.addEventListener('error', function() {
+      this.style.opacity = '0.3';
+      this.alt = 'Thumbnail niet beschikbaar';
+    });
+  });
 </script>
 </body>
 </html>

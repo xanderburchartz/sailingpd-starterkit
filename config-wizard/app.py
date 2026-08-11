@@ -3,6 +3,8 @@ from flask import Flask, render_template, request, jsonify, send_file
 import configparser
 import io
 import os
+import shutil
+import sys
 from pathlib import Path
 
 try:
@@ -11,13 +13,52 @@ try:
 except ImportError:
     HAS_PILLOW = False
 
-app = Flask(__name__)
-app.config["TEMPLATES_AUTO_RELOAD"] = True
+# ─── uitvoer veilig maken ────────────────────────────────────────────────────
+# Windows gebruikt buiten een echt consolevenster de oude codepagina (cp1252 op
+# een Nederlandse installatie). Onze meldingen bevatten accenten en lijntjes, en
+# die laten het programma daar met een UnicodeEncodeError crashen nog voor de
+# webserver start. UTF-8 afdwingen met errors="replace" maakt uitvoer nooit meer
+# fataal.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError, OSError):
+        pass
 
-# ─── directory resolution ────────────────────────────────────────────────────
-# config-ui/ zit direct in de sailingpd installatiemap, dus parent = installatiemap
-BASE_DIR   = Path(__file__).parent
-SAILING_DIR = BASE_DIR.parent
+# ─── waar draaien we vandaan? ────────────────────────────────────────────────
+# Als losse broncode (start.sh / start.bat) staat alles naast app.py. Als
+# bevroren .exe (PyInstaller) pakt PyInstaller de templates uit in een tijdelijke
+# map (sys._MEIPASS), terwijl de SailingPD-installatie natuurlijk naast de .exe
+# staat. Die twee moeten dus uit elkaar worden gehouden.
+FROZEN = getattr(sys, "frozen", False)
+
+# Map waar de gebruiker het programma heeft neergezet — bepaalt waar we de
+# SailingPD-installatie zoeken.
+BASE_DIR = Path(sys.executable).resolve().parent if FROZEN else Path(__file__).resolve().parent
+
+# Map met meegeleverde bronbestanden (templates); bij een .exe de uitpakmap.
+RESOURCE_DIR = Path(getattr(sys, "_MEIPASS", BASE_DIR)) if FROZEN else BASE_DIR
+
+app = Flask(__name__, template_folder=str(RESOURCE_DIR / "templates"))
+app.config["TEMPLATES_AUTO_RELOAD"] = not FROZEN
+
+SPD_MARKERS = ("web_root", "sailingPD", "sailingPD.exe", "boatspecifics")
+
+
+def _find_sailing_dir(base: Path) -> Path:
+    """Zoek de SailingPD-installatiemap: die met web_root / sailingPD(.exe) / boatspecifics.
+
+    Gekeken wordt naar de map zelf (de .exe kan los in de SailingPD-map staan),
+    daarna de bovenliggende map (de gebruikelijke config-wizard/-indeling) en
+    ten slotte nog een niveau hoger. Wordt niets gevonden, dan valt hij terug op
+    de bovenliggende map, zoals voorheen.
+    """
+    for candidate in (base, base.parent, base.parent.parent):
+        if any((candidate / m).exists() for m in SPD_MARKERS):
+            return candidate
+    return base.parent
+
+SAILING_DIR       = _find_sailing_dir(BASE_DIR)
 BOATSPECIFICS_DIR = SAILING_DIR / "boatspecifics"
 SYSTEMFILES_DIR   = SAILING_DIR / "systemfiles"
 POLARS_DIR        = SAILING_DIR / "polars"
@@ -136,10 +177,57 @@ def get_config():
     })
 
 
+STARTUPFILES_FILE = SYSTEMFILES_DIR / "startupfiles.ini"
+
+
+def _pick_file(dirpath: Path, prefer_non_example: bool = False) -> str:
+    """Kies een bestand uit een map; bij voorkeur niet een 'example ...'-bestand."""
+    if not dirpath.exists():
+        return ""
+    files = sorted(f for f in dirpath.glob("*.csv") if not f.name.startswith("."))
+    if not files:
+        return ""
+    if prefer_non_example:
+        eigen = [f for f in files if not f.name.lower().startswith("example")]
+        if eigen:
+            return str(eigen[0])
+    return str(files[0])
+
+
+def _ensure_startupfiles():
+    """Schrijf systemfiles/startupfiles.ini voor de headless (web/printer) modus.
+
+    Zonder scherm kan SailingPD niet interactief om bestanden vragen en stopt hij
+    met "Deadly Error. Headless cannot be combined with no for same start files".
+    Bestaande keuzes blijven staan zolang het genoemde bestand nog bestaat; alleen
+    ontbrekende regels worden ingevuld.
+    """
+    huidig = read_ini(STARTUPFILES_FILE).get("startupfiles", {})
+
+    defaults = {
+        "boatfile":      str(BOATSPECIFICS_FILE),
+        "polarfile":     _pick_file(POLARS_DIR, prefer_non_example=True),
+        "heelpolarfile": _pick_file(HEELPOLARS_DIR),
+        "deviationfile": _pick_file(DEVIATION_DIR),
+        "stwcorrfile":   _pick_file(STWCORR_DIR),
+    }
+
+    resultaat = {}
+    for sleutel, standaard in defaults.items():
+        bestaand = huidig.get(sleutel, "").strip()
+        resultaat[sleutel] = bestaand if bestaand and Path(bestaand).exists() else standaard
+
+    write_ini(STARTUPFILES_FILE, {"startupfiles": resultaat})
+    return resultaat
+
+
 @app.route("/api/config", methods=["POST"])
 def save_config():
     data = request.get_json(force=True)
     try:
+        BOATSPECIFICS_DIR.mkdir(parents=True, exist_ok=True)
+        SYSTEMFILES_DIR.mkdir(parents=True, exist_ok=True)
+
         if "boatspecifics" in data:
             write_ini(BOATSPECIFICS_FILE, data["boatspecifics"])
         if "processlist" in data:
@@ -168,6 +256,12 @@ def save_config():
                 HEADLESS_FILE.write_text("web\n", encoding="utf-8")
             elif HEADLESS_FILE.exists():
                 HEADLESS_FILE.unlink()
+
+        # In de headless modus moet startupfiles.ini bestaan, anders weigert
+        # SailingPD te starten met een "Deadly Error".
+        if HEADLESS_FILE.exists():
+            _ensure_startupfiles()
+
         return jsonify({"success": True, "message": "Configuratie opgeslagen!"})
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
@@ -188,11 +282,13 @@ def list_csv(folder):
 def get_csv(folder, filename):
     if folder not in CSV_DIRS:
         return jsonify({"error": "Onbekende map"}), 400
-    p = CSV_DIRS[folder] / filename
+    # [SECURITY OPTIMIZATION]: Strikt beveiligen tegen path traversal via Path(filename).name
+    safe_name = Path(filename).name
+    p = CSV_DIRS[folder] / safe_name
     if not p.exists():
         return jsonify({"error": "Bestand niet gevonden"}), 404
     return jsonify({"content": p.read_text(encoding="utf-8", errors="replace"),
-                    "filename": filename})
+                    "filename": safe_name})
 
 
 @app.route("/api/csv/<folder>/<path:filename>", methods=["POST"])
@@ -201,7 +297,9 @@ def save_csv(folder, filename):
         return jsonify({"error": "Onbekende map"}), 400
     data = request.get_json(force=True)
     content = data.get("content", "")
-    p = CSV_DIRS[folder] / filename
+    # [SECURITY OPTIMIZATION]: Strikt beveiligen tegen path traversal via Path(filename).name
+    safe_name = Path(filename).name
+    p = CSV_DIRS[folder] / safe_name
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(content, encoding="utf-8")
     return jsonify({"success": True})
@@ -211,7 +309,9 @@ def save_csv(folder, filename):
 def delete_csv(folder, filename):
     if folder not in CSV_DIRS:
         return jsonify({"error": "Onbekende map"}), 400
-    p = CSV_DIRS[folder] / filename
+    # [SECURITY OPTIMIZATION]: Strikt beveiligen tegen path traversal via Path(filename).name
+    safe_name = Path(filename).name
+    p = CSV_DIRS[folder] / safe_name
     if p.exists():
         p.unlink()
     return jsonify({"success": True})
@@ -428,7 +528,8 @@ def test_nmea():
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(seconds)
             sock.connect((host, port))
-            sock.settimeout(1.0)
+            # [PERFORMANCE OPTIMIZATION]: Kortere socket timeout (0.2s) voorkomt trage responsiviteit
+            sock.settimeout(0.2)
             deadline = time.monotonic() + seconds
             while time.monotonic() < deadline:
                 try:
@@ -448,7 +549,8 @@ def test_nmea():
                 except OSError:
                     pass
             sock.bind(("", port))
-            sock.settimeout(1.0)
+            # [PERFORMANCE OPTIMIZATION]: Kortere socket timeout (0.2s) voorkomt trage responsiviteit
+            sock.settimeout(0.2)
             deadline = time.monotonic() + seconds
             while time.monotonic() < deadline:
                 try:
@@ -491,32 +593,91 @@ def test_nmea():
     })
 
 
+SERVICE_NAME = "sailingpd.service"
+
+
+def _systemd_service_active():
+    """True als SailingPD als systemd-service is ingericht (Linux/Raspberry Pi).
+
+    Draait SailingPD als service, dan moet de startknop die service herstarten;
+    een los proces starten zou botsen op poort 5000/9090 met de service.
+    """
+    import subprocess
+    if sys.platform.startswith("win") or not shutil.which("systemctl"):
+        return False
+    try:
+        r = subprocess.run(["systemctl", "is-enabled", SERVICE_NAME],
+                           capture_output=True, text=True, timeout=5)
+        return r.stdout.strip() in ("enabled", "enabled-runtime", "static", "alias", "indirect")
+    except Exception:
+        return False
+
+
 @app.route("/api/start", methods=["POST"])
 def start_sailingpd():
     import subprocess
+    # Systemd-installatie: herstart de service in plaats van een tweede proces te starten.
+    if _systemd_service_active():
+        for cmd in (["sudo", "-n", "systemctl", "restart", SERVICE_NAME],
+                    ["systemctl", "restart", SERVICE_NAME]):
+            try:
+                r = subprocess.run(cmd, capture_output=True, text=True, timeout=20)
+            except Exception:
+                continue
+            if r.returncode == 0:
+                return jsonify({"success": True,
+                                "message": "SailingPD-service herstart — hij komt op zodra er NMEA-data is."})
+        return jsonify({"success": False,
+                        "error": f"Kon {SERVICE_NAME} niet herstarten. Probeer: sudo systemctl restart {SERVICE_NAME}"}), 500
+
     # Windows: sailingPD.exe · Linux/Raspberry Pi: sailingPD
     exe = next((SAILING_DIR / n for n in ("sailingPD", "sailingPD.exe") if (SAILING_DIR / n).exists()), None)
     if exe is None:
         return jsonify({"success": False, "error": f"sailingPD (of sailingPD.exe) niet gevonden in {SAILING_DIR}"}), 404
     try:
-        subprocess.Popen(
-            [str(exe)],
-            cwd=str(SAILING_DIR),
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            start_new_session=True,
-        )
+        kwargs = {
+            "cwd": str(SAILING_DIR),
+            "stdout": subprocess.DEVNULL,
+            "stderr": subprocess.DEVNULL,
+        }
+        if sys.platform == "win32":
+            # [WINDOWS FIX]: Gebruik DETACHED_PROCESS en CREATE_NEW_PROCESS_GROUP om los te koppelen van console
+            DETACHED_PROCESS = 0x00000008
+            CREATE_NEW_PROCESS_GROUP = 0x00000200
+            kwargs["creationflags"] = DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP
+        else:
+            kwargs["start_new_session"] = True
+
+        subprocess.Popen([str(exe)], **kwargs)
         return jsonify({"success": True, "message": "SailingPD wordt gestart…"})
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+def _found_sailingpd() -> bool:
+    return any((SAILING_DIR / m).exists() for m in SPD_MARKERS)
+
+
 if __name__ == "__main__":
-    print(f"─────────────────────────────────────────────────────────────────")
-    print(f"  SailingPD Config Wizard")
-    print(f"  Plaats deze map (config-wizard/) in uw SailingPD-installatiemap")
-    print(f"  Installatiemap : {SAILING_DIR}")
-    print(f"  Open in browser: http://localhost:5001")
-    print(f"─────────────────────────────────────────────────────────────────")
     port = int(os.environ.get("PORT", 5001))
-    app.run(host="0.0.0.0", port=port, debug=False)
+    url = f"http://localhost:{port}"
+
+    print("=" * 65)
+    print(f"  SailingPD Config Wizard")
+    if _found_sailingpd():
+        print(f"  Installatiemap : {SAILING_DIR}")
+    else:
+        # Beter een duidelijke waarschuwing dan een wizard die stilletjes de
+        # verkeerde map bewerkt.
+        print(f"  LET OP: geen SailingPD-installatie gevonden bij {SAILING_DIR}")
+        print(f"  Zet dit programma IN uw SailingPD-map (die met sailingPD.exe)")
+    print(f"  Open in browser: {url}")
+    print("=" * 65)
+
+    if FROZEN:
+        # Als .exe is er geen start.bat die de browser opent; zelf doen.
+        import threading, webbrowser
+        threading.Timer(1.5, lambda: webbrowser.open(url)).start()
+
+    # [PERFORMANCE OPTIMIZATION]: Enable threaded=True om gelijktijdige browserverzoeken af te handelen
+    app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
