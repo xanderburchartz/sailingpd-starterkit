@@ -143,11 +143,28 @@ def index():
     return render_template("index.html")
 
 
+def _strip_placeholders(boatspecifics: dict) -> dict:
+    """Maak overduidelijke placeholder-waarden uit SailingPD's voorbeeldbestand leeg.
+
+    Het meegeleverde 'example boatspecifics.ini' vult o.a. de transducer-labels met
+    'yourrolltransducer' / 'yourpitchtransducer'. Die als voor-ingevulde waarde tonen
+    is verwarrender dan een leeg veld met de detectieknop ernaast.
+    """
+    inp = boatspecifics.get("Inputcontrol")
+    if inp:
+        for key in ("XDR_roll", "XDR_pitch"):
+            val = inp.get(key, "")
+            if val.strip().lower().startswith("your"):
+                inp[key] = ""
+    return boatspecifics
+
+
 @app.route("/api/config", methods=["GET"])
 def get_config():
     boatspecifics = read_ini(BOATSPECIFICS_FILE)
     if not boatspecifics:
         boatspecifics = read_ini(EXAMPLE_FILES["boatspecifics"])
+    boatspecifics = _strip_placeholders(boatspecifics)
 
     processlist   = read_ini(PROCESSLIST_FILE)
     if not processlist:

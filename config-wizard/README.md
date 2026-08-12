@@ -15,7 +15,7 @@ De Config Wizard leidt u stapsgewijs door alle instellingen van SailingPD. U hoe
 | # | Stap | Inhoud |
 |---|------|--------|
 | 1 | Welkom | Uitleg over SailingPD en de wizard |
-| 2 | Activiteit & Opstarten | Live zeilen, replay, of analyse; gedrag bij opstarten |
+| 2 | Activiteit | Wat wil je doen: live zeilen, uitproberen zonder instrumenten, naspelen of analyse |
 | 3 | Bootgegevens | Bootnaam, windmeterhoogte, Leeway K-factor, bootfoto |
 | 4 | NMEA Verbinding | Netwerk (UDP/TCP) of serieel; kalibratie-instellingen |
 | 5 | Snelheidspolar | Polar uploaden of aanmaken |
@@ -65,7 +65,7 @@ chmod +x config-wizard/start.sh
 
 ## Starten
 
-**Windows** — dubbelklik op **`SailingPD-ConfigWizard.exe`**: die heeft geen Python nodig, vindt uw SailingPD-map zelf en opent de browser. Werkt u vanaf de broncode, dubbelklik dan op **`start.bat`**. De eerste keer maakt het script automatisch een Python-omgeving aan, installeert Flask + Pillow en opent de browser. Verschijnt er "Python is niet gevonden"? Installeer Python 3.9+ (zie *Vereisten*).
+**Windows** — dubbelklik op **`SailingPD instellen.exe`**: die heeft geen Python nodig, vindt uw SailingPD-map zelf en opent de browser. Werkt u vanaf de broncode, dubbelklik dan op **`start.bat`**. De eerste keer maakt het script automatisch een Python-omgeving aan, installeert Flask + Pillow en opent de browser. Verschijnt er "Python is niet gevonden"? Installeer Python 3.9+ (zie *Vereisten*).
 
 **Linux / Raspberry Pi:**
 

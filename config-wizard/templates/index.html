@@ -297,7 +297,7 @@ function yn(bool) { return bool ? 'Y' : 'N'; }
 // ─── step metadata ────────────────────────────────────────────────────────
 const STEPS = [
   { title: 'Welkom',             icon: '👋', basic: true  },
-  { title: 'Activiteit & Opstarten', icon: '🎯', basic: true  },
+  { title: 'Activiteit',         icon: '🎯', basic: true  },
   { title: 'Bootgegevens',       icon: '⛵', basic: true  },
   { title: 'NMEA Verbinding',    icon: '🔌', basic: true  },
   { title: 'Snelheidspolar',     icon: '📊', basic: true  },
@@ -487,23 +487,6 @@ function bindW(id, section, key) {
 // STEP 0 — Welkom
 // ═══════════════════════════════════════════════════════════════════════════
 function renderStep0() {
-  const outputChannels = [
-    ['🖥️', 'Eigen scherm (Python-venster)',
-      'Het native dashboard op het scherm van de computer of Pi — kleurrijk, snel, volledig overzicht. Niet beschikbaar in headless-modus.'],
-    ['🌐', 'Webserver (browser)',
-      'Tablets en telefoons op het netwerk openen het dashboard via de browser (http://[ip-adres]:9090).'],
-    ['📡', 'UDP broadcast',
-      'Stuurt data naar andere apps op het netwerk (Navionics, iSailor, eigen displays).'],
-    ['🔗', 'NMEA seriële/netwerk uitgang',
-      'Stuurt berekende NMEA-berichten terug naar chartplotters en andere instrumenten.'],
-    ['💬', 'Spraak (tekst-naar-spraak)',
-      'Gesproken trim adviezen via de audio-uitgang van de computer of Pi.'],
-    ['📁', 'SPDlog CSV-bestand',
-      'Slaat alle berekeningen op in een CSV-log voor latere analyse.'],
-    ['📋', 'NMEA kopiebestanden',
-      'Sla kopieën op van ingaand/uitgaand NMEA-verkeer voor debugging.'],
-  ];
-
   return card('👋 Welkom bij SailingPD',
     `<div class="space-y-6">
 
@@ -540,20 +523,6 @@ function renderStep0() {
         </div>
       </div>
 
-      <div>
-        <h3 class="font-semibold text-slate-700 mb-3">📤 De 7 uitvoerkanalen van SailingPD</h3>
-        <div class="space-y-2">
-          ${outputChannels.map(([icon, title, desc]) => `
-            <div class="flex items-start gap-3 p-3 rounded-lg border border-slate-200 bg-white">
-              <span class="text-xl flex-shrink-0 mt-0.5">${icon}</span>
-              <div>
-                <div class="font-semibold text-slate-800 text-sm">${title}</div>
-                <div class="text-xs text-slate-500 mt-0.5">${desc}</div>
-              </div>
-            </div>`).join('')}
-        </div>
-      </div>
-
       <div class="bg-green-50 border border-green-200 rounded-xl p-5">
         <div class="font-bold text-green-900 mb-1">👋 Nieuw hier? Geen zorgen.</div>
         <ul class="text-sm text-green-900 space-y-1">
@@ -569,57 +538,92 @@ function renderStep0() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// STEP 1 — Activiteit
+// STEP 1 — Wat wil je doen?
 // ═══════════════════════════════════════════════════════════════════════════
+// Eén heldere keuze bovenaan die drie onderliggende instellingen consistent zet:
+//   General.activity · Mode.replay · Starting specials.Dummywind
+function setActivityMode(mode) {
+  if (mode === 'try') {                 // uitproberen zonder instrumenten
+    set('General','activity','NMEA'); set('Mode','replay','N'); setP('Starting specials','Dummywind','Y');
+  } else if (mode === 'replay') {       // een gelogde tocht naspelen
+    set('General','activity','NMEA'); set('Mode','replay','Y'); setP('Starting specials','Dummywind','N');
+  } else if (mode === 'analyse') {      // post-processor draaien
+    const a = get('General','activity','NMEA');
+    set('General','activity', a === 'checkperfwind' ? 'checkperfwind' : 'performancematrix');
+    set('Mode','replay','N'); setP('Starting specials','Dummywind','N');
+  } else {                              // live zeilen (standaard)
+    set('General','activity','NMEA'); set('Mode','replay','N'); setP('Starting specials','Dummywind','N');
+  }
+  showStep(currentStep);   // opnieuw tekenen zodat waarschuwing/subkeuze meteen verschijnt
+}
+
+function currentActivityMode() {
+  if (yesno(getP('Starting specials','Dummywind','N'))) return 'try';
+  if (yesno(get('Mode','replay','N'))) return 'replay';
+  const a = get('General','activity','NMEA');
+  if (a === 'performancematrix' || a === 'checkperfwind') return 'analyse';
+  return 'live';
+}
+
 function renderStep1() {
-  const act = get('General','activity','NMEA');
-  const activities = [
-    { val:'NMEA',               icon:'⛵', label:'Live zeilen (NMEA)',
-      desc:'De app leest live NMEA-data van GPS, windmeter, log en koers. Gebruik dit op het water.' },
-    { val:'performancematrix',  icon:'📈', label:'Performance matrix bouwen <span class="badge badge-opt" style="font-size:.65rem">Geavanceerd</span>',
-      desc:'Bouw een performance matrix op basis van eerder opgeslagen PDlog-bestanden (SPDlog CSV). Alleen relevant als je al een seizoen gelogde data hebt.' },
-    { val:'checkperfwind',      icon:'🔍', label:'Performance / wind check <span class="badge badge-opt" style="font-size:.65rem">Geavanceerd</span>',
-      desc:'Analyseer performance per windhoek en windsterkte uit PDlog-bestanden. Alleen relevant als je al gelogde data hebt.' },
+  const mode = currentActivityMode();
+  const act  = get('General','activity','NMEA');
+
+  const modes = [
+    { val:'live',   icon:'🌊', label:'Live zeilen',
+      desc:'Op het water. SailingPD leest je instrumenten (GPS, wind, log, kompas) en rekent live mee.' },
+    { val:'try',    icon:'🧪', label:'Uitproberen zonder instrumenten',
+      desc:'Thuis of aan de wal. SailingPD verzint testwind, zodat je meteen ziet hoe het dashboard werkt — je hebt geen NMEA-bron nodig.' },
+    { val:'replay', icon:'🔁', label:'Een gelogde tocht naspelen',
+      desc:'Speel een eerder opgeslagen NMEA-logbestand opnieuw af om een tocht achteraf na te bespreken.' },
+    { val:'analyse',icon:'📊', label:'Analyse achteraf <span class="badge badge-opt" style="font-size:.65rem">Geavanceerd</span>',
+      desc:'Bouw een performance-matrix of bekijk performance per windhoek uit eerder gelogde data.' },
   ];
 
-  const cards = activities.map(a => `
+  const cards = modes.map(m => `
     <label class="flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all
-                  ${act===a.val ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-white hover:border-blue-300'}">
-      <input type="radio" name="activity" value="${a.val}" ${act===a.val?'checked':''} class="mt-1 accent-blue-600">
+                  ${mode===m.val ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-white hover:border-blue-300'}">
+      <input type="radio" name="spdmode" value="${m.val}" ${mode===m.val?'checked':''}
+             onchange="setActivityMode('${m.val}')" class="mt-1 accent-blue-600">
       <div>
-        <div class="font-semibold text-slate-800 flex items-center gap-2">${a.icon} ${a.label}</div>
-        <div class="text-sm text-slate-500 mt-1">${a.desc}</div>
+        <div class="font-semibold text-slate-800 flex items-center gap-2">${m.icon} ${m.label}</div>
+        <div class="text-sm text-slate-500 mt-1">${m.desc}</div>
       </div>
     </label>`).join('');
 
-  return card('🎯 Stap 2 — Activiteit & Opstarten',
-    why(`<strong>Waarom dit?</strong> Hiermee kies je wat SailingPD gaat doen.
-         <strong>Live zeilen</strong> is de gewone keuze aan boord. <strong>Replay</strong> speelt een oud
-         logbestand opnieuw af om achteraf na te bespreken. De twee "Geavanceerd"-opties zijn analyses
-         achteraf — die heb je pas nodig als je een tijd data hebt gelogd.`) +
+  const tryHint = (mode === 'try')
+    ? `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-5 text-sm text-emerald-900">
+         🧪 SailingPD start straks met <strong>testwind</strong>, dus je ziet het dashboard bewegen zonder dat er
+         instrumenten aangesloten zijn. Zet dit terug op <em>Live zeilen</em> zodra je aan boord bent.</div>`
+    : '';
+
+  const replayWarn = (mode === 'replay')
+    ? warn(`<strong>Let op:</strong> naspelen werkt alleen met weergavemodus <em>Scherm</em>.
+            SailingPD vraagt bij het starten welk logbestand je wilt afspelen, en die vraag kan hij
+            niet stellen als alles in de browser draait — hij stopt dan meteen.
+            Zet bij <em>Weergave</em> de modus op <em>Scherm</em>.`)
+    : '';
+
+  const analyseSelect = (mode === 'analyse')
+    ? selectField('f-analyse','Welke analyse?', act === 'checkperfwind' ? 'checkperfwind' : 'performancematrix',
+        [['performancematrix','Performance-matrix bouwen uit gelogde data'],
+         ['checkperfwind','Performance per windhoek en windsterkte']],
+        'Beide werken op eerder gelogde PDlog-bestanden (SPDlog CSV). Alleen relevant als je al een tijd data hebt gelogd.')
+    : '';
+
+  return card('🎯 Stap 2 — Wat wil je doen?',
+    why(`<strong>Waarom dit?</strong> Kies waarvoor je SailingPD nu gebruikt.
+         <strong>Live zeilen</strong> is de gewone keuze aan boord. Wil je thuis alvast zien hoe het werkt,
+         kies dan <strong>Uitproberen zonder instrumenten</strong> — daarvoor heb je geen NMEA-bron nodig.`) +
     `<div class="space-y-3">${cards}</div>` +
+    tryHint + replayWarn + analyseSelect +
     sectionHeader('Gedrag bij opstarten') +
     toggleRow('f-speech-en', 'Spraak ingeschakeld bij start',
       yesno(getP('Starting specials','Speech enabled','N')),
-      'Schakel tekst-naar-spraak in zodra de app start. Zet dit uit bij eerste installatie — je kunt het later aanzetten als alles werkt.') +
+      'Schakelt gesproken trim-adviezen in zodra de app start. Zet dit uit bij de eerste installatie — later aanzetten kan altijd.') +
     toggleRow('f-noquestions', 'Geen vragen bij start (onbeheerd)',
       yesno(getP('Starting specials','Noquestionsasked','N')),
-      'Slaat bevestigingsvragen over. Handig als de computer/Pi automatisch opstart bij het aanzetten van de boot.') +
-    toggleRow('f-dummy', 'Dummy wind (testmodus)',
-      yesno(getP('Starting specials','Dummywind','N')),
-      'Genereert fictieve winddata zonder NMEA-bron. Alleen voor testen op kantoor of thuis.') +
-
-    sectionHeader('Logbestand afspelen') +
-    toggleRow('f-replay', 'Oud logbestand afspelen in plaats van live data',
-      yesno(get('Mode','replay','N')),
-      'Speelt een eerder opgeslagen NMEA-log opnieuw af, bijvoorbeeld om een tocht na te bespreken. ' +
-      'SailingPD vraagt bij het starten welk bestand je wilt afspelen.') +
-    (yesno(get('Mode','replay','N'))
-      ? warn(`<strong>Let op:</strong> afspelen werkt alleen met weergavemodus <em>Scherm</em>.
-              SailingPD vraagt bij het starten welk logbestand je wilt afspelen, en die vraag kan
-              hij niet stellen als alles in de browser draait — hij stopt dan meteen.
-              Zet bij <em>Weergave</em> de modus op <em>Scherm</em>, of zet dit weer uit.`)
-      : '')
+      'Slaat bevestigingsvragen over. Handig als de computer/Pi automatisch opstart bij het aanzetten van de boot.')
   );
 }
 
@@ -703,7 +707,7 @@ function renderStep3() {
         [['UDP','UDP (meest gebruikt)'],['TCP','TCP (directe verbinding)']],
         'Twijfel je? Kies UDP — dat is de standaard voor NMEA-multiplexers en Signal K.') +
       textField('f-nip','Adres van de bron (IP of naam)', get('NMEAnetwork','NMEA_IP','localhost'),
-        'Waar de data vandaan komt. Draait de bron op dezelfde computer? Gebruik "localhost". Anders het IP-adres van je multiplexer of Signal K-apparaat.') +
+        'Waar SailingPD de NMEA-data ophaalt. Komt de data van een ander apparaat op je netwerk (multiplexer, Signal K)? Vul bij UDP "0.0.0.0" in — dat betekent "luister op alle netwerkverbindingen" (de gewone keuze aan boord). Draait de bron op deze computer zelf, gebruik dan "localhost". Bij TCP vul je het IP-adres van de bron in.') +
       numField('f-nport','Poort', get('NMEAnetwork','NMEA_PORT','5000'), 1, 65535, 1,
         'Veelgebruikte poorten: 10110 (standaard NMEA), 5000 (SailingPD-default), 7000.') +
     `</div>` +
@@ -796,15 +800,11 @@ function renderStep4() {
       class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold">
       Polar opslaan
     </button>` +
-    `<div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mt-6 flex items-center justify-between gap-4 flex-wrap">
-       <div class="text-sm text-blue-900">
-         <strong>Dit is genoeg om te beginnen.</strong> Activiteit, boot, verbinding en polar zijn de basis —
-         de overige stappen zijn optioneel en kun je later instellen.
-       </div>
-       <button type="button" onclick="showStep(13)"
-         class="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap">
-         Naar Opslaan →
-       </button>
+    `<div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mt-6 text-sm text-blue-900">
+       <strong>De belangrijkste instellingen staan.</strong> Activiteit, boot, verbinding en polar vormen de kern.
+       Er volgen nog twee korte basisstappen — <strong>WiFi &amp; Webserver</strong> (zodat je het dashboard in de
+       browser kunt openen) en <strong>Weergave</strong> — en daarna Opslaan. Klik op <em>Volgende →</em> om die af te ronden.
+       De stappen die je via "Toon ook de optionele stappen" ziet, kun je gerust overslaan.
      </div>` +
     `<div id="csv-preview-area" class="hidden mt-5">
       <h4 class="font-semibold text-sm text-slate-700 mb-2">Voorvertoning:</h4>
@@ -1335,15 +1335,20 @@ async function saveRawFile() {
 // STEP 13 — Samenvatting & Opslaan
 // ═══════════════════════════════════════════════════════════════════════════
 function renderStep10() {
-  const act = get('General','activity','?');
   const boat = get('Boatdata','boat name','?');
   const ch = get('NMEAconnection','channel','?');
   const webOn = yesno(getW('Output','Webserver','N'));
   const webPort = getW('Output','Webserverport','9090');
 
+  const modeLabels = {
+    live:    'Live zeilen',
+    try:     'Uitproberen zonder instrumenten (testwind)',
+    replay:  'Een gelogde tocht naspelen',
+    analyse: 'Analyse achteraf (' + get('General','activity','?') + ')',
+  };
+
   const summaryRows = [
-    ['Activiteit',        act],
-    ['Logbestand afspelen', yesno(get('Mode','replay','N')) ? 'Ja — replay' : 'Nee — live data'],
+    ['Wat je doet',       modeLabels[currentActivityMode()] || 'Live zeilen'],
     ['Bootnaam',          boat],
     ['NMEA verbinding',   ch === 'network'
       ? `${get('NMEAnetwork','Type')} → ${get('NMEAnetwork','NMEA_IP')}:${get('NMEAnetwork','NMEA_PORT')}`
@@ -1393,12 +1398,13 @@ const stepRenderers = [
 // ═══════════════════════════════════════════════════════════════════════════
 function attachListeners(step) {
   if (step === 1) {
-    document.querySelectorAll('input[name=activity]').forEach(r => {
-      r.addEventListener('change', () => set('General','activity', r.value));
-    });
+    // De moduskeuze (Live / Uitproberen / Naspelen / Analyse) loopt via
+    // setActivityMode() in de onchange van de radio's — die zet activity,
+    // replay én Dummywind samen. Hier alleen de losse velden koppelen.
     bindP('f-speech-en',  'Starting specials', 'Speech enabled');
     bindP('f-noquestions','Starting specials',  'Noquestionsasked');
-    bindP('f-dummy',      'Starting specials',  'Dummywind');
+    const an = document.getElementById('f-analyse');
+    if (an) an.addEventListener('change', () => set('General','activity', an.value));
   }
   if (step === 2) {
     bind('f-boatname',  'Boatdata',  'boat name');
@@ -1406,7 +1412,6 @@ function attachListeners(step) {
     bind('f-windhgt',   'Boatdata',  'windsensor height');
     bind('f-leeway',    'Boatdata',  'leeway K');
     bind('f-color',     'Mode',      'color');
-    bind('f-replay',    'Mode',      'replay');
   }
   if (step === 3) {
     const chSel = document.getElementById('f-channel');
