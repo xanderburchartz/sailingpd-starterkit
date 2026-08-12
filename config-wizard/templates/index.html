@@ -964,6 +964,17 @@ function renderStep7() {
         'Op welke netwerkverbindingen de server luistert. 0.0.0.0 = overal op je netwerk bereikbaar — laat dit zo staan, tenzij je weet waarom niet.') +
     `</div>` +
 
+    sectionHeader('Dashboard-menu als startpagina') +
+    `<div class="text-sm text-slate-600 mb-3">
+       Zet een overzichtelijk <strong>menu</strong> met alle SailingPD-schermen (met voorbeeldplaatjes) als
+       startpagina op poort 9090. De originele pagina blijft bereikbaar via <code>/dials.html</code>.
+     </div>
+     <div id="webmenu-status" class="text-sm mb-3 text-slate-500">Status laden…</div>
+     <button type="button" id="btn-webmenu" onclick="installWebMenu()"
+       class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">
+       Dashboard-menu installeren
+     </button>` +
+
     `<div class="bg-slate-100 border border-slate-200 rounded-xl p-4 mt-8 mb-1 text-sm text-slate-600">
        <strong class="text-slate-800">Geavanceerd — meestal niet nodig.</strong>
        De meeste mensen gebruiken alleen het web-dashboard hierboven en kunnen de rest van deze stap overslaan.
@@ -1473,6 +1484,7 @@ function attachListeners(step) {
     bindW('f-web-port', 'Output', 'Webserverport');
     bind('f-mv-ip',   'Outputcontrol', 'Multiview_IP');
     bind('f-mv-port', 'Outputcontrol', 'Multiview_PORT');
+    loadWebmenuStatus();
   }
   if (step === 8) {
     const advKeys = ['tack perf','big heel','few heel','off course','rudderangle','pinching',
@@ -1636,6 +1648,38 @@ async function startSPD() {
   const r = await fetch('/api/start', { method:'POST' });
   const d = await r.json();
   flash(d.success ? '▶ SailingPD gestart!' : '✗ ' + (d.error || '?'), d.success);
+}
+
+// ─── dashboard-menu installeren ─────────────────────────────────────────────
+async function loadWebmenuStatus() {
+  const el = document.getElementById('webmenu-status');
+  if (!el) return;
+  try {
+    const d = await (await fetch('/api/webmenu')).json();
+    if (!d.web_root_exists) {
+      el.textContent = '⚠️ Geen web_root gevonden — staat dit programma wel in je SailingPD-map?';
+      el.className = 'text-sm mb-3 text-amber-700';
+    } else if (d.installed) {
+      el.textContent = '✓ Het dashboard-menu is de startpagina op poort 9090.';
+      el.className = 'text-sm mb-3 text-green-700 font-semibold';
+    } else {
+      el.textContent = 'Nog niet geïnstalleerd — nu is de standaard SailingPD-pagina de startpagina.';
+      el.className = 'text-sm mb-3 text-slate-500';
+    }
+  } catch (e) { el.textContent = ''; }
+}
+
+async function installWebMenu() {
+  const btn = document.getElementById('btn-webmenu');
+  if (btn) btn.disabled = true;
+  try {
+    const d = await (await fetch('/api/webmenu/install', { method:'POST' })).json();
+    flash(d.success ? '✓ Dashboard-menu geïnstalleerd' : ('✗ ' + (d.error || '?')), d.success);
+  } catch (e) {
+    flash('✗ ' + e, false);
+  }
+  await loadWebmenuStatus();
+  if (btn) btn.disabled = false;
 }
 
 async function saveAndStart() {

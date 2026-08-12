@@ -65,6 +65,11 @@ POLARS_DIR        = SAILING_DIR / "polars"
 HEELPOLARS_DIR    = SAILING_DIR / "heelpolars"
 DEVIATION_DIR     = SAILING_DIR / "deviation"
 STWCORR_DIR       = SAILING_DIR / "stwcorrection"
+WEB_ROOT_DIR      = SAILING_DIR / "web_root"
+
+# Meegeleverd dashboard-menu (web-menu/). Bij een .exe zit het in de bundel
+# (PyInstaller --add-data), als broncode staat het naast config-wizard/.
+MENU_SRC_DIR = (RESOURCE_DIR / "web-menu") if FROZEN else (BASE_DIR.parent / "web-menu")
 
 BOATSPECIFICS_FILE = BOATSPECIFICS_DIR / "boatspecifics.ini"
 PROCESSLIST_FILE   = SYSTEMFILES_DIR   / "processlist.ini"
@@ -417,6 +422,67 @@ def image_info(name):
         except Exception:
             pass
     return jsonify(info)
+
+
+# ─── dashboard-menu (web-menu) installeren in web_root ───────────────────────
+# Het meegeleverde menu (web-menu/index.html + thumbs) wordt de startpagina op
+# poort 9090. De originele SPA blijft bereikbaar als dials.html.
+MENU_MARKER = "SailingPD — Pagina's"   # <title> van ons menu
+
+
+def _webmenu_installed() -> bool:
+    idx = WEB_ROOT_DIR / "index.html"
+    if not idx.exists():
+        return False
+    try:
+        return MENU_MARKER in idx.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return False
+
+
+@app.route("/api/webmenu", methods=["GET"])
+def webmenu_status():
+    return jsonify({
+        "installed":      _webmenu_installed(),
+        "web_root_exists": WEB_ROOT_DIR.exists(),
+        "source_exists":  (MENU_SRC_DIR / "index.html").exists(),
+    })
+
+
+@app.route("/api/webmenu/install", methods=["POST"])
+def webmenu_install():
+    src_index = MENU_SRC_DIR / "index.html"
+    if not src_index.exists():
+        return jsonify({"success": False, "error": f"Menu-bronbestand niet gevonden ({src_index})"}), 404
+    if not WEB_ROOT_DIR.exists():
+        return jsonify({"success": False, "error": f"web_root niet gevonden in {SAILING_DIR}"}), 404
+    try:
+        dst_index = WEB_ROOT_DIR / "index.html"
+        orig_bak  = WEB_ROOT_DIR / "index.html.orig-spa"
+        dials     = WEB_ROOT_DIR / "dials.html"
+
+        # Bestaande (originele) startpagina één keer bewaren, en als dials.html
+        # beschikbaar houden — maar nooit ons eigen menu als 'origineel' opslaan.
+        if dst_index.exists() and not _webmenu_installed():
+            if not orig_bak.exists():
+                shutil.copy2(dst_index, orig_bak)
+            shutil.copy2(dst_index, dials)
+        elif orig_bak.exists() and not dials.exists():
+            shutil.copy2(orig_bak, dials)
+
+        shutil.copy2(src_index, dst_index)
+
+        # Thumbnails meekopiëren (mogen ontbreken).
+        src_thumbs = MENU_SRC_DIR / "thumbs"
+        if src_thumbs.is_dir():
+            dst_thumbs = WEB_ROOT_DIR / "thumbs"
+            dst_thumbs.mkdir(parents=True, exist_ok=True)
+            for jpg in src_thumbs.glob("*.jpg"):
+                shutil.copy2(jpg, dst_thumbs / jpg.name)
+
+        return jsonify({"success": True, "message": "Dashboard-menu geïnstalleerd als startpagina."})
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
 
 
 # ─── webserver field selection ────────────────────────────────────────────────
