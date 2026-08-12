@@ -488,6 +488,13 @@ def _install_webmenu():
         for jpg in src_thumbs.glob("*.jpg"):
             shutil.copy2(jpg, dst_thumbs / jpg.name)
 
+    # SPD's eigen logo meekopiëren zodat het menu (geserveerd door SPD op 9090)
+    # hetzelfde logo toont als de wizard. Ontbreekt het? Dan valt het menu terug
+    # op een anker-embleem.
+    spd_icon = SYSTEMFILES_DIR / "icon.png"
+    if spd_icon.exists():
+        shutil.copy2(spd_icon, WEB_ROOT_DIR / "spd-icon.png")
+
     return True, "Dashboard-menu geïnstalleerd als startpagina."
 
 

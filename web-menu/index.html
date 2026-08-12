@@ -41,9 +41,13 @@
   header{display:flex;justify-content:space-between;align-items:center;gap:1rem;
     flex-wrap:wrap;margin:.25rem 0 2rem}
   .brand{display:flex;align-items:center;gap:.85rem}
-  .mark{width:46px;height:46px;border-radius:13px;flex-shrink:0;display:grid;place-items:center;
-    font-size:1.5rem;color:#fff;background:linear-gradient(140deg,var(--hero2),var(--hero1));
-    box-shadow:0 6px 16px rgba(14,42,83,.28)}
+  .mark{width:48px;height:48px;border-radius:13px;flex-shrink:0;overflow:hidden;
+    display:grid;place-items:center;background:var(--panel);border:1px solid var(--line);
+    box-shadow:0 4px 13px rgba(14,42,83,.16)}
+  .mark img{width:74%;height:74%;object-fit:contain}
+  @media (prefers-color-scheme:dark){ .mark img{filter:invert(1)} }
+  .mark.fallback{background:linear-gradient(140deg,var(--hero2),var(--hero1));border:0;
+    color:#fff;font-size:1.5rem;box-shadow:0 6px 16px rgba(14,42,83,.28)}
   .brand h1{font-size:1.5rem;line-height:1.1;margin:0;letter-spacing:-.01em}
   .brand p{margin:.2rem 0 0;color:var(--muted);font-size:.9rem}
   .wizlink{display:inline-flex;align-items:center;gap:.45rem;font-size:.9rem;font-weight:600;
@@ -113,7 +117,7 @@
 
 <header>
   <div class="brand">
-    <div class="mark">⚓</div>
+    <div class="mark"><img id="brandlogo" src="spd-icon.png" alt="SailingPD"></div>
     <div>
       <h1>SailingPD</h1>
       <p>Kies je dashboard — alles draait lokaal, ook zonder internet.</p>
@@ -236,8 +240,14 @@
   var w = document.getElementById('wizlink');
   if (w) w.href = location.protocol + '//' + location.hostname + ':5001/';
 
-  // Ontbrekende thumbnails netjes afvangen (grijs blokje i.p.v. gebroken plaatje).
-  document.querySelectorAll('img').forEach(function(img){
+  // Ontbreekt het SPD-logo (oudere installatie)? Val terug op een anker-embleem.
+  var logo = document.getElementById('brandlogo');
+  if (logo) logo.addEventListener('error', function(){
+    var m = this.parentNode; m.classList.add('fallback'); m.textContent = '⚓';
+  });
+
+  // Ontbrekende thumbnails netjes afvangen (leeg i.p.v. gebroken plaatje).
+  document.querySelectorAll('img:not(#brandlogo)').forEach(function(img){
     img.addEventListener('error', function(){ this.style.opacity = '0'; });
   });
 </script>

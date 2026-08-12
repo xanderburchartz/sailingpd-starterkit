@@ -1197,37 +1197,53 @@ function renderStepSignalK() {
   return card('🛰️ Stap 12 — Signal K',
     `<span class="badge badge-opt">Optioneel</span>` +
     why(`<strong>Waarom dit?</strong> Heb je een <strong>Signal K</strong>-server aan boord?
-         Dan kan SailingPD zijn NMEA-data via Signal K binnenkrijgen. SailingPD leest NMEA
+         Dan kan SailingPD zijn instrumentdata via Signal K binnenkrijgen. SailingPD leest NMEA 0183
          over <strong>UDP</strong> (zie stap <em>NMEA Verbinding</em>: standaard
-         <code>localhost:${escHtml(nport)}</code>). Een meegeleverde <strong>Node-RED flow</strong>
-         haalt de juiste waarden uit Signal K en stuurt ze als NMEA over UDP naar SailingPD.`) +
-    `<div class="bg-slate-50 border border-slate-200 rounded-xl p-5 mb-5">
-       <h4 class="font-semibold text-slate-800 mb-2">📦 Node-RED flow</h4>
+         <code>localhost:${escHtml(nport)}</code>). Er zijn <strong>twee manieren</strong> om Signal K
+         die NMEA naar SailingPD te laten sturen — kies wat bij je past.`) +
+
+    sectionHeader('Manier 1 — via de Signal K-plugin (aanrader)') +
+    `<div class="bg-green-50 border border-green-200 rounded-xl p-5 mb-3">
+       <p class="text-sm text-green-900 mb-2">
+         De eenvoudigste route: een officiële Signal K-plugin zet je data om naar NMEA 0183 en
+         stuurt die over UDP naar SailingPD. <strong>Geen Node-RED nodig.</strong>
+       </p>
+       <ol class="list-decimal ml-5 space-y-2 text-sm text-green-900">
+         <li>Installeer in Signal K de plugin <strong>“Signal K to NMEA 0183”</strong>
+             (<code>@signalk/signalk-to-nmea0183</code>) via de <em>App Store</em> in het Signal K-beheer,
+             en zet de conversies aan (o.a. RMC, MWV, VHW, XDR).</li>
+         <li>Voeg in Signal K een <strong>uitgaande verbinding</strong> toe
+             (<em>Server → Data Connections → Add</em>): type <strong>NMEA 0183</strong>, uitvoer over
+             <strong>UDP</strong>, naar het adres en de poort van SailingPD — op dezelfde computer
+             <code>localhost:${escHtml(nport)}</code>, anders het IP van de computer/Pi waar SailingPD draait.</li>
+         <li>Zet SailingPD's <em>NMEA Verbinding</em> op <strong>Netwerk / UDP</strong> met dezelfde poort (stap 4).</li>
+       </ol>
+     </div>` +
+
+    sectionHeader('Manier 2 — via de meegeleverde Node-RED flow') +
+    `<div class="bg-slate-50 border border-slate-200 rounded-xl p-5 mb-3">
        <p class="text-sm text-slate-600 mb-3">
-         In de map <code>Signal K connection/</code> zit de kant-en-klare flow
-         <code>Node Red SPD v311.json</code> en een PDF-handleiding
+         Gebruik je al <strong>Node-RED</strong>, of wil je de omzetting zelf aanpassen? Dan kun je de
+         kant-en-klare flow gebruiken. In de map <code>Signal K connection/</code> zit
+         <code>Node Red SPD v311.json</code> plus een PDF-handleiding
          (<code>Sailing PD Manual Signal K 4.1.1.pdf</code>).
        </p>
        <a href="/api/signalk-flow" download
           class="inline-block bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold">
           ⬇️ Node-RED flow downloaden (JSON)
        </a>
+       <ol class="list-decimal ml-5 space-y-2 text-sm text-slate-700 mt-3">
+         <li>Zorg dat <strong>Node-RED</strong> draait op je Signal K-server (meestal ingebouwd).</li>
+         <li><strong>Importeer</strong> de flow (menu → <em>Import</em> → plak/kies het JSON-bestand).</li>
+         <li>Controleer de <strong>UDP-out</strong>-node: die moet naar host en poort van SailingPD wijzen
+             — standaard <code>localhost:${escHtml(nport)}</code>.</li>
+         <li>Zet SailingPD's <em>NMEA Verbinding</em> op <strong>Netwerk / UDP</strong> met dezelfde poort (stap 4).</li>
+         <li><strong>Deploy</strong> de flow. SailingPD ontvangt nu de NMEA-data.</li>
+       </ol>
      </div>` +
-    sectionHeader('Zo stel je het in') +
-    `<ol class="list-decimal ml-5 space-y-2 text-sm text-slate-700">
-       <li>Zorg dat <strong>Node-RED</strong> draait op je Signal K-server (meestal ingebouwd).</li>
-       <li>Download hierboven de flow en <strong>importeer</strong> die in Node-RED
-           (menu → <em>Import</em> → plak/kies het JSON-bestand).</li>
-       <li>Controleer in de flow de <strong>UDP-out</strong>-node: die moet naar de host en poort
-           van SailingPD wijzen — standaard <code>localhost:${escHtml(nport)}</code>
-           (of het IP van de computer/Pi als Signal K op een ander apparaat draait).</li>
-       <li>Zorg dat SailingPD's <em>NMEA Verbinding</em> op <strong>Netwerk / UDP</strong> staat
-           met dezelfde poort (stap 4).</li>
-       <li><strong>Deploy</strong> de flow in Node-RED. SailingPD ontvangt nu de NMEA-data.</li>
-     </ol>` +
-    `<div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mt-5 text-sm text-amber-900">
-       ℹ️ Deze wizard configureert Node-RED zelf niet — dat doe je in de Node-RED-editor.
-       Raadpleeg de meegeleverde PDF-handleiding voor details.
+    `<div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mt-3 text-sm text-amber-900">
+       ℹ️ Deze wizard configureert Signal K zelf niet — dat doe je in het Signal K-beheer (of de
+       Node-RED-editor). Beide manieren leveren hetzelfde resultaat; de plugin is meestal het minste werk.
      </div>`
   );
 }
