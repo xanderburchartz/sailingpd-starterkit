@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>SailingPD — Paneel</title>
+<style>
+  /* ── Neutraal (donker) = standaard ── */
+  :root{
+    --bg:#0e1420;--panel:#161f2e;--panel2:#1c2738;--ink:#eaf0f8;--muted:#8b98ab;--line:#283243;
+    --good:#28c76f;--accent:#3b93ff;--arc:#2b3648;--gauge-face:transparent;--gauge-ink:var(--ink);
+    --segP:transparent;--segS:transparent;--needle:var(--ink);--radius:12px;--tilebg:var(--panel);
+  }
+  /* ── B&G-stijl: wit, navy labels, zwarte cijfers, navy boog ── */
+  :root[data-skin="bg"]{
+    --bg:#e6ebf1;--panel:#ffffff;--panel2:#f2f6fb;--ink:#0c1420;--muted:#33425a;--line:#c7d0dc;
+    --good:#1f9d4d;--accent:#1f6fe0;--arc:#2b3648;--gauge-face:transparent;--gauge-ink:#0c1420;
+    --segP:transparent;--segS:transparent;--needle:#0c1420;--radius:8px;--tilebg:#ffffff;
+  }
+  /* ── Raymarine-stijl: zwart, lichte meterwijzerplaat met rood/groen boog ── */
+  :root[data-skin="ray"]{
+    --bg:#000000;--panel:#0b0e12;--panel2:#12161c;--ink:#eef2f7;--muted:#9aa6b5;--line:#1b2129;
+    --good:#1f9d4d;--accent:#1f78d6;--arc:#c9d2dd;--gauge-face:#f3f6fa;--gauge-ink:#0c1420;
+    --segP:#d21f2e;--segS:#1f9d4d;--needle:#0c1420;--radius:14px;--tilebg:#0b0e12;
+  }
+  /* ── Nacht: rood op zwart, over elke stijl heen ── */
+  :root[data-mode="night"]{
+    --bg:#000!important;--panel:#0a0000!important;--panel2:#0e0000!important;--ink:#ff3b30!important;
+    --muted:#a02016!important;--line:#340c08!important;--good:#ff6a44!important;--accent:#ff3b30!important;
+    --arc:#3a0d0d!important;--gauge-face:transparent!important;--gauge-ink:#ff3b30!important;
+    --segP:#ff2a1e!important;--segS:#ff6a44!important;--needle:#ff3b30!important;--tilebg:#0a0000!important;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;-webkit-font-smoothing:antialiased;user-select:none}
+  .app{height:100vh;display:flex;flex-direction:column;gap:8px;padding:8px}
+  .bar{display:flex;align-items:center;gap:.45rem;flex-wrap:wrap}
+  .bar .id{font-weight:700;margin-right:auto;display:flex;gap:.5rem;align-items:baseline}
+  .bar .rt{color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums;font-size:.9rem}
+  .btn{border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:.72rem;font-weight:800;
+    text-transform:uppercase;letter-spacing:.04em;padding:.42rem .7rem;border-radius:7px;cursor:pointer}
+  .btn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .seg2{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+  .seg2 .c{padding:.42rem .7rem;font-size:.72rem;font-weight:800;text-transform:uppercase;color:var(--muted);cursor:pointer;background:var(--panel)}
+  .seg2 .c.on{background:var(--accent);color:#fff}
+
+  .grid{flex:1;display:grid;gap:8px;min-height:0;grid-auto-rows:1fr}
+  .tile{background:var(--tilebg);border:1px solid var(--line);border-radius:var(--radius);position:relative;
+    display:flex;flex-direction:column;padding:.6rem .8rem;overflow:hidden;min-height:0;container-type:size}
+  .tile .lab{font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);
+    display:flex;justify-content:space-between;gap:.4rem}
+  .tile .lab .u{color:var(--muted);font-weight:700}
+  .body{flex:1;display:grid;place-items:center;min-height:0;position:relative}
+  .num{font-weight:800;font-variant-numeric:tabular-nums;line-height:.9;letter-spacing:-.01em;font-size:clamp(1.6rem,7cqw,5rem);text-align:center}
+  .num.txt{font-size:clamp(.9rem,4.4cqw,1.7rem);font-weight:700;line-height:1.15}
+  .num .dec{font-size:.58em}
+  .barwrap{width:100%}
+  .barbar{height:16px;border-radius:9px;background:var(--panel2);border:1px solid var(--line);overflow:hidden;position:relative}
+  .barbar .f{position:absolute;left:0;top:0;bottom:0;background:var(--good);border-radius:9px}
+  .barval{font-weight:800;font-variant-numeric:tabular-nums;font-size:clamp(1.3rem,5cqw,2.6rem);margin-bottom:.3rem}
+  .gauge{width:100%;height:100%;display:block}
+  .gval{position:absolute;font-weight:800;font-variant-numeric:tabular-nums;font-size:clamp(1.2rem,5cqw,2.5rem);bottom:8%;color:var(--gauge-ink)}
+
+  body.editing .tile{cursor:pointer}
+  body.editing .tile::after{content:"✎";position:absolute;top:.4rem;right:.5rem;font-size:.8rem;color:var(--muted);opacity:.6}
+  body.editing .tile.sel{outline:3px solid var(--accent);outline-offset:-2px}
+
+  .sheet{display:none;flex-wrap:wrap;align-items:center;gap:.5rem;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:.6rem .7rem}
+  body.editing .sheet.open{display:flex}
+  .sheet .ttl{font-size:.72rem;font-weight:800;text-transform:uppercase;color:var(--muted)}
+  .sheet select{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:.4rem;font-size:.85rem;font-weight:600;max-width:60vw}
+  .sheet .rm{border:1px solid #d33;color:#d33;background:transparent;border-radius:7px;padding:.4rem .7rem;font-size:.72rem;font-weight:800;text-transform:uppercase;cursor:pointer}
+  .sheet .sp{flex:1}
+  .step{display:flex;align-items:center;gap:.25rem;font-size:.72rem;font-weight:800;color:var(--muted)}
+  .step button{width:30px;height:30px;border-radius:7px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-weight:800;cursor:pointer;font-size:1rem}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="bar">
+    <div class="id"><span id="boat">SailingPD</span><span class="rt" id="clock">--:--:--</span></div>
+    <button class="btn" id="addbtn" style="display:none">+ Tegel</button>
+    <button class="btn" id="resetbtn" style="display:none">Standaard</button>
+    <button class="btn" id="editbtn">Bewerken</button>
+    <div class="seg2" id="skin"><div class="c on" data-k="">Neutraal</div><div class="c" data-k="bg">B&amp;G</div><div class="c" data-k="ray">Raymarine</div></div>
+    <button class="btn" id="nightbtn">Nacht</button>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="sheet" id="sheet">
+    <span class="ttl">Tegel</span>
+    <select id="s-field"></select>
+    <div class="seg2" id="s-type"><div class="c" data-t="num">Getal</div><div class="c" data-t="gauge">Meter</div><div class="c" data-t="bar">Balk</div></div>
+    <span class="s-note" id="s-note" style="display:none;font-size:.72rem;font-weight:700;color:var(--muted)">ⓘ Tekstveld — alleen als tekst</span>
+    <span class="step">Breed <button data-s="w-">–</button><button data-s="w+">+</button></span>
+    <span class="step">Hoog <button data-s="h-">–</button><button data-s="h+">+</button></span>
+    <span class="sp"></span>
+    <button class="rm" id="s-rm">Verwijder</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  // n=numeriek {l,u,min,max,d,ang?}, t=tekst {l,text:1}
+  function n(l,u,min,max,d,ang){return {l:l,u:u,min:min,max:max,d:d,ang:ang};}
+  function T(l){return {l:l,u:'',text:1};}
+  var F={
+    // Performance
+    'Performance-SOG':{l:'Performance (SOG)',u:'%',min:60,max:115,d:0,band:[97,110]},
+    'Performance-waterspeed':{l:'Performance (STW)',u:'%',min:60,max:115,d:0,band:[97,110]},
+    'Performance-incl-current':{l:'Performance incl. stroom',u:'%',min:60,max:115,d:0,band:[97,110]},
+    'Performance-to-windward':{l:'Perf. te loevaart',u:'%',min:60,max:115,d:0,band:[97,110]},
+    'Performance-to-WP':{l:'Perf. naar waypoint',u:'%',min:60,max:115,d:0,band:[97,110]},
+    'Performance-filter':n('Perf.-filter','',0,60,0),
+    'Target-speed':n('Doelsnelheid','kn',0,14,1),'Target-VMG':n('Doel-VMG','kn',0,10,1),
+    'VMG':n('VMG','kn',0,10,1),'VMG-to-WP':n('VMG naar WP','kn',0,10,1),
+    // Snelheid
+    'SOG':n('SOG','kn',0,16,1),'SOG-forward':n('SOG voorwaarts','kn',0,16,1),'STW-corrected':n('STW','kn',0,16,1),
+    'Speed-shortage':n('Snelheidstekort','kn',-3,3,1),'Speed-sideways':n('Zijwaartse snelheid','kn',-3,3,1),
+    'Speed-from-current':n('Snelheid uit stroom','kn',-3,3,1),'Rate-of-Turn':n('Draaisnelheid','°/s',-30,30,0),
+    // Wind
+    'AWA':n('AWA','°',-180,180,0,1),'AWS':n('AWS','kn',0,50,1),
+    'TWA':n('TWA','°',-180,180,0,1),'TWS':n('TWS','kn',0,40,1),'TWS-avg':n('TWS gemiddeld','kn',0,40,1),
+    'TWS-trend':n('TWS-trend','kn',-3,3,1),'Upwash':n('Upwash','°',-10,10,0),
+    'Bow-AWA':n('AWA (boeg)','°',-180,180,0,1),'Bow-TWA':n('TWA (boeg)','°',-180,180,0,1),
+    'Windshift-deg':{l:'Windshift',u:'°',min:-40,max:40,d:0,band:[-5,5]},
+    'GEOWIND':n('Ware windrichting','°',0,360,0),'GEOWIND-TWS':n('Geo-wind TWS','kn',0,40,1),
+    'GEOWIND-TWS-avg':n('Geo-wind TWS gem.','kn',0,40,1),'GEOWIND-TWS-trend':n('Geo-wind trend','kn',-3,3,1),
+    'Shift-limit':n('Shift-grens','°',0,40,0),'App Wind-filter':n('AW-filter','',0,60,0),
+    // Hoeken & doelen
+    'Upwind-angle':n('Doelhoek loef (t-UA)','°',20,70,0),'Downwind-angle':n('Doelhoek lij (t-DA)','°',120,180,0),
+    'Best-angle':n('Beste hoek','°',20,180,0),'Best-angle-error':{l:'Beste-hoek fout',u:'°',min:-40,max:40,d:0,band:[-4,4]},
+    'UA-error':{l:'Hoekfout loef',u:'°',min:-30,max:30,d:0,band:[-3,3]},'DA-error':{l:'Hoekfout lij',u:'°',min:-30,max:30,d:0,band:[-3,3]},
+    'Actual-leeway':n('Leeway','°',-25,25,0),'Expected-leeway':n('Verwachte leeway','°',-25,25,0),
+    // Trim & beweging
+    'Actual-heel':n('Slagzij','°',-45,45,0),'Best-heel':n('Doelslagzij','°',0,40,0),
+    'Heel-error':{l:'Slagzij-fout',u:'°',min:-20,max:20,d:0,band:[-3,3]},
+    'Actual-pitch':n('Stamp','°',-15,15,1),'Actual-yaw':n('Gier','°',-20,20,1),
+    'Heave-vertical':n('Deining','m',-3,3,1),'Rudder-angle':n('Roerhoek','°',-40,40,0),
+    // Stroom & diepte
+    'Current-kts':n('Stroom','kn',0,5,1),'Current-from-degrees':n('Stroom vanuit','°',0,360,0),
+    'Current-to-degrees':n('Stroom naar','°',0,360,0),'Current-degrees-relative':n('Stroom t.o.v. boeg','°',-180,180,0,1),
+    'Current-impact-degrees':n('Stroom-impact','°',-180,180,0,1),'Current-limit-kts':n('Stroom-grens','kn',0,5,1),
+    'Current-limit-degrees':n('Stroom-hoekgrens','°',0,90,0),'Depth-avg':n('Diepte','m',0,30,1),'Depth-change':n('Diepteverloop','m',-5,5,1),
+    // Koers & navigatie
+    'COG':n('COG','°',0,360,0),'HDG-corrected':n('Koers (HDG)','°',0,360,0),'Off Course':n('Koersafwijking','°',-60,60,0),
+    'Rel-COG':n('COG relatief','°',-180,180,0,1),'Rel-HDG':n('HDG relatief','°',-180,180,0,1),'Rel-BTW':n('BTW relatief','°',-180,180,0,1),
+    'BTW':n('Peiling naar WP','°',0,360,0),'DTW':n('Afstand naar WP','nm',0,50,1),'XTE':n('Dwarsafwijking','nm',-2,2,2),
+    'Distance-layline':T('Afstand layline'),'Time-layline':T('Tijd tot layline'),'Direction-to-steer':T('Bijsturen'),
+    'Est-Time en Route':T('Verwachte reistijd'),'TWA-to-WP':T('TWA naar WP'),'Waypoint':T('Waypoint'),
+    // Meldingen & advies
+    'Trim-advice1':T('Trim-advies'),'Trim-advice2':T('Trim-advies 2'),'Trim-advice3':T('Trim-advies 3'),
+    'Wind-message':T('Wind-melding'),'Current-message':T('Stroom-melding'),'BOW':T('Boeg/tak'),
+    // Systeem
+    'Boatname':T('Bootnaam'),'SPD-Version':T('SPD-versie'),'GPS-RMC-time':T('GPS-tijd'),'HDOP':T('HDOP'),
+    'Satellites':T('Satellieten'),'Replay-speed':T('Replay-snelheid'),
+    'Log-nr':n('Log-nummer','',0,999,0),'Records-filter':n('Records-filter','',0,60,0),'Records-processed':n('Records verwerkt','',0,99,0),
+  };
+  var GROUPS=[
+    ['Performance',['Performance-SOG','Performance-waterspeed','Performance-incl-current','Performance-to-windward','Performance-to-WP','Target-speed','Target-VMG','VMG','VMG-to-WP','Performance-filter']],
+    ['Snelheid',['SOG','SOG-forward','STW-corrected','Speed-shortage','Speed-sideways','Speed-from-current','Rate-of-Turn']],
+    ['Wind',['AWA','AWS','TWA','TWS','TWS-avg','TWS-trend','Upwash','Bow-AWA','Bow-TWA','Windshift-deg','GEOWIND','GEOWIND-TWS','GEOWIND-TWS-avg','GEOWIND-TWS-trend','Shift-limit','App Wind-filter']],
+    ['Hoeken & doelen',['Upwind-angle','Downwind-angle','Best-angle','Best-angle-error','UA-error','DA-error','Actual-leeway','Expected-leeway']],
+    ['Trim & beweging',['Actual-heel','Best-heel','Heel-error','Actual-pitch','Actual-yaw','Heave-vertical','Rudder-angle']],
+    ['Stroom & diepte',['Current-kts','Current-from-degrees','Current-to-degrees','Current-degrees-relative','Current-impact-degrees','Current-limit-kts','Current-limit-degrees','Depth-avg','Depth-change']],
+    ['Koers & navigatie',['COG','HDG-corrected','Off Course','Rel-COG','Rel-HDG','Rel-BTW','BTW','DTW','XTE','Distance-layline','Time-layline','Direction-to-steer','Est-Time en Route','TWA-to-WP','Waypoint']],
+    ['Meldingen & advies',['Trim-advice1','Trim-advice2','Trim-advice3','Wind-message','Current-message','BOW']],
+    ['Systeem',['Boatname','SPD-Version','GPS-RMC-time','HDOP','Satellites','Replay-speed','Log-nr','Records-filter','Records-processed']],
+  ];
+  var DEFAULT=[
+    {f:'Performance-SOG',t:'gauge',w:2,h:2},{f:'Trim-advice1',t:'num',w:2,h:1},
+    {f:'SOG',t:'num',w:1,h:1},{f:'Target-speed',t:'num',w:1,h:1},
+    {f:'VMG',t:'num',w:1,h:1},{f:'Target-VMG',t:'num',w:1,h:1},
+    {f:'TWA',t:'num',w:1,h:1},{f:'TWS',t:'num',w:1,h:1},
+    {f:'Actual-heel',t:'gauge',w:1,h:1},{f:'Windshift-deg',t:'num',w:1,h:1},
+  ];
+
+  var grid=document.getElementById('grid'),sheet=document.getElementById('sheet');
+  var latest={},tiles=[],sel=null;
+  function load(){try{var s=JSON.parse(localStorage.getItem('spd-panel'));if(Array.isArray(s)&&s.length)return s;}catch(e){}return DEFAULT.map(function(o){return Object.assign({},o)});}
+  function save(){localStorage.setItem('spd-panel',JSON.stringify(state));}
+  var state=load();
+  function cols(){return Math.max(2,Math.min(6,Math.floor(window.innerWidth/210)));}
+  function num(v){var x=parseFloat(v);return isNaN(x)?null:x;}
+
+  function build(){
+    var N=cols();grid.style.gridTemplateColumns='repeat('+N+',1fr)';grid.innerHTML='';tiles=[];
+    state.forEach(function(cfg,idx){
+      var meta=F[cfg.f]||{l:cfg.f,u:'',min:0,max:100,d:0};
+      cfg.w=Math.min(cfg.w||1,N);cfg.h=cfg.h||1;
+      var el=document.createElement('div');el.className='tile'+(sel===idx?' sel':'');
+      el.style.gridColumn='span '+cfg.w;el.style.gridRow='span '+cfg.h;
+      el.innerHTML='<div class="lab"><span>'+meta.l+'</span><span class="u">'+(meta.u||'')+'</span></div><div class="body"></div>';
+      var body=el.querySelector('.body'),ref={cfg:cfg,meta:meta};
+      if(meta.text){ref.kind='text';body.innerHTML='<div class="num txt">—</div>';ref.el=body.firstChild;}
+      else if(cfg.t==='gauge'){ref.kind='gauge';makeGauge(body,ref);}
+      else if(cfg.t==='bar'){ref.kind='bar';body.innerHTML='<div class="barwrap"><div class="barval">--</div><div class="barbar"><div class="f"></div></div></div>';ref.el=body.querySelector('.barval');ref.fill=body.querySelector('.f');}
+      else{ref.kind='num';body.innerHTML='<div class="num">--</div>';ref.el=body.firstChild;}
+      el.addEventListener('click',function(){if(document.body.classList.contains('editing'))selectTile(idx);});
+      grid.appendChild(el);tiles.push(ref);
+    });
+    paint();
+  }
+  function makeGauge(body,ref){
+    var NS='http://www.w3.org/2000/svg';
+    var svg=document.createElementNS(NS,'svg');svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('class','gauge');
+    var face=document.createElementNS(NS,'circle');face.setAttribute('cx',50);face.setAttribute('cy',50);face.setAttribute('r',46);face.setAttribute('fill','var(--gauge-face)');svg.appendChild(face);
+    function arc(a0,a1,r,color,w){var p=document.createElementNS(NS,'path');
+      function pt(a){a=(a-90)*Math.PI/180;return[50+r*Math.cos(a),50+r*Math.sin(a)];}
+      var s=pt(a0),e=pt(a1),big=(a1-a0)>180?1:0;
+      p.setAttribute('d','M'+s[0]+' '+s[1]+' A'+r+' '+r+' 0 '+big+' 1 '+e[0]+' '+e[1]);
+      p.setAttribute('fill','none');p.setAttribute('stroke',color);p.setAttribute('stroke-width',w);p.setAttribute('stroke-linecap','round');svg.appendChild(p);return p;}
+    arc(-135,135,40,'var(--arc)',8);
+    // Raymarine-kleursegmenten (transparant in andere stijlen)
+    arc(-135,0,40,'var(--segP)',8); arc(0,135,40,'var(--segS)',8);
+    if(ref.meta.band){var b=ref.meta.band,m=ref.meta,f0=(b[0]-m.min)/(m.max-m.min),f1=(b[1]-m.min)/(m.max-m.min);
+      arc(-135+270*Math.max(0,f0),-135+270*Math.min(1,f1),40,'var(--good)',8);}
+    var needle=document.createElementNS(NS,'line');needle.setAttribute('x1',50);needle.setAttribute('y1',50);needle.setAttribute('x2',50);needle.setAttribute('y2',15);
+    needle.setAttribute('stroke','var(--needle)');needle.setAttribute('stroke-width',3);needle.setAttribute('stroke-linecap','round');svg.appendChild(needle);
+    var hub=document.createElementNS(NS,'circle');hub.setAttribute('cx',50);hub.setAttribute('cy',50);hub.setAttribute('r',4);hub.setAttribute('fill','var(--needle)');svg.appendChild(hub);
+    body.appendChild(svg);
+    var val=document.createElement('div');val.className='gval';val.textContent='--';body.appendChild(val);
+    ref.needle=needle;ref.el=val;
+  }
+  function fmtNum(v,d){var s=v.toFixed(d),i=s.indexOf('.');return i<0?s:s.slice(0,i)+'<span class="dec">'+s.slice(i)+'</span>';}
+  function paint(){
+    tiles.forEach(function(r){
+      var raw=latest[r.cfg.f],m=r.meta;
+      if(r.kind==='text'){r.el.textContent=(raw==null||raw==='')?'—':String(raw).trim()||'—';return;}
+      var v=num(raw);
+      if(r.kind==='num'){r.el.innerHTML=(v==null)?'--':fmtNum(m.ang?Math.abs(v):v,m.d);return;}
+      if(r.kind==='bar'){r.el.textContent=(v==null)?'--':(m.ang?Math.abs(v):v).toFixed(m.d);
+        r.fill.style.width=(v==null?0:Math.max(0,Math.min(1,(v-m.min)/(m.max-m.min)))*100)+'%';return;}
+      if(r.kind==='gauge'){r.el.innerHTML=(v==null)?'--':fmtNum(m.ang?Math.abs(v):v,m.d);
+        var f=v==null?0:Math.max(0,Math.min(1,(v-m.min)/(m.max-m.min)));
+        r.needle.setAttribute('transform','rotate('+(-135+270*f)+' 50 50)');}
+    });
+  }
+  function render(d){latest=d;
+    if(d.Boatname)document.getElementById('boat').textContent=String(d.Boatname).trim()||'SailingPD';
+    if(d['GPS-RMC-time'])document.getElementById('clock').textContent=String(d['GPS-RMC-time']).trim();
+    paint();
+  }
+
+  var sField=document.getElementById('s-field');
+  (function(){var h='';GROUPS.forEach(function(g){h+='<optgroup label="'+g[0]+'">';g[1].forEach(function(k){h+='<option value="'+k+'">'+(F[k]?F[k].l:k)+'</option>';});h+='</optgroup>';});sField.innerHTML=h;})();
+  function fillSheet(){if(sel==null)return;var cfg=state[sel],isText=!!(F[cfg.f]&&F[cfg.f].text);
+    sField.value=cfg.f;
+    document.getElementById('s-type').style.display=isText?'none':'';
+    document.getElementById('s-note').style.display=isText?'':'none';
+    sheet.querySelectorAll('#s-type .c').forEach(function(c){c.classList.toggle('on',c.dataset.t===cfg.t);});}
+  function selectTile(idx){sel=idx;sheet.classList.add('open');fillSheet();build();}
+  sField.addEventListener('change',function(){if(sel==null)return;state[sel].f=this.value;if(F[this.value]&&F[this.value].text)state[sel].t='num';save();fillSheet();build();});
+  sheet.querySelectorAll('#s-type .c').forEach(function(c){c.addEventListener('click',function(){if(sel==null)return;state[sel].t=this.dataset.t;save();fillSheet();build();});});
+  sheet.querySelectorAll('[data-s]').forEach(function(b){b.addEventListener('click',function(){if(sel==null)return;var s=this.dataset.s,cfg=state[sel];
+    if(s==='w+')cfg.w=Math.min(cols(),(cfg.w||1)+1);if(s==='w-')cfg.w=Math.max(1,(cfg.w||1)-1);
+    if(s==='h+')cfg.h=Math.min(3,(cfg.h||1)+1);if(s==='h-')cfg.h=Math.max(1,(cfg.h||1)-1);save();build();});});
+  document.getElementById('s-rm').addEventListener('click',function(){if(sel==null)return;state.splice(sel,1);sel=null;sheet.classList.remove('open');save();build();});
+
+  document.getElementById('editbtn').addEventListener('click',function(){
+    var on=!document.body.classList.contains('editing');document.body.classList.toggle('editing',on);
+    this.classList.toggle('on',on);this.textContent=on?'Klaar':'Bewerken';
+    document.getElementById('addbtn').style.display=on?'':'none';document.getElementById('resetbtn').style.display=on?'':'none';
+    if(!on){sel=null;sheet.classList.remove('open');build();}});
+  document.getElementById('addbtn').addEventListener('click',function(){state.push({f:'SOG',t:'num',w:1,h:1});save();selectTile(state.length-1);});
+  document.getElementById('resetbtn').addEventListener('click',function(){if(confirm('Terug naar standaardindeling?')){state=DEFAULT.map(function(o){return Object.assign({},o)});sel=null;sheet.classList.remove('open');save();build();}});
+
+  // Stijl (skin) + nacht — onthouden
+  function applySkin(k){if(k)document.documentElement.setAttribute('data-skin',k);else document.documentElement.removeAttribute('data-skin');
+    document.querySelectorAll('#skin .c').forEach(function(c){c.classList.toggle('on',c.dataset.k===k);});localStorage.setItem('spd-skin',k);}
+  document.querySelectorAll('#skin .c').forEach(function(c){c.addEventListener('click',function(){applySkin(this.dataset.k);});});
+  var nb=document.getElementById('nightbtn');
+  function applyNight(on){if(on)document.documentElement.setAttribute('data-mode','night');else document.documentElement.removeAttribute('data-mode');nb.classList.toggle('on',on);localStorage.setItem('spd-night',on?'1':'');}
+  nb.addEventListener('click',function(){applyNight(document.documentElement.getAttribute('data-mode')!=='night');});
+  applySkin(localStorage.getItem('spd-skin')||''); applyNight(localStorage.getItem('spd-night')==='1');
+
+  var rt;window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(build,200);});
+  var q=new URLSearchParams(location.search);
+  var host=q.get('host')||location.hostname||'localhost',port=q.get('port')||(location.port||'9090');
+  (function connect(){var ws;try{ws=new WebSocket('ws://'+host+':'+port+'/ws');}catch(e){return setTimeout(connect,2000);}
+    ws.onmessage=function(ev){try{render(JSON.parse(ev.data));}catch(e){}};
+    ws.onclose=function(){setTimeout(connect,2000);};ws.onerror=function(){try{ws.close();}catch(e){}};})();
+  build();
+})();
+</script>
+</body>
+</html>

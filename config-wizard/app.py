@@ -495,6 +495,11 @@ def _install_webmenu():
     if spd_icon.exists():
         shutil.copy2(spd_icon, WEB_ROOT_DIR / "spd-icon.png")
 
+    # Het configureerbare prestatiepaneel meekopiëren (de standaard-dashboardkeuze).
+    panel = MENU_SRC_DIR / "panel.html"
+    if panel.exists():
+        shutil.copy2(panel, WEB_ROOT_DIR / "panel.html")
+
     return True, "Dashboard-menu geïnstalleerd als startpagina."
 
 
