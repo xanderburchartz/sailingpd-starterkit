@@ -284,6 +284,13 @@ def save_config():
         if HEADLESS_FILE.exists():
             _ensure_startupfiles()
 
+        # Het overzichtsmenu wordt standaard de startpagina op poort 9090.
+        # Idempotent en niet-fataal: mislukt het, dan blijft de config wél bewaard.
+        try:
+            _install_webmenu()
+        except Exception:
+            pass
+
         return jsonify({"success": True, "message": "Configuratie opgeslagen!"})
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
@@ -449,40 +456,49 @@ def webmenu_status():
     })
 
 
-@app.route("/api/webmenu/install", methods=["POST"])
-def webmenu_install():
+def _install_webmenu():
+    """Kopieer het meegeleverde menu naar web_root. Retourneert (ok, bericht).
+
+    Idempotent: bewaart de originele startpagina één keer als index.html.orig-spa
+    én als dials.html, en overschrijft die nooit met ons eigen menu.
+    """
     src_index = MENU_SRC_DIR / "index.html"
     if not src_index.exists():
-        return jsonify({"success": False, "error": f"Menu-bronbestand niet gevonden ({src_index})"}), 404
+        return False, f"Menu-bronbestand niet gevonden ({src_index})"
     if not WEB_ROOT_DIR.exists():
-        return jsonify({"success": False, "error": f"web_root niet gevonden in {SAILING_DIR}"}), 404
+        return False, f"web_root niet gevonden in {SAILING_DIR}"
+
+    dst_index = WEB_ROOT_DIR / "index.html"
+    orig_bak  = WEB_ROOT_DIR / "index.html.orig-spa"
+    dials     = WEB_ROOT_DIR / "dials.html"
+
+    if dst_index.exists() and not _webmenu_installed():
+        if not orig_bak.exists():
+            shutil.copy2(dst_index, orig_bak)
+        shutil.copy2(dst_index, dials)
+    elif orig_bak.exists() and not dials.exists():
+        shutil.copy2(orig_bak, dials)
+
+    shutil.copy2(src_index, dst_index)
+
+    src_thumbs = MENU_SRC_DIR / "thumbs"
+    if src_thumbs.is_dir():
+        dst_thumbs = WEB_ROOT_DIR / "thumbs"
+        dst_thumbs.mkdir(parents=True, exist_ok=True)
+        for jpg in src_thumbs.glob("*.jpg"):
+            shutil.copy2(jpg, dst_thumbs / jpg.name)
+
+    return True, "Dashboard-menu geïnstalleerd als startpagina."
+
+
+@app.route("/api/webmenu/install", methods=["POST"])
+def webmenu_install():
     try:
-        dst_index = WEB_ROOT_DIR / "index.html"
-        orig_bak  = WEB_ROOT_DIR / "index.html.orig-spa"
-        dials     = WEB_ROOT_DIR / "dials.html"
-
-        # Bestaande (originele) startpagina één keer bewaren, en als dials.html
-        # beschikbaar houden — maar nooit ons eigen menu als 'origineel' opslaan.
-        if dst_index.exists() and not _webmenu_installed():
-            if not orig_bak.exists():
-                shutil.copy2(dst_index, orig_bak)
-            shutil.copy2(dst_index, dials)
-        elif orig_bak.exists() and not dials.exists():
-            shutil.copy2(orig_bak, dials)
-
-        shutil.copy2(src_index, dst_index)
-
-        # Thumbnails meekopiëren (mogen ontbreken).
-        src_thumbs = MENU_SRC_DIR / "thumbs"
-        if src_thumbs.is_dir():
-            dst_thumbs = WEB_ROOT_DIR / "thumbs"
-            dst_thumbs.mkdir(parents=True, exist_ok=True)
-            for jpg in src_thumbs.glob("*.jpg"):
-                shutil.copy2(jpg, dst_thumbs / jpg.name)
-
-        return jsonify({"success": True, "message": "Dashboard-menu geïnstalleerd als startpagina."})
+        ok, msg = _install_webmenu()
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
+    return (jsonify({"success": True, "message": msg}) if ok
+            else (jsonify({"success": False, "error": msg}), 404))
 
 
 # ─── webserver field selection ────────────────────────────────────────────────

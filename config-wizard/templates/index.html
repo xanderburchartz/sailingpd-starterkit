@@ -964,43 +964,45 @@ function renderStep7() {
         'Op welke netwerkverbindingen de server luistert. 0.0.0.0 = overal op je netwerk bereikbaar — laat dit zo staan, tenzij je weet waarom niet.') +
     `</div>` +
 
-    sectionHeader('Dashboard-menu als startpagina') +
-    `<div class="text-sm text-slate-600 mb-3">
-       Zet een overzichtelijk <strong>menu</strong> met alle SailingPD-schermen (met voorbeeldplaatjes) als
-       startpagina op poort 9090. De originele pagina blijft bereikbaar via <code>/dials.html</code>.
-     </div>
-     <div id="webmenu-status" class="text-sm mb-3 text-slate-500">Status laden…</div>
-     <button type="button" id="btn-webmenu" onclick="installWebMenu()"
-       class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">
-       Dashboard-menu installeren
-     </button>` +
-
-    `<div class="bg-slate-100 border border-slate-200 rounded-xl p-4 mt-8 mb-1 text-sm text-slate-600">
-       <strong class="text-slate-800">Geavanceerd — meestal niet nodig.</strong>
-       De meeste mensen gebruiken alleen het web-dashboard hierboven en kunnen de rest van deze stap overslaan.
-       De opties hieronder zijn er alleen voor wie de gegevens naar een ándere app of naar extra schermen wil sturen.
+    sectionHeader('Dashboard-menu') +
+    `<div class="bg-green-50 border border-green-200 rounded-xl p-4 text-sm text-green-900">
+       ✓ Zodra je opslaat, wordt een overzichtelijk <strong>menu</strong> met alle SailingPD-schermen je
+       startpagina op poort 9090. Je originele pagina blijft bereikbaar via <code>/dials.html</code>.
      </div>` +
 
-    sectionHeader('Gegevens naar een andere app (UDP)') +
-    toggleRow('f-udp-on','Gegevens ook naar een andere app sturen', udpOn,
-      'Alleen nodig als je de gegevens óók naar een ándere navigatie-app wilt sturen (bijv. Navionics of iSailor op je tablet). Voor het gewone web-dashboard hoeft dit niet aan.') +
-    `<div id="udp-settings" class="${udpOn?'':'opacity-50 pointer-events-none'}">` +
-      textField('f-udp-ip','Naar welk adres', getW('Output','UDPip','255.255.255.255'),
-        '255.255.255.255 = naar álle apparaten op het netwerk tegelijk ("broadcast"). Laat zo staan als je twijfelt.') +
-      numField('f-udp-port','Poort', getW('Output','UDPport','7000'), 1, 65535, 1,
-        'De ontvangende app moet op dezelfde poort luisteren. Standaard 7000.') +
-      numField('f-udp-interval','Verzendinterval (seconden)', get('Outputcontrol','UDP interval','10'), 1, 60, 1,
-        'Hoe vaak de gegevens worden verstuurd. Lager = vaker, maar meer netwerkverkeer.') +
-      sectionHeader('Welke gegevens meesturen?') +
-      `<div class="rounded-xl border border-slate-200 px-4 py-2">${udpToggles}</div>` +
-    `</div>` +
+    // Geavanceerde uitvoer (UDP, Multiview) alleen tonen buiten de basismodus.
+    (basicMode
+      ? `<div class="bg-slate-100 border border-slate-200 rounded-xl p-4 mt-8 text-sm text-slate-600">
+           <strong class="text-slate-800">Geavanceerde uitvoer verborgen.</strong>
+           Wil je gegevens ook naar een ándere app (UDP) of naar extra repeater-schermen sturen?
+           Zet dan <em>“Toon ook de optionele stappen”</em> aan in de zijbalk.
+         </div>`
+      : `<div class="bg-slate-100 border border-slate-200 rounded-xl p-4 mt-8 mb-1 text-sm text-slate-600">
+           <strong class="text-slate-800">Geavanceerd — meestal niet nodig.</strong>
+           De meeste mensen gebruiken alleen het web-dashboard hierboven.
+           De opties hieronder zijn er alleen voor wie de gegevens naar een ándere app of naar extra schermen wil sturen.
+         </div>` +
 
-    sectionHeader('Meerdere repeater-schermen (Multiview)') +
-    `<div class="text-xs text-slate-500 mb-3">Alleen voor speciale opstellingen met meerdere losse "repeater"-schermen die tegelijk dezelfde gegevens tonen. Gebruik je dat niet? Laat deze twee velden gewoon staan.</div>` +
-    textField('f-mv-ip','Naar welk adres', get('Outputcontrol','Multiview_IP','255.255.255.255'),
-      '255.255.255.255 = naar alle schermen op het netwerk tegelijk.') +
-    numField('f-mv-port','Poort', get('Outputcontrol','Multiview_PORT','10110'), 1, 65535, 1,
-      'Standaard 10110 (de gangbare NMEA-netwerkpoort). Laat staan als je Multiview niet gebruikt.')
+        sectionHeader('Gegevens naar een andere app (UDP)') +
+        toggleRow('f-udp-on','Gegevens ook naar een andere app sturen', udpOn,
+          'Alleen nodig als je de gegevens óók naar een ándere navigatie-app wilt sturen (bijv. Navionics of iSailor op je tablet). Voor het gewone web-dashboard hoeft dit niet aan.') +
+        `<div id="udp-settings" class="${udpOn?'':'opacity-50 pointer-events-none'}">` +
+          textField('f-udp-ip','Naar welk adres', getW('Output','UDPip','255.255.255.255'),
+            '255.255.255.255 = naar álle apparaten op het netwerk tegelijk ("broadcast"). Laat zo staan als je twijfelt.') +
+          numField('f-udp-port','Poort', getW('Output','UDPport','7000'), 1, 65535, 1,
+            'De ontvangende app moet op dezelfde poort luisteren. Standaard 7000.') +
+          numField('f-udp-interval','Verzendinterval (seconden)', get('Outputcontrol','UDP interval','10'), 1, 60, 1,
+            'Hoe vaak de gegevens worden verstuurd. Lager = vaker, maar meer netwerkverkeer.') +
+          sectionHeader('Welke gegevens meesturen?') +
+          `<div class="rounded-xl border border-slate-200 px-4 py-2">${udpToggles}</div>` +
+        `</div>` +
+
+        sectionHeader('Meerdere repeater-schermen (Multiview)') +
+        `<div class="text-xs text-slate-500 mb-3">Alleen voor speciale opstellingen met meerdere losse "repeater"-schermen die tegelijk dezelfde gegevens tonen. Gebruik je dat niet? Laat deze twee velden gewoon staan.</div>` +
+        textField('f-mv-ip','Naar welk adres', get('Outputcontrol','Multiview_IP','255.255.255.255'),
+          '255.255.255.255 = naar alle schermen op het netwerk tegelijk.') +
+        numField('f-mv-port','Poort', get('Outputcontrol','Multiview_PORT','10110'), 1, 65535, 1,
+          'Standaard 10110 (de gangbare NMEA-netwerkpoort). Laat staan als je Multiview niet gebruikt.'))
   );
 }
 
@@ -1463,28 +1465,30 @@ function attachListeners(step) {
     bind('f-genfilt',   'Outputcontrol', 'general filter');
   }
   if (step === 7) {
-    const udpCb = document.getElementById('f-udp-on');
-    udpCb.addEventListener('change', () => {
-      setW('Output','UDPmessages', yn(udpCb.checked));
-      document.getElementById('udp-settings').style.opacity = udpCb.checked ? '1':'0.5';
-      document.getElementById('udp-settings').style.pointerEvents = udpCb.checked ? '':'none';
-    });
     const webCb = document.getElementById('f-web-on');
     webCb.addEventListener('change', () => {
       setW('Output','Webserver', yn(webCb.checked));
       document.getElementById('web-settings').style.opacity = webCb.checked ? '1':'0.5';
       document.getElementById('web-settings').style.pointerEvents = webCb.checked ? '':'none';
     });
-    bindW('f-udp-ip',     'Output', 'UDPip');
-    bindW('f-udp-port',   'Output', 'UDPport');
-    bind('f-udp-interval','Outputcontrol','UDP interval');
-    ['layline','perf','wind','current','angles','trimadvice'].forEach(k =>
-      bindW(`f-udp-${k}`, 'UDPmessages', k));
     bindW('f-web-ip',   'Output', 'Webservername');
     bindW('f-web-port', 'Output', 'Webserverport');
-    bind('f-mv-ip',   'Outputcontrol', 'Multiview_IP');
-    bind('f-mv-port', 'Outputcontrol', 'Multiview_PORT');
-    loadWebmenuStatus();
+    // Geavanceerde velden bestaan alleen buiten de basismodus.
+    const udpCb = document.getElementById('f-udp-on');
+    if (udpCb) {
+      udpCb.addEventListener('change', () => {
+        setW('Output','UDPmessages', yn(udpCb.checked));
+        document.getElementById('udp-settings').style.opacity = udpCb.checked ? '1':'0.5';
+        document.getElementById('udp-settings').style.pointerEvents = udpCb.checked ? '':'none';
+      });
+      bindW('f-udp-ip',     'Output', 'UDPip');
+      bindW('f-udp-port',   'Output', 'UDPport');
+      bind('f-udp-interval','Outputcontrol','UDP interval');
+      ['layline','perf','wind','current','angles','trimadvice'].forEach(k =>
+        bindW(`f-udp-${k}`, 'UDPmessages', k));
+      bind('f-mv-ip',   'Outputcontrol', 'Multiview_IP');
+      bind('f-mv-port', 'Outputcontrol', 'Multiview_PORT');
+    }
   }
   if (step === 8) {
     const advKeys = ['tack perf','big heel','few heel','off course','rudderangle','pinching',
@@ -1650,37 +1654,6 @@ async function startSPD() {
   flash(d.success ? '▶ SailingPD gestart!' : '✗ ' + (d.error || '?'), d.success);
 }
 
-// ─── dashboard-menu installeren ─────────────────────────────────────────────
-async function loadWebmenuStatus() {
-  const el = document.getElementById('webmenu-status');
-  if (!el) return;
-  try {
-    const d = await (await fetch('/api/webmenu')).json();
-    if (!d.web_root_exists) {
-      el.textContent = '⚠️ Geen web_root gevonden — staat dit programma wel in je SailingPD-map?';
-      el.className = 'text-sm mb-3 text-amber-700';
-    } else if (d.installed) {
-      el.textContent = '✓ Het dashboard-menu is de startpagina op poort 9090.';
-      el.className = 'text-sm mb-3 text-green-700 font-semibold';
-    } else {
-      el.textContent = 'Nog niet geïnstalleerd — nu is de standaard SailingPD-pagina de startpagina.';
-      el.className = 'text-sm mb-3 text-slate-500';
-    }
-  } catch (e) { el.textContent = ''; }
-}
-
-async function installWebMenu() {
-  const btn = document.getElementById('btn-webmenu');
-  if (btn) btn.disabled = true;
-  try {
-    const d = await (await fetch('/api/webmenu/install', { method:'POST' })).json();
-    flash(d.success ? '✓ Dashboard-menu geïnstalleerd' : ('✗ ' + (d.error || '?')), d.success);
-  } catch (e) {
-    flash('✗ ' + e, false);
-  }
-  await loadWebmenuStatus();
-  if (btn) btn.disabled = false;
-}
 
 async function saveAndStart() {
   const r = await fetch('/api/config', {

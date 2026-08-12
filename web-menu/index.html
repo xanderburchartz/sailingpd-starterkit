@@ -11,190 +11,234 @@
 <title>SailingPD — Pagina's</title>
 <style>
   :root{
-    --bg:#eef2f7; --panel:#ffffff; --ink:#0f172a; --muted:#64748b;
-    --line:#e2e8f0; --accent:#2563eb; --accent-ink:#1d4ed8; --full:#059669;
-    --chip:#f1f5f9; --chip-ink:#334155; --thumbbg:#f8fafc;
+    --bg:#eef2f7; --bg2:#e2e8f2; --panel:#ffffff; --ink:#0f172a; --muted:#5b6b82;
+    --line:#e3e8f0; --line2:#d3dbe7; --accent:#1e63e9; --accent-ink:#1749b8;
+    --hero1:#0e2a53; --hero2:#123c78; --emerald:#0a8f5f; --emerald-ink:#0a7a52;
+    --chip:#eef2f8; --chip-ink:#39485f; --thumbbg:#eef2f8; --shadow:20 33 61;
   }
   @media (prefers-color-scheme:dark){
-    :root{ --bg:#0b1220; --panel:#151d2e; --ink:#e8edf5; --muted:#94a3b8;
-      --line:#243149; --accent:#3b82f6; --accent-ink:#93c5fd; --full:#34d399;
-      --chip:#1e293b; --chip-ink:#cbd5e1; --thumbbg:#0b1220; }
+    :root{
+      --bg:#0a0f1a; --bg2:#0e1524; --panel:#141c2e; --ink:#e8edf6; --muted:#93a1b8;
+      --line:#22304a; --line2:#2c3c59; --accent:#4f8cff; --accent-ink:#9cc0ff;
+      --hero1:#0c2140; --hero2:#12233f;
+      --emerald:#25c088; --emerald-ink:#7fe9c1;
+      --chip:#1b2740; --chip-ink:#c3cfe2; --thumbbg:#0c1424; --shadow:0 0 0;
+    }
   }
   *{box-sizing:border-box}
   html,body{margin:0}
-  body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);
-    line-height:1.45;padding:1.25rem;max-width:1100px;margin:0 auto;}
-  header{margin:.5rem 0 1.5rem}
-  h1{font-size:1.6rem;margin:0 0 .25rem;display:flex;align-items:center;gap:.5rem}
-  .sub{color:var(--muted);font-size:.95rem;margin:0}
-  .topbar{display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap}
-  .wizlink{font-size:.85rem;color:var(--accent-ink);text-decoration:none;border:1px solid var(--line);
-    background:var(--panel);padding:.45rem .8rem;border-radius:.6rem;white-space:nowrap}
-  .wizlink:hover{border-color:var(--accent)}
-  h2{font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);
-    margin:1.9rem 0 .8rem;font-weight:700}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:.9rem}
+  body{
+    font-family:'Segoe UI',system-ui,-apple-system,'Helvetica Neue',sans-serif;
+    background:
+      radial-gradient(1200px 400px at 50% -160px, var(--bg2), transparent 70%),
+      var(--bg);
+    color:var(--ink);line-height:1.5;
+    padding:1.5rem 1.25rem 3rem;max-width:1160px;margin:0 auto;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ── Header ──────────────────────────────────────────────────────────── */
+  header{display:flex;justify-content:space-between;align-items:center;gap:1rem;
+    flex-wrap:wrap;margin:.25rem 0 2rem}
+  .brand{display:flex;align-items:center;gap:.85rem}
+  .mark{width:46px;height:46px;border-radius:13px;flex-shrink:0;display:grid;place-items:center;
+    font-size:1.5rem;color:#fff;background:linear-gradient(140deg,var(--hero2),var(--hero1));
+    box-shadow:0 6px 16px rgba(14,42,83,.28)}
+  .brand h1{font-size:1.5rem;line-height:1.1;margin:0;letter-spacing:-.01em}
+  .brand p{margin:.2rem 0 0;color:var(--muted);font-size:.9rem}
+  .wizlink{display:inline-flex;align-items:center;gap:.45rem;font-size:.9rem;font-weight:600;
+    color:#fff;text-decoration:none;background:linear-gradient(140deg,var(--accent),var(--accent-ink));
+    padding:.6rem 1.05rem;border-radius:.7rem;white-space:nowrap;
+    box-shadow:0 4px 12px rgba(30,99,233,.28);transition:transform .12s,box-shadow .15s}
+  .wizlink:hover{transform:translateY(-1px);box-shadow:0 7px 18px rgba(30,99,233,.36)}
+
+  /* ── Section heading ─────────────────────────────────────────────────── */
+  .eyebrow{display:flex;align-items:center;gap:.6rem;margin:2.2rem 0 1rem}
+  .eyebrow h2{font-size:.76rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);
+    margin:0;font-weight:800;white-space:nowrap}
+  .eyebrow .rule{height:1px;background:linear-gradient(90deg,var(--line2),transparent);flex:1}
+
+  /* ── Hero (volledig dashboard) ───────────────────────────────────────── */
+  .hero{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);
+    text-decoration:none;color:inherit;background:var(--panel);
+    border:1px solid var(--line);border-radius:1.15rem;overflow:hidden;
+    box-shadow:0 1px 2px rgba(var(--shadow),.05);transition:transform .12s,box-shadow .2s,border-color .2s}
+  .hero:hover{transform:translateY(-3px);box-shadow:0 16px 40px rgba(var(--shadow),.16);border-color:var(--line2)}
+  .hero .pic{position:relative;min-height:230px;background:var(--thumbbg)}
+  .hero .pic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top}
+  .hero .txt{padding:1.6rem 1.8rem;display:flex;flex-direction:column;justify-content:center}
+  .hero .kicker{display:inline-flex;align-items:center;gap:.4rem;align-self:flex-start;
+    font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;
+    color:#fff;background:linear-gradient(140deg,var(--emerald),var(--emerald-ink));
+    padding:.28rem .6rem;border-radius:.45rem;margin-bottom:.75rem}
+  .hero h3{font-size:1.5rem;margin:0 0 .5rem;letter-spacing:-.01em;display:flex;align-items:center;gap:.55rem}
+  .hero p{margin:0;color:var(--muted);font-size:.95rem;line-height:1.55}
+
+  /* ── Card grid ───────────────────────────────────────────────────────── */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:1.1rem}
   .card{display:flex;flex-direction:column;text-decoration:none;color:inherit;background:var(--panel);
-    border:1px solid var(--line);border-radius:.9rem;overflow:hidden;
-    transition:border-color .15s,transform .1s,box-shadow .15s}
-  .card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.10)}
-  .thumb{display:block;width:100%;aspect-ratio:3/2;object-fit:cover;object-position:top left;
-    background:var(--thumbbg);border-bottom:1px solid var(--line)}
-  .body{padding:.85rem 1.05rem}
-  .card .t{font-weight:700;font-size:1.02rem;display:flex;align-items:center;gap:.5rem;margin-bottom:.15rem}
-  .card .file{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.72rem;color:var(--muted);
-    margin-bottom:.5rem;word-break:break-all}
-  .card .d{font-size:.85rem;color:var(--muted)}
-  .featured{border:2px solid var(--full)}
-  .featured .t{font-size:1.15rem}
-  .badge{display:inline-block;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
-    padding:.12rem .45rem;border-radius:.35rem;background:var(--chip);color:var(--chip-ink);margin-left:.35rem}
-  .chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.2rem}
-  .chip{text-decoration:none;background:var(--chip);color:var(--chip-ink);border:1px solid var(--line);
-    padding:.4rem .7rem;border-radius:.6rem;font-size:.85rem;font-weight:600}
-  .chip:hover{border-color:var(--accent);color:var(--accent-ink)}
-  .note{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--accent);
-    border-radius:.6rem;padding:.8rem 1rem;font-size:.85rem;color:var(--muted);margin:.4rem 0 0}
-  footer{color:var(--muted);font-size:.78rem;margin:2.2rem 0 .5rem;text-align:center}
+    border:1px solid var(--line);border-radius:1rem;overflow:hidden;
+    box-shadow:0 1px 2px rgba(var(--shadow),.05);
+    transition:transform .12s,box-shadow .2s,border-color .2s}
+  .card:hover{transform:translateY(-3px);box-shadow:0 14px 32px rgba(var(--shadow),.15);border-color:var(--line2)}
+  .card .pic{position:relative;aspect-ratio:16/10;background:var(--thumbbg);border-bottom:1px solid var(--line)}
+  .card .pic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top}
+  .card .body{padding:.95rem 1.1rem 1.05rem;display:flex;flex-direction:column;gap:.3rem;flex:1}
+  .card .t{font-weight:700;font-size:1rem;display:flex;align-items:center;gap:.5rem;letter-spacing:-.005em}
+  .card .d{font-size:.855rem;color:var(--muted);line-height:1.5}
+  .card .file{margin-top:auto;padding-top:.55rem;font-family:ui-monospace,Menlo,Consolas,monospace;
+    font-size:.7rem;color:var(--muted);opacity:.72}
+
+  /* ── Density chips ───────────────────────────────────────────────────── */
+  .subline{font-size:.86rem;color:var(--muted);margin:.2rem 0 .7rem}
+  .chips{display:flex;flex-wrap:wrap;gap:.55rem}
+  .chip{display:inline-flex;align-items:center;text-decoration:none;background:var(--chip);color:var(--chip-ink);
+    border:1px solid var(--line);padding:.5rem .85rem;border-radius:.7rem;font-size:.86rem;font-weight:650;
+    transition:border-color .15s,color .15s,transform .1s}
+  .chip:hover{border-color:var(--accent);color:var(--accent-ink);transform:translateY(-1px)}
+
+  footer{color:var(--muted);font-size:.8rem;margin-top:2.8rem;padding-top:1.2rem;
+    border-top:1px solid var(--line);text-align:center}
+
+  @media (max-width:640px){
+    body{padding:1.1rem .9rem 2.4rem}
+    .hero{grid-template-columns:1fr}
+    .hero .pic{min-height:180px;aspect-ratio:16/10}
+    .hero .txt{padding:1.3rem 1.35rem}
+    .brand h1{font-size:1.3rem}
+  }
 </style>
 </head>
 <body>
+
 <header>
-  <div class="topbar">
+  <div class="brand">
+    <div class="mark">⚓</div>
     <div>
-      <h1>⚓ SailingPD — pagina's</h1>
-      <p class="sub">Kies hieronder welk dashboard je wilt openen. Alles draait lokaal op deze server (werkt zonder internet).</p>
+      <h1>SailingPD</h1>
+      <p>Kies je dashboard — alles draait lokaal, ook zonder internet.</p>
     </div>
-    <a class="wizlink" id="wizlink" href="#">⚙️ Instellingen (wizard)</a>
   </div>
+  <a class="wizlink" id="wizlink" href="#">⚙️ Instellingen</a>
 </header>
 
-<h2>Volledig overzicht</h2>
-<div class="grid">
-  <a class="card featured" href="SPDfull.html">
-    <img class="thumb" src="thumbs/SPDfull.jpg" alt="Voorbeeld van het volledige dashboard" loading="lazy">
-    <div class="body">
-      <div class="t">🧭 Volledig dashboard <span class="badge">standaard</span></div>
-      <div class="file">SPDfull.html</div>
-      <div class="d">Álle grootheden in tekst — wind, koers, snelheid, performance, GEO-wind, stroom, doelhoeken (t-UA/t-DA), heave/pitch/yaw — plus de bedieningsknoppen. Het meest complete beeld, identiek aan het "eigen venster" van de app.</div>
-    </div>
-  </a>
-</div>
+<!-- ── Volledig dashboard (hero) ─────────────────────────────────────────── -->
+<div class="eyebrow"><h2>Aanrader</h2><span class="rule"></span></div>
+<a class="hero" href="SPDfull.html">
+  <div class="pic">
+    <img src="thumbs/SPDfull.jpg" alt="Voorbeeld van het volledige dashboard" loading="lazy">
+  </div>
+  <div class="txt">
+    <span class="kicker">Meest compleet</span>
+    <h3>🧭 Volledig dashboard</h3>
+    <p>Álle grootheden in tekst — wind, koers, snelheid, performance, GEO-wind, stroom, doelhoeken
+       en beweging (heave/pitch/yaw) — plus de bedieningsknoppen. Hetzelfde complete beeld als het
+       eigen venster van de app.</p>
+  </div>
+</a>
 
-<h2>Live dashboards (updaten realtime)</h2>
+<!-- ── Live dashboards ───────────────────────────────────────────────────── -->
+<div class="eyebrow"><h2>Live dashboards</h2><span class="rule"></span></div>
 <div class="grid">
   <a class="card" href="SPDperfandadvice.html">
-    <img class="thumb" src="thumbs/SPDperfandadvice.jpg" alt="Voorbeeld performance + advies" loading="lazy">
+    <div class="pic"><img class="thumb" src="thumbs/SPDperfandadvice.jpg" alt="Voorbeeld performance + advies" loading="lazy"></div>
     <div class="body">
       <div class="t">📈 Performance + advies</div>
+      <div class="d">Performance-cijfers met tekstueel trim-advies. Fijn als je vooral op snelheid en trim stuurt.</div>
       <div class="file">SPDperfandadvice.html</div>
-      <div class="d">Performance-cijfers samen met tekstueel trim-advies. Fijn als je vooral op snelheid en trim wilt sturen.</div>
     </div>
   </a>
   <a class="card" href="SPDperfincldials.html">
-    <img class="thumb" src="thumbs/SPDperfincldials.jpg" alt="Voorbeeld performance met wijzers" loading="lazy">
+    <div class="pic"><img class="thumb" src="thumbs/SPDperfincldials.jpg" alt="Voorbeeld performance met wijzers" loading="lazy"></div>
     <div class="body">
       <div class="t">📊 Performance + wijzers</div>
-      <div class="file">SPDperfincldials.html</div>
       <div class="d">Performance-overzicht met wijzerplaten erbij voor snel aflezen.</div>
+      <div class="file">SPDperfincldials.html</div>
     </div>
   </a>
   <a class="card" href="SPDperfjustdials.html">
-    <img class="thumb" src="thumbs/SPDperfjustdials.jpg" alt="Voorbeeld performance-wijzers" loading="lazy">
+    <div class="pic"><img class="thumb" src="thumbs/SPDperfjustdials.jpg" alt="Voorbeeld performance-wijzers" loading="lazy"></div>
     <div class="body">
       <div class="t">⏱️ Alleen performance-wijzers</div>
-      <div class="file">SPDperfjustdials.html</div>
       <div class="d">Strak en rustig: uitsluitend de performance-meters.</div>
+      <div class="file">SPDperfjustdials.html</div>
     </div>
   </a>
   <a class="card" href="SPDadviceanddials.html">
-    <img class="thumb" src="thumbs/SPDadviceanddials.jpg" alt="Voorbeeld advies met wijzers" loading="lazy">
+    <div class="pic"><img class="thumb" src="thumbs/SPDadviceanddials.jpg" alt="Voorbeeld advies met wijzers" loading="lazy"></div>
     <div class="body">
       <div class="t">💬 Advies + wijzers</div>
-      <div class="file">SPDadviceanddials.html</div>
       <div class="d">Tekstueel trim-advies gecombineerd met wijzerplaten.</div>
+      <div class="file">SPDadviceanddials.html</div>
     </div>
   </a>
   <a class="card" href="SPDdialsTWAUADA.html">
-    <img class="thumb" src="thumbs/SPDdialsTWAUADA.jpg" alt="Voorbeeld wind- en doelhoeken" loading="lazy">
+    <div class="pic"><img class="thumb" src="thumbs/SPDdialsTWAUADA.jpg" alt="Voorbeeld wind- en doelhoeken" loading="lazy"></div>
     <div class="body">
       <div class="t">🎯 Wind- &amp; doelhoeken</div>
-      <div class="file">SPDdialsTWAUADA.html</div>
       <div class="d">Wijzers rond de windhoek (TWA) en de optimale doelhoeken aan/afwind (UA/DA) — voor hoek- en koersgevoel.</div>
+      <div class="file">SPDdialsTWAUADA.html</div>
     </div>
   </a>
   <a class="card" href="SPDdoubledials.html">
-    <img class="thumb" src="thumbs/SPDdoubledials.jpg" alt="Voorbeeld dubbele wijzers" loading="lazy">
+    <div class="pic"><img class="thumb" src="thumbs/SPDdoubledials.jpg" alt="Voorbeeld dubbele wijzers" loading="lazy"></div>
     <div class="body">
       <div class="t">🔵 Dubbele wijzers</div>
-      <div class="file">SPDdoubledials.html</div>
       <div class="d">Grote, dubbele wijzerplaten — goed afleesbaar op afstand in de kuip.</div>
+      <div class="file">SPDdoubledials.html</div>
     </div>
   </a>
   <a class="card" href="dials.html">
-    <img class="thumb" src="thumbs/dials.jpg" alt="Voorbeeld dials-app" loading="lazy">
+    <div class="pic"><img class="thumb" src="thumbs/dials.jpg" alt="Voorbeeld dials-app" loading="lazy"></div>
     <div class="body">
       <div class="t">✨ Dials-app (modern)</div>
+      <div class="d">De moderne, grafische dials-app — voorheen de standaardpagina op deze poort.</div>
       <div class="file">dials.html</div>
-      <div class="d">De moderne, grafische dials-app (voorheen de standaardpagina op deze poort).</div>
     </div>
   </a>
 </div>
 
-<h2>Wijzerplaten — offline varianten</h2>
-<div class="note">
-  Deze pagina's tonen wijzerplaten (gauges) en laden hun meters <strong>lokaal</strong> — ideaal aan boord.
-  Ze verschillen alleen in hoevéél wijzers je tegelijk ziet (21 → 32). De <strong>voice</strong>-versie spreekt het advies ook uit.
-</div>
-<div class="grid" style="margin-top:.8rem">
+<!-- ── Offline wijzerplaten ──────────────────────────────────────────────── -->
+<div class="eyebrow"><h2>Wijzerplaten — offline</h2><span class="rule"></span></div>
+<p class="subline">Deze pagina's laden hun meters volledig lokaal — ideaal aan boord. Ze verschillen alleen in hoevéél wijzers je tegelijk ziet.</p>
+<div class="grid">
   <a class="card" href="SPDdials_offline.html">
-    <img class="thumb" src="thumbs/SPDdials_offline.jpg" alt="Voorbeeld offline wijzers" loading="lazy">
+    <div class="pic"><img class="thumb" src="thumbs/SPDdials_offline.jpg" alt="Voorbeeld offline wijzers" loading="lazy"></div>
     <div class="body">
       <div class="t">🕹️ Offline wijzers (basis)</div>
-      <div class="file">SPDdials_offline.html</div>
       <div class="d">Basis wijzerplaten-dashboard, volledig lokaal.</div>
+      <div class="file">SPDdials_offline.html</div>
     </div>
   </a>
   <a class="card" href="SPD_32_dials_offline_voice.html">
-    <img class="thumb" src="thumbs/SPD_32_dials_offline_voice.jpg" alt="Voorbeeld 32 wijzers met spraak" loading="lazy">
+    <div class="pic"><img class="thumb" src="thumbs/SPD_32_dials_offline_voice.jpg" alt="Voorbeeld 32 wijzers met spraak" loading="lazy"></div>
     <div class="body">
       <div class="t">🔊 32 wijzers + spraak</div>
-      <div class="file">SPD_32_dials_offline_voice.html</div>
       <div class="d">De meest uitgebreide wijzerplaat-versie, met gesproken trim-advies via de audio-uitgang.</div>
+      <div class="file">SPD_32_dials_offline_voice.html</div>
     </div>
   </a>
 </div>
-<div style="margin-top:.9rem">
-  <div class="d" style="font-size:.82rem;color:var(--muted);margin-bottom:.4rem">Zelfde stijl, andere dichtheid (aantal wijzers naar smaak):</div>
-  <div class="chips">
-    <a class="chip" href="SPD_21_dials_offline.html">21 wijzers</a>
-    <a class="chip" href="SPD_25_dials_offline.html">25 wijzers</a>
-    <a class="chip" href="SPD_27_dials_offline.html">27 wijzers</a>
-    <a class="chip" href="SPD_28_dials_offline.html">28 wijzers</a>
-    <a class="chip" href="SPD_29_dials_offline.html">29 wijzers</a>
-    <a class="chip" href="SPD_32_dials_offline.html">32 wijzers</a>
-  </div>
+<p class="subline" style="margin-top:1.1rem">Zelfde stijl, andere dichtheid — kies naar smaak:</p>
+<div class="chips">
+  <a class="chip" href="SPD_21_dials_offline.html">21 wijzers</a>
+  <a class="chip" href="SPD_25_dials_offline.html">25 wijzers</a>
+  <a class="chip" href="SPD_27_dials_offline.html">27 wijzers</a>
+  <a class="chip" href="SPD_28_dials_offline.html">28 wijzers</a>
+  <a class="chip" href="SPD_29_dials_offline.html">29 wijzers</a>
+  <a class="chip" href="SPD_32_dials_offline.html">32 wijzers</a>
 </div>
 
-<footer>SailingPD · geserveerd op poort 9090 · deze menupagina werkt offline</footer>
+<footer>SailingPD · geserveerd op poort 9090 · werkt offline</footer>
 
 <script>
-  /*
-   * [UX & OPTIMIZATION ANNOTATION]:
-   * - Dynamische link naar de Config Wizard op poort 5001.
-   * - Fallback afgehandeld voor ontbrekende of niet-geladen thumbnails.
-   */
+  // Instellingen-knop wijst naar de wizard op poort 5001, op dezelfde host.
   var w = document.getElementById('wizlink');
-  if (w) {
-    w.href = location.protocol + '//' + location.hostname + ':5001/';
-  }
+  if (w) w.href = location.protocol + '//' + location.hostname + ':5001/';
 
-  // Voeg een nette opmaak toe indien thumbnails niet geladen kunnen worden
-  document.querySelectorAll('img.thumb').forEach(function(img) {
-    img.addEventListener('error', function() {
-      this.style.opacity = '0.3';
-      this.alt = 'Thumbnail niet beschikbaar';
-    });
+  // Ontbrekende thumbnails netjes afvangen (grijs blokje i.p.v. gebroken plaatje).
+  document.querySelectorAll('img').forEach(function(img){
+    img.addEventListener('error', function(){ this.style.opacity = '0'; });
   });
 </script>
 </body>
