@@ -411,6 +411,10 @@ function why(text) {
   return `<div class="why-box rounded-lg p-4 mb-5 text-sm text-blue-900">${text}</div>`;
 }
 
+function warn(text) {
+  return `<div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5 text-sm text-amber-900">⚠️ ${text}</div>`;
+}
+
 function textField(id, label, val, hint='', type='text', extra='') {
   return `<div class="field-group">
     <label class="field-label" for="${id}">${label}</label>
@@ -572,8 +576,6 @@ function renderStep1() {
   const activities = [
     { val:'NMEA',               icon:'⛵', label:'Live zeilen (NMEA)',
       desc:'De app leest live NMEA-data van GPS, windmeter, log en koers. Gebruik dit op het water.' },
-    { val:'replay',             icon:'🔁', label:'Replay van logbestand',
-      desc:'Speel een eerder opgeslagen NMEA-logbestand opnieuw af. Handig voor analyse na de wedstrijd of tocht.' },
     { val:'performancematrix',  icon:'📈', label:'Performance matrix bouwen <span class="badge badge-opt" style="font-size:.65rem">Geavanceerd</span>',
       desc:'Bouw een performance matrix op basis van eerder opgeslagen PDlog-bestanden (SPDlog CSV). Alleen relevant als je al een seizoen gelogde data hebt.' },
     { val:'checkperfwind',      icon:'🔍', label:'Performance / wind check <span class="badge badge-opt" style="font-size:.65rem">Geavanceerd</span>',
@@ -605,7 +607,19 @@ function renderStep1() {
       'Slaat bevestigingsvragen over. Handig als de computer/Pi automatisch opstart bij het aanzetten van de boot.') +
     toggleRow('f-dummy', 'Dummy wind (testmodus)',
       yesno(getP('Starting specials','Dummywind','N')),
-      'Genereert fictieve winddata zonder NMEA-bron. Alleen voor testen op kantoor of thuis.')
+      'Genereert fictieve winddata zonder NMEA-bron. Alleen voor testen op kantoor of thuis.') +
+
+    sectionHeader('Logbestand afspelen') +
+    toggleRow('f-replay', 'Oud logbestand afspelen in plaats van live data',
+      yesno(get('Mode','replay','N')),
+      'Speelt een eerder opgeslagen NMEA-log opnieuw af, bijvoorbeeld om een tocht na te bespreken. ' +
+      'SailingPD vraagt bij het starten welk bestand je wilt afspelen.') +
+    (yesno(get('Mode','replay','N'))
+      ? warn(`<strong>Let op:</strong> afspelen werkt alleen met weergavemodus <em>Scherm</em>.
+              SailingPD vraagt bij het starten welk logbestand je wilt afspelen, en die vraag kan
+              hij niet stellen als alles in de browser draait — hij stopt dan meteen.
+              Zet bij <em>Weergave</em> de modus op <em>Scherm</em>, of zet dit weer uit.`)
+      : '')
   );
 }
 
@@ -613,8 +627,6 @@ function renderStep1() {
 // STEP 2 — Bootgegevens
 // ═══════════════════════════════════════════════════════════════════════════
 function renderStep2() {
-  const act = get('General','activity','NMEA');
-  const isReplay = act === 'replay';
   return card('⛵ Stap 3 — Bootgegevens',
     why(`<strong>Waarom dit?</strong> De bootnaam verschijnt in logs en weergaven.
          De windmeterhoogte helpt de ware windhoek nauwkeurig te berekenen: het zeil buigt de wind
@@ -632,8 +644,6 @@ function renderStep2() {
     selectField('f-color','Kleurenschema', get('Mode','color','Y'),
       [['Y','Kleur (aanbevolen)'],['N','Zwart-wit']],
       '') +
-    (isReplay ? selectField('f-replay','Replaymodus', get('Mode','replay','N'),
-      [['Y','Ja — replay van logbestand'],['N','Nee — live modus']]) : '') +
 
     sectionHeader('Bootfoto in dashboard') +
     `<div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -1333,6 +1343,7 @@ function renderStep10() {
 
   const summaryRows = [
     ['Activiteit',        act],
+    ['Logbestand afspelen', yesno(get('Mode','replay','N')) ? 'Ja — replay' : 'Nee — live data'],
     ['Bootnaam',          boat],
     ['NMEA verbinding',   ch === 'network'
       ? `${get('NMEAnetwork','Type')} → ${get('NMEAnetwork','NMEA_IP')}:${get('NMEAnetwork','NMEA_PORT')}`
