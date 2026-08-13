@@ -14,7 +14,7 @@
   .idcol{display:flex;flex-direction:column;line-height:1.15;margin-right:auto;min-width:120px}
   .idcol .b{font-size:13px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--label)}
   .idcol .s{font-size:11px;font-weight:700;color:var(--label);opacity:.7;font-variant-numeric:tabular-nums}
-  .btn{border:1px solid var(--line);background:transparent;color:var(--label);font:800 11px/1 inherit;letter-spacing:.05em;text-transform:uppercase;padding:9px 11px;border-radius:7px;cursor:pointer;min-height:34px}
+  .btn{border:1px solid var(--line);background:transparent;color:var(--label);font:800 11px/1 inherit;letter-spacing:.04em;text-transform:uppercase;padding:9px 10px;border-radius:7px;cursor:pointer;min-height:34px}
   .btn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
   .stp{width:30px;height:30px;border-radius:7px;border:1px solid var(--line);background:transparent;color:var(--ink);font-weight:800;cursor:pointer;font-size:1rem}
   #grid{display:grid;gap:6px;grid-auto-rows:86px;align-content:start;flex:1;min-height:0;overflow:auto;padding:8px}
@@ -28,6 +28,7 @@
     <button class="btn on" id="skin-modern" data-act="skin-modern">Modern</button>
     <button class="btn" id="skin-bg" data-act="skin-bg">B&amp;G</button>
     <button class="btn" id="skin-ray" data-act="skin-ray">Raymarine</button>
+    <button class="btn" id="skin-spd" data-act="skin-spd">SPD-default</button>
     <button class="btn" id="editbtn" data-act="edit">Bewerken</button>
     <button class="btn" id="addbtn" data-act="add" style="display:none">+ Tegel</button>
     <button class="btn" id="resetbtn" data-act="reset" style="display:none">Standaard</button>
@@ -407,6 +408,19 @@ window.SPD_TPL = {
     ray: {
       day: { mface:'#ffffff', mframe:'#101720', page:'#000000', screen:'#ffffff', gnum:'#3f4753', tile:'#ffffff', chrome:'#dfe3e8', ink:'#101720', label:'#3a4A60', line:'#c3cbd6', input:'#f1f4f8', raybg1:'#0b0e12', raybg2:'#7d858f', facedim:'#e2e7ee', facedim2:'#cfd7e1', face:'#e9eef4', faceink:'#101720', facefill:'#ffffff', accent:'#f0a020', good:'#17a34a', warn:'#f0a020', bad:'#d92d20', sb:'#17a34a', pt:'#d92d20', tw:'#2f6fd0', cog:'#f0a020', ring:'#ffffff', ringink:'#101720', inner:'#f4f7fb', innerink:'#101720', boat:'#7f8b9b', gtick:'#ffffff', bar:'#101720', barink:'#ffffff', tickband:'#c9d2dd', dialedge:'#0d1b28', needledark:'#8c4709', needleshade:'#95490d', needlehl:'#e08c34', needle:'#ba5f12', hub:'#d1731a', rad:'14px', segP:'#d92d20', segS:'#17a34a' },
       night: { mface:'#140403', mframe:'#2c0b08', page:'#000000', screen:'#080000', gnum:'#c43226', tile:'#0d0100', chrome:'#080000', ink:'#ff4133', label:'#a8201a', line:'#2c0b08', input:'#150403', raybg1:'#0b0201', raybg2:'#2a0a07', facedim:'#150403', facedim2:'#100302', face:'#1a0605', faceink:'#ff4133', facefill:'#140403', accent:'#ff4133', good:'#ff6a44', warn:'#ff8f4d', bad:'#ff4133', sb:'#ff6a44', pt:'#ff4133', tw:'#ff8f4d', cog:'#ff8f4d', ring:'#2a0c09', ringink:'#ff4133', inner:'#1a0605', innerink:'#ff4133', boat:'#4a1512', gtick:'#ff4133', bar:'#150403', barink:'#ff4133', tickband:'#3a0d0a', dialedge:'#5a1512', needledark:'#6d1810', needleshade:'#7d2013', needlehl:'#e05a38', needle:'#c04529', hub:'#d94f2e', rad:'14px', segP:'#8f1a14', segS:'#b3452c' }
+    },
+    // SPD-default: SPD's eigen sobere look — licht, plat, scherpe hoeken, monospace-cijfers.
+    spd: {
+      day: { page:'#f3f4f6', tile:'#ffffff', chrome:'#e8eaed', screen:'#ffffff', ink:'#14171c', label:'#3a4658', line:'#d3d7dd',
+        accent:'#1f5fd0', good:'#12a04a', bad:'#d92d20', warn:'#c9761a', sb:'#12a04a', pt:'#d92d20', tw:'#2f6fd0', cog:'#e8862a',
+        face:'#dfe3e8', faceink:'#14171c', facefill:'transparent', needle:'#14171c', needlebg:'#2b3fb5', ring:'#3a4658', ringink:'#ffffff',
+        inner:'#eceef1', innerink:'#3a4658', boat:'#97a0ad', bar:'#3a4658', barink:'#ffffff', gnum:'#3a4658', tickband:'#cfd4da',
+        dialedge:'#3a4658', gtick:'#97a0ad', rad:'2px', shadow:'none', segP:'transparent', segS:'transparent' },
+      night: { page:'#000', tile:'#0a0000', chrome:'#090000', screen:'#0e0000', ink:'#ff3b30', label:'#a02016', line:'#340c08',
+        accent:'#ff3b30', good:'#ff6a44', bad:'#ff2a1e', warn:'#ff8f4d', sb:'#ff6a44', pt:'#ff2a1e', tw:'#ff8f4d', cog:'#ff8f4d',
+        face:'#140000', faceink:'#ff3b30', facefill:'transparent', needle:'#ff3b30', needlebg:'#ff3b30', ring:'#2a0a07', ringink:'#ff3b30',
+        inner:'#140000', innerink:'#a02016', boat:'#8f1a12', bar:'#0a0000', barink:'#ff3b30', gnum:'#a02016', tickband:'#3a0d0d',
+        dialedge:'#5a1512', gtick:'#a02016', rad:'2px', shadow:'none', segP:'transparent', segS:'transparent' }
     }
   };
 
@@ -497,7 +511,7 @@ window.SPD_TPL = {
     tiles: (Array.isArray(stiles)&&stiles.length)?stiles:DEFAULT(),
     editing:false, sel:null, data:{}, live:false, cols:4
   };
-  if(['modern','bg','ray'].indexOf(state.skin)<0) state.skin='modern';
+  if(['modern','bg','ray','spd'].indexOf(state.skin)<0) state.skin='modern';
   function setTiles(tiles,extra){ try{ localStorage.setItem('spd-tiles-v6',JSON.stringify(tiles)); }catch(e){}
     state.tiles=tiles; if(extra) Object.assign(state,extra); render(); }
   function put(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
@@ -597,13 +611,13 @@ window.SPD_TPL = {
     var P=PALETTE, pal=(P[state.skin]||P.modern)[state.night?'night':'day'];
     var rs=document.documentElement.style;
     Object.keys(pal).forEach(function(k){ rs.setProperty('--'+k,pal[k]); });
-    document.body.style.background=pal.page; document.body.style.color=pal.ink;
+    document.body.style.background=pal.page; document.body.style.color=pal.ink; document.body.style.fontFamily=state.skin==='spd'?"Consolas,'Courier New',ui-monospace,monospace":"";
     var d=state.data||{}, sog=d['SOG'];
 
     // Header
     document.getElementById('boat').textContent = d['Boatname']?String(d['Boatname']).trim():'SailingPD';
     document.getElementById('status').textContent = (state.live?'LIVE':'DEMO — geen verbinding')+' · '+(d['GPS-RMC-time']?String(d['GPS-RMC-time']).trim():'--:--:--');
-    ['modern','bg','ray'].forEach(function(k){ document.getElementById('skin-'+k).classList.toggle('on',state.skin===k); });
+    ['modern','bg','ray','spd'].forEach(function(k){ var b=document.getElementById('skin-'+k); if(b) b.classList.toggle('on',state.skin===k); });
     document.getElementById('night').classList.toggle('on',state.night);
     var eb=document.getElementById('editbtn'); eb.classList.toggle('on',state.editing); eb.textContent=state.editing?'Klaar':'Bewerken';
     document.getElementById('addbtn').style.display=state.editing?'':'none';
@@ -643,6 +657,7 @@ window.SPD_TPL = {
     'skin-modern':function(){ put('spd-skin-v2','modern'); state.skin='modern'; render(); },
     'skin-bg':function(){ put('spd-skin-v2','bg'); state.skin='bg'; render(); },
     'skin-ray':function(){ put('spd-skin-v2','ray'); state.skin='ray'; render(); },
+    'skin-spd':function(){ put('spd-skin-v2','spd'); state.skin='spd'; render(); },
     night:function(){ state.night=!state.night; put('spd-night-v1',state.night?'1':''); render(); },
     edit:function(){ state.editing=!state.editing; state.sel=null; render(); },
     add:function(){ var t=state.tiles.concat([{f:'SOG',t:'num',w:1,h:1}]); setTiles(t,{sel:t.length-1}); },
