@@ -3,284 +3,725 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <title>SailingPD — Paneel</title>
 <style>
-  /* ── Modern (donker) = standaard — dit is de vastgelegde "Modern"-stijl ── */
-  :root{
-    --bg:#0e1420;--panel:#161f2e;--panel2:#1c2738;--ink:#eaf0f8;--muted:#8b98ab;--line:#283243;
-    --good:#28c76f;--accent:#3b93ff;--arc:#2b3648;--gauge-face:transparent;--gauge-ink:var(--ink);
-    --segP:transparent;--segS:transparent;--needle:var(--ink);--radius:12px;--tilebg:var(--panel);
-  }
-  /* ── B&G-stijl: wit, navy labels, zwarte cijfers, navy boog ── */
-  :root[data-skin="bg"]{
-    --bg:#e6ebf1;--panel:#ffffff;--panel2:#f2f6fb;--ink:#0c1420;--muted:#33425a;--line:#c7d0dc;
-    --good:#1f9d4d;--accent:#1f6fe0;--arc:#2b3648;--gauge-face:transparent;--gauge-ink:#0c1420;
-    --segP:transparent;--segS:transparent;--needle:#0c1420;--radius:8px;--tilebg:#ffffff;
-  }
-  /* ── Raymarine-stijl: zwart, lichte meterwijzerplaat met rood/groen boog ── */
-  :root[data-skin="ray"]{
-    --bg:#000000;--panel:#0b0e12;--panel2:#12161c;--ink:#eef2f7;--muted:#9aa6b5;--line:#1b2129;
-    --good:#1f9d4d;--accent:#1f78d6;--arc:#c9d2dd;--gauge-face:#f3f6fa;--gauge-ink:#0c1420;
-    --segP:#d21f2e;--segS:#1f9d4d;--needle:#0c1420;--radius:14px;--tilebg:#0b0e12;
-  }
-  /* ── Nacht: rood op zwart, over elke stijl heen ── */
-  :root[data-mode="night"]{
-    --bg:#000!important;--panel:#0a0000!important;--panel2:#0e0000!important;--ink:#ff3b30!important;
-    --muted:#a02016!important;--line:#340c08!important;--good:#ff6a44!important;--accent:#ff3b30!important;
-    --arc:#3a0d0d!important;--gauge-face:transparent!important;--gauge-ink:#ff3b30!important;
-    --segP:#ff2a1e!important;--segS:#ff6a44!important;--needle:#ff3b30!important;--tilebg:#0a0000!important;
-  }
   *{box-sizing:border-box;margin:0;padding:0}
-  html,body{height:100%}
-  body{background:var(--bg);color:var(--ink);overflow:hidden;font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;-webkit-font-smoothing:antialiased;user-select:none}
-  .app{height:100vh;display:flex;flex-direction:column;gap:8px;padding:8px}
-  .bar{display:flex;align-items:center;gap:.45rem;flex-wrap:wrap}
-  .bar .id{font-weight:700;margin-right:auto;display:flex;gap:.5rem;align-items:baseline}
-  .bar .rt{color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums;font-size:.9rem}
-  .btn{border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:.72rem;font-weight:800;
-    text-transform:uppercase;letter-spacing:.04em;padding:.42rem .7rem;border-radius:7px;cursor:pointer}
+  html,body{height:100%;overflow:hidden}
+  body{font-family:'Segoe UI',system-ui,-apple-system,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;user-select:none;background:#0e1420;color:#eaf0f8}
+  #app{display:flex;flex-direction:column;height:100vh;width:100%;overflow:hidden;gap:0}
+  .bar{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--chrome);border-bottom:1px solid var(--line);flex-wrap:wrap;flex:none}
+  .idcol{display:flex;flex-direction:column;line-height:1.15;margin-right:auto;min-width:120px}
+  .idcol .b{font-size:13px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--label)}
+  .idcol .s{font-size:11px;font-weight:700;color:var(--label);opacity:.7;font-variant-numeric:tabular-nums}
+  .btn{border:1px solid var(--line);background:transparent;color:var(--label);font:800 11px/1 inherit;letter-spacing:.05em;text-transform:uppercase;padding:9px 11px;border-radius:7px;cursor:pointer;min-height:34px}
   .btn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
-  .seg2{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
-  .seg2 .c{padding:.42rem .7rem;font-size:.72rem;font-weight:800;text-transform:uppercase;color:var(--muted);cursor:pointer;background:var(--panel)}
-  .seg2 .c.on{background:var(--accent);color:#fff}
-
-  .grid{flex:1;display:grid;gap:8px;min-height:0;grid-auto-rows:1fr}
-  .tile{background:var(--tilebg);border:1px solid var(--line);border-radius:var(--radius);position:relative;
-    display:flex;flex-direction:column;padding:.6rem .8rem;overflow:hidden;min-height:0;container-type:size}
-  .tile .lab{font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);
-    display:flex;justify-content:space-between;gap:.4rem}
-  .tile .lab .u{color:var(--muted);font-weight:700}
-  .body{flex:1;display:grid;place-items:center;min-height:0;position:relative}
-  .num{font-weight:800;font-variant-numeric:tabular-nums;line-height:.9;letter-spacing:-.01em;font-size:clamp(1.6rem,7cqw,5rem);text-align:center}
-  .num.txt{font-size:clamp(.9rem,4.4cqw,1.7rem);font-weight:700;line-height:1.15}
-  .num .dec{font-size:.58em}
-  .barwrap{width:100%}
-  .barbar{height:16px;border-radius:9px;background:var(--panel2);border:1px solid var(--line);overflow:hidden;position:relative}
-  .barbar .f{position:absolute;left:0;top:0;bottom:0;background:var(--good);border-radius:9px}
-  .barval{font-weight:800;font-variant-numeric:tabular-nums;font-size:clamp(1.3rem,5cqw,2.6rem);margin-bottom:.3rem}
-  .gauge{width:100%;height:100%;display:block}
-  .gval{position:absolute;font-weight:800;font-variant-numeric:tabular-nums;font-size:clamp(1.2rem,5cqw,2.5rem);bottom:8%;color:var(--gauge-ink)}
-
-  body.editing .tile{cursor:pointer}
-  body.editing .tile::after{content:"✎";position:absolute;top:.4rem;right:.5rem;font-size:.8rem;color:var(--muted);opacity:.6}
-  body.editing .tile.sel{outline:3px solid var(--accent);outline-offset:-2px}
-
-  .sheet{display:none;flex-wrap:wrap;align-items:center;gap:.5rem;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:.6rem .7rem}
-  body.editing .sheet.open{display:flex}
-  .sheet .ttl{font-size:.72rem;font-weight:800;text-transform:uppercase;color:var(--muted)}
-  .sheet select{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:.4rem;font-size:.85rem;font-weight:600;max-width:60vw}
-  .sheet .rm{border:1px solid #d33;color:#d33;background:transparent;border-radius:7px;padding:.4rem .7rem;font-size:.72rem;font-weight:800;text-transform:uppercase;cursor:pointer}
-  .sheet .sp{flex:1}
-  .step{display:flex;align-items:center;gap:.25rem;font-size:.72rem;font-weight:800;color:var(--muted)}
-  .step button{width:30px;height:30px;border-radius:7px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-weight:800;cursor:pointer;font-size:1rem}
+  .stp{width:30px;height:30px;border-radius:7px;border:1px solid var(--line);background:transparent;color:var(--ink);font-weight:800;cursor:pointer;font-size:1rem}
+  #grid{display:grid;gap:6px;grid-auto-rows:86px;align-content:start;flex:1;min-height:0;overflow:auto;padding:8px}
+  #sheet{display:none;flex-wrap:wrap;align-items:center;gap:.5rem;background:var(--chrome);border-top:1px solid var(--line);padding:.55rem .7rem;flex:none}
 </style>
 </head>
 <body>
-<div class="app">
+<div id="app">
   <div class="bar">
-    <div class="id"><span id="boat">SailingPD</span><span class="rt" id="clock">--:--:--</span></div>
-    <button class="btn" id="addbtn" style="display:none">+ Tegel</button>
-    <button class="btn" id="resetbtn" style="display:none">Standaard</button>
-    <button class="btn" id="editbtn">Bewerken</button>
-    <div class="seg2" id="skin"><div class="c on" data-k="">Modern</div><div class="c" data-k="bg">B&amp;G</div><div class="c" data-k="ray">Raymarine</div></div>
-    <button class="btn" id="nightbtn">Nacht</button>
+    <div class="idcol"><span class="b" id="boat">SailingPD</span><span class="s" id="status">--</span></div>
+    <button class="btn on" id="skin-modern" data-act="skin-modern">Modern</button>
+    <button class="btn" id="skin-bg" data-act="skin-bg">B&amp;G</button>
+    <button class="btn" id="skin-ray" data-act="skin-ray">Raymarine</button>
+    <button class="btn" id="editbtn" data-act="edit">Bewerken</button>
+    <button class="btn" id="addbtn" data-act="add" style="display:none">+ Tegel</button>
+    <button class="btn" id="resetbtn" data-act="reset" style="display:none">Standaard</button>
+    <button class="btn" id="night" data-act="night">Nacht</button>
+    <span id="hint" style="font-size:11px;font-weight:700;color:var(--label);opacity:.8"></span>
   </div>
-  <div class="grid" id="grid"></div>
-  <div class="sheet" id="sheet">
-    <span class="ttl">Tegel</span>
-    <select id="s-field"></select>
-    <div class="seg2" id="s-type"><div class="c" data-t="num">Getal</div><div class="c" data-t="gauge">Meter</div><div class="c" data-t="bar">Balk</div></div>
-    <span class="s-note" id="s-note" style="display:none;font-size:.72rem;font-weight:700;color:var(--muted)">ⓘ Tekstveld — alleen als tekst</span>
-    <span class="step">Breed <button data-s="w-">–</button><button data-s="w+">+</button></span>
-    <span class="step">Hoog <button data-s="h-">–</button><button data-s="h+">+</button></span>
-    <span class="sp"></span>
-    <button class="rm" id="s-rm">Verwijder</button>
-  </div>
+  <div id="grid"></div>
+  <div id="sheet"></div>
 </div>
-
 <script>
+window.SPD_TPL = {
+  text: (t) => `              <div style="font-size:17px;font-weight:700;line-height:1.2;text-align:center;color:var(--ink,#101720);text-wrap:pretty">${t.text}</div>`,
+  num: (t) => `              <div style="${t.numStyle}">${t.val.i}<span style="font-size:.58em">${t.val.d}</span></div>`,
+  bar: (t) => `              <div style="width:100%">
+                <div style="font-size:28px;font-weight:800;color:var(--ink,#101720);font-variant-numeric:tabular-nums;line-height:1;margin-bottom:6px">${t.val.i}<span style="font-size:18px">${t.val.d}</span></div>
+                <div style="height:16px;border-radius:8px;background:var(--face,#dfe5ec);position:relative;overflow:hidden">
+                  <div style="${t.fill}"></div>
+                </div>
+              </div>`,
+  gaugeModern: (t) => `                <svg viewBox="0 0 100 100" style="position:absolute;inset:0;width:100%;height:100%;display:block" preserveAspectRatio="xMidYMid meet">
+                  <circle cx="50" cy="50" r="46" fill="var(--facefill,transparent)"></circle>
+                  <path d="${t.track}" fill="none" stroke="var(--face,#dfe5ec)" stroke-width="8" stroke-linecap="round"></path>
+                  <path d="${t.bandLo}" fill="none" stroke="${t.loCol}" stroke-width="4"></path>
+                  <path d="${t.bandMid}" fill="none" stroke="${t.midCol}" stroke-width="4"></path>
+                  <path d="${t.bandHi}" fill="none" stroke="${t.hiCol}" stroke-width="4"></path>
+                  <path d="${t.arc}" fill="none" stroke="var(--accent,#1f5fd0)" stroke-width="8" stroke-linecap="round"></path>
+                  <line x1="50" y1="50" x2="50" y2="17" stroke="var(--needle,#101720)" stroke-width="3" stroke-linecap="round" transform="${t.needle}"></line>
+                  <circle cx="50" cy="50" r="4" fill="var(--needle,#101720)"></circle>
+                  <foreignObject x="14" y="68" width="72" height="24">
+                    <div style="font:800 20px/24px 'Segoe UI',system-ui,sans-serif;text-align:center;color:var(--faceink,#101720);font-variant-numeric:tabular-nums">${t.val.i}${t.val.d}</div>
+                  </foreignObject>
+                </svg>`,
+  gaugeBG: (t) => `                <svg viewBox="0 0 100 100" style="position:absolute;inset:0;width:100%;height:100%;display:block" preserveAspectRatio="xMidYMid meet">
+                  <defs><mask id="bgcut" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100">
+                    <rect x="0" y="0" width="100" height="100" fill="#fff"></rect>
+                    <polygon points="39.22,79 43,79 43,87 34.78,87" fill="#000"></polygon>
+                    <polygon points="60.78,79 57,79 57,87 65.22,87" fill="#000"></polygon>
+                  </mask></defs>
+                  <path d="M37.0 83.0 L17.2 83.0 A46.5 46.5 0 0 1 17.2 17.0 L82.8 17.0 A46.5 46.5 0 0 1 82.8 83.0 L63.0 83.0" fill="none" stroke="var(--ring,#4a5561)" stroke-width="6" stroke-linecap="round"></path>
+                  <g mask="url(#bgcut)">
+                    <path d="M37.0 83.0 L17.2 83.0 A46.5 46.5 0 0 1 17.2 17.0 L82.8 17.0 A46.5 46.5 0 0 1 82.8 83.0 L63.0 83.0" fill="none" stroke="${t.loCol}" stroke-width="6" stroke-linecap="butt" stroke-dasharray="34.3 251.8" stroke-dashoffset="0.0"></path>
+                    <path d="M37.0 83.0 L17.2 83.0 A46.5 46.5 0 0 1 17.2 17.0 L82.8 17.0 A46.5 46.5 0 0 1 82.8 83.0 L63.0 83.0" fill="none" stroke="${t.midCol}" stroke-width="6" stroke-dasharray="31.3 251.8" stroke-dashoffset="-110.3"></path>
+                    <path d="M37.0 83.0 L17.2 83.0 A46.5 46.5 0 0 1 17.2 17.0 L82.8 17.0 A46.5 46.5 0 0 1 82.8 83.0 L63.0 83.0" fill="none" stroke="${t.hiCol}" stroke-width="6" stroke-linecap="butt" stroke-dasharray="34.3 251.8" stroke-dashoffset="-217.5"></path>
+                  </g>
+                  <circle cx="27.6" cy="83.0" r="0.75" fill="var(--gtick,#ffffff)"></circle>
+                  <circle cx="16.1" cy="81.8" r="0.75" fill="var(--gtick,#ffffff)"></circle>
+                  <circle cx="9.9" cy="73.6" r="0.75" fill="var(--gtick,#ffffff)"></circle>
+                  <circle cx="5.7" cy="64.2" r="0.75" fill="var(--gtick,#ffffff)"></circle>
+                  <circle cx="3.9" cy="43.9" r="0.75" fill="var(--gtick,#ffffff)"></circle>
+                  <circle cx="6.4" cy="33.9" r="0.75" fill="var(--gtick,#ffffff)"></circle>
+                  <circle cx="11.0" cy="24.7" r="0.75" fill="var(--gtick,#ffffff)"></circle>
+                  <circle cx="17.7" cy="17.0" r="0.75" fill="var(--gtick,#ffffff)"></circle>
+                  <circle cx="38.6" cy="17.0" r="0.75" fill="var(--gtick,#ffffff)"></circle>
+                  <circle cx="46.3" cy="17.0" r="0.75" fill="var(--gtick,#ffffff)"></circle>
+                  <circle cx="53.7" cy="17.0" r="0.75" fill="var(--gtick,#ffffff)"></circle>
+                  <circle cx="61.4" cy="17.0" r="0.75" fill="var(--gtick,#ffffff)"></circle>
+                  <circle cx="82.3" cy="17.0" r="0.75" fill="var(--gtick,#ffffff)"></circle>
+                  <circle cx="89.0" cy="24.7" r="0.75" fill="var(--gtick,#ffffff)"></circle>
+                  <circle cx="93.6" cy="33.9" r="0.75" fill="var(--gtick,#ffffff)"></circle>
+                  <circle cx="96.1" cy="43.9" r="0.75" fill="var(--gtick,#ffffff)"></circle>
+                  <circle cx="94.3" cy="64.2" r="0.75" fill="var(--gtick,#ffffff)"></circle>
+                  <circle cx="90.1" cy="73.6" r="0.75" fill="var(--gtick,#ffffff)"></circle>
+                  <circle cx="83.9" cy="81.8" r="0.75" fill="var(--gtick,#ffffff)"></circle>
+                  <circle cx="72.4" cy="83.0" r="0.75" fill="var(--gtick,#ffffff)"></circle>
+                  <line x1="38.0" y1="81.2" x2="36.0" y2="84.8" stroke="var(--gtick,#ffffff)" stroke-width="1.2"></line>
+                  <line x1="5.8" y1="53.9" x2="1.6" y2="54.3" stroke="var(--gtick,#ffffff)" stroke-width="1.2"></line>
+                  <line x1="29.6" y1="19.1" x2="29.6" y2="14.9" stroke="var(--gtick,#ffffff)" stroke-width="1.2"></line>
+                  <line x1="70.4" y1="19.1" x2="70.4" y2="14.9" stroke="var(--gtick,#ffffff)" stroke-width="1.2"></line>
+                  <line x1="94.2" y1="53.9" x2="98.4" y2="54.3" stroke="var(--gtick,#ffffff)" stroke-width="1.2"></line>
+                  <line x1="62.0" y1="81.2" x2="64.0" y2="84.8" stroke="var(--gtick,#ffffff)" stroke-width="1.2"></line>
+                  <foreignObject x="28.0" y="69.5" width="18" height="10"><div style="font:700 6.5px/10px 'Segoe UI',system-ui,sans-serif;text-align:center;color:var(--gnum,#3f4753)">${t.scale.s0}</div></foreignObject>
+                  <foreignObject x="3.2" y="48.4" width="18" height="10"><div style="font:700 6.5px/10px 'Segoe UI',system-ui,sans-serif;text-align:center;color:var(--gnum,#3f4753)">${t.scale.s2}</div></foreignObject>
+                  <foreignObject x="20.6" y="20.5" width="18" height="10"><div style="font:700 6.5px/10px 'Segoe UI',system-ui,sans-serif;text-align:center;color:var(--gnum,#3f4753)">${t.scale.s4}</div></foreignObject>
+                  <foreignObject x="61.4" y="20.5" width="18" height="10"><div style="font:700 6.5px/10px 'Segoe UI',system-ui,sans-serif;text-align:center;color:var(--gnum,#3f4753)">${t.scale.s6}</div></foreignObject>
+                  <foreignObject x="78.8" y="48.4" width="18" height="10"><div style="font:700 6.5px/10px 'Segoe UI',system-ui,sans-serif;text-align:center;color:var(--gnum,#3f4753)">${t.scale.s8}</div></foreignObject>
+                  <foreignObject x="54.0" y="69.5" width="18" height="10"><div style="font:700 6.5px/10px 'Segoe UI',system-ui,sans-serif;text-align:center;color:var(--gnum,#3f4753)">${t.scale.s10}</div></foreignObject>
+                  <foreignObject x="28" y="30" width="44" height="10">
+                    <div style="font:800 8px/10px 'Segoe UI',system-ui,sans-serif;text-align:center;color:var(--ink,#101720)">${t.unit}</div>
+                  </foreignObject>
+                  <g transform="${t.bgNeedle}">
+                    <path d="M48.4 50 L49.4 20 L50.6 20 L51.6 50 Z" fill="var(--needlebg,#2b3fb5)"></path>
+                  </g>
+                  <foreignObject x="24" y="43" width="52" height="21">
+                    <div style="font:800 19px/21px 'Segoe UI',system-ui,sans-serif;text-align:center;color:var(--ink,#101720);font-variant-numeric:tabular-nums">${t.val.i}<span style="font-size:12px">${t.val.d}</span></div>
+                  </foreignObject>
+                </svg>`,
+  gaugeRay: (t) => `                <svg viewBox="0 0 100 100" style="position:absolute;inset:0;width:100%;height:100%;display:block" preserveAspectRatio="xMidYMid meet">
+                  <path d="${t.rayTrack}" fill="none" stroke="var(--tickband,#c9d2dd)" stroke-width="3.4"></path>
+                  <path d="${t.rayLo}" fill="none" stroke="${t.loCol}" stroke-width="3.4"></path>
+                  <path d="${t.rayMid}" fill="none" stroke="${t.midCol}" stroke-width="3.4"></path>
+                  <path d="${t.rayHi}" fill="none" stroke="${t.hiCol}" stroke-width="3.4"></path>
+                  <path d="${t.rayEdgeOut}" fill="none" stroke="var(--dialedge,#0d1b28)" stroke-width="1.3"></path>
+                  <line x1="50" y1="6.2" x2="50" y2="13.5" stroke="var(--dialedge,#0d1b28)" stroke-width="1.7" transform="rotate(-125 50 50)"></line>
+                  <line x1="50" y1="6.2" x2="50" y2="13.5" stroke="var(--dialedge,#0d1b28)" stroke-width="1.7" transform="rotate(-100 50 50)"></line>
+                  <line x1="50" y1="6.2" x2="50" y2="13.5" stroke="var(--dialedge,#0d1b28)" stroke-width="1.7" transform="rotate(-75 50 50)"></line>
+                  <line x1="50" y1="6.2" x2="50" y2="13.5" stroke="var(--dialedge,#0d1b28)" stroke-width="1.7" transform="rotate(-50 50 50)"></line>
+                  <line x1="50" y1="6.2" x2="50" y2="13.5" stroke="var(--dialedge,#0d1b28)" stroke-width="1.7" transform="rotate(-25 50 50)"></line>
+                  <line x1="50" y1="6.2" x2="50" y2="13.5" stroke="var(--dialedge,#0d1b28)" stroke-width="1.7" transform="rotate(0 50 50)"></line>
+                  <line x1="50" y1="6.2" x2="50" y2="13.5" stroke="var(--dialedge,#0d1b28)" stroke-width="1.7" transform="rotate(25 50 50)"></line>
+                  <line x1="50" y1="6.2" x2="50" y2="13.5" stroke="var(--dialedge,#0d1b28)" stroke-width="1.7" transform="rotate(50 50 50)"></line>
+                  <line x1="50" y1="6.2" x2="50" y2="13.5" stroke="var(--dialedge,#0d1b28)" stroke-width="1.7" transform="rotate(75 50 50)"></line>
+                  <line x1="50" y1="6.2" x2="50" y2="13.5" stroke="var(--dialedge,#0d1b28)" stroke-width="1.7" transform="rotate(100 50 50)"></line>
+                  <line x1="50" y1="6.2" x2="50" y2="13.5" stroke="var(--dialedge,#0d1b28)" stroke-width="1.7" transform="rotate(125 50 50)"></line>
+                  <line x1="50" y1="6.2" x2="50" y2="10.5" stroke="var(--dialedge,#0d1b28)" stroke-width="1.1" transform="rotate(-112.5 50 50)"></line>
+                  <line x1="50" y1="6.2" x2="50" y2="10.5" stroke="var(--dialedge,#0d1b28)" stroke-width="1.1" transform="rotate(-87.5 50 50)"></line>
+                  <line x1="50" y1="6.2" x2="50" y2="10.5" stroke="var(--dialedge,#0d1b28)" stroke-width="1.1" transform="rotate(-62.5 50 50)"></line>
+                  <line x1="50" y1="6.2" x2="50" y2="10.5" stroke="var(--dialedge,#0d1b28)" stroke-width="1.1" transform="rotate(-37.5 50 50)"></line>
+                  <line x1="50" y1="6.2" x2="50" y2="10.5" stroke="var(--dialedge,#0d1b28)" stroke-width="1.1" transform="rotate(-12.5 50 50)"></line>
+                  <line x1="50" y1="6.2" x2="50" y2="10.5" stroke="var(--dialedge,#0d1b28)" stroke-width="1.1" transform="rotate(12.5 50 50)"></line>
+                  <line x1="50" y1="6.2" x2="50" y2="10.5" stroke="var(--dialedge,#0d1b28)" stroke-width="1.1" transform="rotate(37.5 50 50)"></line>
+                  <line x1="50" y1="6.2" x2="50" y2="10.5" stroke="var(--dialedge,#0d1b28)" stroke-width="1.1" transform="rotate(62.5 50 50)"></line>
+                  <line x1="50" y1="6.2" x2="50" y2="10.5" stroke="var(--dialedge,#0d1b28)" stroke-width="1.1" transform="rotate(87.5 50 50)"></line>
+                  <line x1="50" y1="6.2" x2="50" y2="10.5" stroke="var(--dialedge,#0d1b28)" stroke-width="1.1" transform="rotate(112.5 50 50)"></line>
+                  <rect x="14.2" y="70.4" width="71.6" height="3.2" fill="var(--tickband,#c9d2dd)"></rect>
+                  <line x1="14.2" y1="73.9" x2="85.8" y2="73.9" stroke="var(--dialedge,#0d1b28)" stroke-width="1"></line>
+                  <foreignObject x="18.7" y="61.8" width="16" height="9"><div style="font:700 6.5px/9px 'Segoe UI',system-ui,sans-serif;text-align:center;color:var(--faceink,#101720)">${t.scale.s0}</div></foreignObject>
+                  <foreignObject x="14.5" y="38.1" width="16" height="9"><div style="font:700 6.5px/9px 'Segoe UI',system-ui,sans-serif;text-align:center;color:var(--faceink,#101720)">${t.scale.s2}</div></foreignObject>
+                  <foreignObject x="30.0" y="19.7" width="16" height="9"><div style="font:700 6.5px/9px 'Segoe UI',system-ui,sans-serif;text-align:center;color:var(--faceink,#101720)">${t.scale.s4}</div></foreignObject>
+                  <foreignObject x="54.0" y="19.7" width="16" height="9"><div style="font:700 6.5px/9px 'Segoe UI',system-ui,sans-serif;text-align:center;color:var(--faceink,#101720)">${t.scale.s6}</div></foreignObject>
+                  <foreignObject x="69.5" y="38.1" width="16" height="9"><div style="font:700 6.5px/9px 'Segoe UI',system-ui,sans-serif;text-align:center;color:var(--faceink,#101720)">${t.scale.s8}</div></foreignObject>
+                  <foreignObject x="65.3" y="61.8" width="16" height="9"><div style="font:700 6.5px/9px 'Segoe UI',system-ui,sans-serif;text-align:center;color:var(--faceink,#101720)">${t.scale.s10}</div></foreignObject>
+                  <g transform="${t.rayNeedle}">
+                    <path d="M47.5 56.5 L48.35 13 L50 8.2 L51.65 13 L52.5 56.5 Z" fill="var(--needle,#ba5f12)" stroke="var(--needledark,#8c4709)" stroke-width="0.4" stroke-linejoin="round"></path>
+                    <path d="M50 8.2 L51.65 13 L52.5 56.5 L50 56.5 Z" fill="var(--needleshade,#95490d)"></path>
+                  </g>
+                  <circle cx="50" cy="54" r="6" fill="var(--hub,#d1731a)" stroke="var(--needledark,#7d3d09)" stroke-width="0.5"></circle>
+                  <circle cx="48.4" cy="52.2" r="1.9" fill="var(--needlehl,#e08c34)"></circle>
+                  <foreignObject x="6" y="61.5" width="88" height="10">
+                    <div style="font:700 6.5px/9px 'Segoe UI',system-ui,sans-serif;text-align:center;color:var(--faceink,#101720);letter-spacing:.04em">${t.unit}</div>
+                  </foreignObject>
+                  <foreignObject x="6" y="78" width="88" height="20">
+                    <div style="font:800 18px/20px 'Segoe UI',system-ui,sans-serif;text-align:center;color:var(--faceink,#101720);font-variant-numeric:tabular-nums">${t.val.i}${t.val.d}</div>
+                  </foreignObject>
+                </svg>`,
+  roseBG: (t) => `              <div style="position:absolute;inset:0;display:flex;flex-direction:column;gap:6px;padding:8px;box-sizing:border-box;background:var(--tile,#fff);border:1px solid var(--line,#b8c1cd);border-radius:var(--rad,4px);container-type:size">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;container-type:size">
+                  <div style="display:flex;flex-direction:column;align-items:flex-start">
+          <span style="font-size:min(8cqw,14px);font-weight:800;letter-spacing:.07em;color:var(--label,#2c3f5e)">${t.l1}</span>
+          <span style="font-size:min(15cqw,30px);font-weight:800;line-height:.9;color:var(--ink,#101720);font-variant-numeric:tabular-nums">${t.v1.i}${t.v1.d}<span style="font-size:.6em"> ${t.u1}</span></span>
+        </div>
+                  <div style="display:flex;flex-direction:column;align-items:flex-end">
+          <span style="font-size:min(8cqw,14px);font-weight:800;letter-spacing:.07em;color:var(--label,#2c3f5e)">${t.l2}</span>
+          <span style="font-size:min(15cqw,30px);font-weight:800;line-height:.9;color:var(--ink,#101720);font-variant-numeric:tabular-nums">${t.v2.i}${t.v2.d}<span style="font-size:.6em"> ${t.u2}</span></span>
+        </div>
+                </div>
+                <div style="flex:1;min-height:0;position:relative;overflow:hidden">
+<svg viewBox="0 0 400 400" style="position:absolute;inset:0;width:100%;height:100%;display:block" preserveAspectRatio="xMidYMid meet">
+          <circle cx="200" cy="200" r="172" fill="none" stroke="var(--ring,#3f4d61)" stroke-width="30"></circle>
+          <g stroke-width="30" fill="none" stroke-linecap="butt">
+            <path d="M200 28 A172 172 0 0 1 286.00 51.04" stroke="var(--sb,#12a04a)"></path>
+            <path d="M286.00 51.04 A172 172 0 0 1 298.66 59.10" stroke="var(--sb,#12a04a)" opacity="0.78"></path>
+            <path d="M298.66 59.10 A172 172 0 0 1 310.56 68.25" stroke="var(--sb,#12a04a)" opacity="0.56"></path>
+            <path d="M310.56 68.25 A172 172 0 0 1 321.62 78.38" stroke="var(--sb,#12a04a)" opacity="0.36"></path>
+            <path d="M321.62 78.38 A172 172 0 0 1 331.75 89.44" stroke="var(--sb,#12a04a)" opacity="0.17"></path>
+            <path d="M114.00 51.04 A172 172 0 0 1 200 28" stroke="var(--pt,#d92d20)"></path>
+            <path d="M101.34 59.10 A172 172 0 0 1 114.00 51.04" stroke="var(--pt,#d92d20)" opacity="0.78"></path>
+            <path d="M89.44 68.25 A172 172 0 0 1 101.34 59.10" stroke="var(--pt,#d92d20)" opacity="0.56"></path>
+            <path d="M78.38 78.38 A172 172 0 0 1 89.44 68.25" stroke="var(--pt,#d92d20)" opacity="0.36"></path>
+            <path d="M68.25 89.44 A172 172 0 0 1 78.38 78.38" stroke="var(--pt,#d92d20)" opacity="0.17"></path>
+          </g>
+          <g transform="rotate(0 200 200)">
+            <line x1="200" y1="16" x2="200" y2="34" stroke="var(--ringink,#fff)" stroke-width="5" transform="rotate(0 200 200)"></line>
+            <line x1="200" y1="16" x2="200" y2="34" stroke="var(--ringink,#fff)" stroke-width="5" transform="rotate(30 200 200)"></line>
+            <line x1="200" y1="16" x2="200" y2="34" stroke="var(--ringink,#fff)" stroke-width="5" transform="rotate(60 200 200)"></line>
+            <line x1="200" y1="16" x2="200" y2="34" stroke="var(--ringink,#fff)" stroke-width="5" transform="rotate(90 200 200)"></line>
+            <line x1="200" y1="16" x2="200" y2="34" stroke="var(--ringink,#fff)" stroke-width="5" transform="rotate(120 200 200)"></line>
+            <line x1="200" y1="16" x2="200" y2="34" stroke="var(--ringink,#fff)" stroke-width="5" transform="rotate(150 200 200)"></line>
+            <line x1="200" y1="16" x2="200" y2="34" stroke="var(--ringink,#fff)" stroke-width="5" transform="rotate(180 200 200)"></line>
+            <line x1="200" y1="16" x2="200" y2="34" stroke="var(--ringink,#fff)" stroke-width="5" transform="rotate(210 200 200)"></line>
+            <line x1="200" y1="16" x2="200" y2="34" stroke="var(--ringink,#fff)" stroke-width="5" transform="rotate(240 200 200)"></line>
+            <line x1="200" y1="16" x2="200" y2="34" stroke="var(--ringink,#fff)" stroke-width="5" transform="rotate(270 200 200)"></line>
+            <line x1="200" y1="16" x2="200" y2="34" stroke="var(--ringink,#fff)" stroke-width="5" transform="rotate(300 200 200)"></line>
+            <line x1="200" y1="16" x2="200" y2="34" stroke="var(--ringink,#fff)" stroke-width="5" transform="rotate(330 200 200)"></line>
+            <circle cx="200" cy="200" r="136" fill="none" stroke="var(--inner,#eef2f7)" stroke-width="26"></circle>
+            <g transform="${t.ringRotB}">
+            <text x="200" y="66" text-anchor="middle" font-size="17" font-weight="800" fill="var(--innerink,#2c3f5e)" transform="rotate(0 200 200)">N</text>
+            <text x="200" y="66" text-anchor="middle" font-size="15" font-weight="700" fill="var(--innerink,#2c3f5e)" transform="rotate(30 200 200)">030</text>
+            <text x="200" y="66" text-anchor="middle" font-size="15" font-weight="700" fill="var(--innerink,#2c3f5e)" transform="rotate(60 200 200)">060</text>
+            <text x="200" y="66" text-anchor="middle" font-size="15" font-weight="700" fill="var(--innerink,#2c3f5e)" transform="rotate(90 200 200)">090</text>
+            <text x="200" y="66" text-anchor="middle" font-size="15" font-weight="700" fill="var(--innerink,#2c3f5e)" transform="rotate(120 200 200)">120</text>
+            <text x="200" y="66" text-anchor="middle" font-size="15" font-weight="700" fill="var(--innerink,#2c3f5e)" transform="rotate(150 200 200)">150</text>
+            <text x="200" y="66" text-anchor="middle" font-size="15" font-weight="700" fill="var(--innerink,#2c3f5e)" transform="rotate(180 200 200)">180</text>
+            <text x="200" y="66" text-anchor="middle" font-size="15" font-weight="700" fill="var(--innerink,#2c3f5e)" transform="rotate(210 200 200)">210</text>
+            <text x="200" y="66" text-anchor="middle" font-size="15" font-weight="700" fill="var(--innerink,#2c3f5e)" transform="rotate(240 200 200)">240</text>
+            <text x="200" y="66" text-anchor="middle" font-size="15" font-weight="700" fill="var(--innerink,#2c3f5e)" transform="rotate(270 200 200)">270</text>
+            <text x="200" y="66" text-anchor="middle" font-size="15" font-weight="700" fill="var(--innerink,#2c3f5e)" transform="rotate(300 200 200)">300</text>
+            <text x="200" y="66" text-anchor="middle" font-size="15" font-weight="700" fill="var(--innerink,#2c3f5e)" transform="rotate(330 200 200)">330</text>
+            </g>
+            <g transform="${t.sbLayB}"><path d="M198.6 200 L189.0 77.5 A123 123 0 0 1 211.0 77.5 L201.4 200 Z" fill="var(--pt,#d92d20)"></path></g>
+            <g transform="${t.ptLayB}"><path d="M198.6 200 L189.0 77.5 A123 123 0 0 1 211.0 77.5 L201.4 200 Z" fill="var(--sb,#12a04a)"></path></g>
+            <g transform="${t.twdRotB}" opacity="${t.twdOpB}"><path d="M200 96 L216 6 L184 6 Z" fill="var(--tw,#2f6fd0)" opacity="0.85"></path><text x="200" y="25" text-anchor="middle" font-size="14" font-weight="800" fill="#fff">T</text></g>
+            <g transform="${t.awaRotB}"><path d="M200 46 L221 6 L179 6 Z" fill="var(--tw,#2f6fd0)"></path><text x="200" y="25" text-anchor="middle" font-size="15" font-weight="800" fill="#fff">A</text></g>
+            <g transform="rotate(0 200 200)"><path d="M187 33 L213 33 L200 64 Z" fill="var(--cog,#e8862a)"></path><path d="M187 95 L213 95 L200 64 Z" fill="var(--cog,#e8862a)"></path></g>
+          </g>
+          <defs><linearGradient id="boatfade" x1="0" y1="148" x2="0" y2="302" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="var(--boat,#8a97a8)" stop-opacity="1"></stop><stop offset="0.62" stop-color="var(--boat,#8a97a8)" stop-opacity="1"></stop><stop offset="1" stop-color="var(--boat,#8a97a8)" stop-opacity="0"></stop></linearGradient></defs>
+          <path d="M232 302 C242 246 238 186 200 148 C162 186 158 246 168 302" fill="none" stroke="url(#boatfade)" stroke-width="7" stroke-linecap="butt" transform="translate(200 302) scale(1.325) translate(-200 -302)"></path>
+          <rect x="165" y="48" width="70" height="32" rx="7" fill="var(--screen,#fff)" stroke="var(--label,#2c3f5e)" stroke-width="2"></rect>
+          <foreignObject x="162" y="50" width="76" height="30">
+            <div style="font:500 23px/30px 'Segoe UI',system-ui,sans-serif;text-align:center;color:var(--ink,#101720);font-variant-numeric:tabular-nums">${t.hdg3}</div>
+          </foreignObject>
+        </svg>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;container-type:size">
+                  <div style="display:flex;flex-direction:column;align-items:flex-start">
+          <span style="font-size:min(8cqw,14px);font-weight:800;letter-spacing:.07em;color:var(--label,#2c3f5e)">${t.l3}</span>
+          <span style="font-size:min(15cqw,30px);font-weight:800;line-height:.9;color:var(--ink,#101720);font-variant-numeric:tabular-nums">${t.v3.t}<span style="font-size:.6em"> ${t.u3}</span></span>
+        </div>
+                  <div style="display:flex;flex-direction:column;align-items:flex-end">
+          <span style="font-size:min(8cqw,14px);font-weight:800;letter-spacing:.07em;color:var(--label,#2c3f5e)">${t.l4}</span>
+          <span style="font-size:min(15cqw,30px);font-weight:800;line-height:.9;color:var(--ink,#101720);font-variant-numeric:tabular-nums">${t.v4.t}<span style="font-size:.6em"> ${t.u4}</span></span>
+        </div>
+                </div>
+              </div>`,
+  wind: (t) => `              <div style="position:absolute;inset:0;display:grid;place-items:center;container-type:size">
+                <div style="width:min(100cqw,100cqh*1.1269);height:min(100cqh,100cqw*0.8874);display:flex;gap:2px;background:var(--mframe,#101720);border-radius:var(--rad,14px);overflow:hidden;box-sizing:border-box;container-type:size">
+                  <div style="flex:2.55;min-width:0;background:var(--mface,#fff);position:relative;overflow:hidden;container-type:size">
+                    <div style="position:absolute;left:8px;top:4px;z-index:2;font-size:5.4cqh;font-weight:800;color:var(--faceink,#101720);white-space:nowrap">${t.l1} &amp; ${t.l2}</div>
+                    <div style="position:absolute;inset:2px">
+<svg viewBox="17 17 366 366" style="position:absolute;inset:0;width:100%;height:100%;display:block" preserveAspectRatio="xMidYMid meet">
+<path d="M351.12 112.75 A174.5 174.5 0 1 1 48.88 112.75" fill="none" stroke="var(--line,#c3cbd6)" stroke-width="11" stroke-linecap="butt"></path><path d="M48.88 112.75 A174.5 174.5 0 0 1 200 25.5" fill="none" stroke="var(--segP,#d92d20)" stroke-width="11" stroke-linecap="butt"></path><path d="M200 25.5 A174.5 174.5 0 0 1 351.12 112.75" fill="none" stroke="var(--segS,#17a34a)" stroke-width="11" stroke-linecap="butt"></path>
+<line x1="200" y1="20" x2="200" y2="37" stroke="var(--faceink,#101720)" stroke-width="5" transform="rotate(0 200 200)"></line><line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(10 200 200)"></line><line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(20 200 200)"></line><line x1="200" y1="20" x2="200" y2="37" stroke="var(--faceink,#101720)" stroke-width="5" transform="rotate(30 200 200)"></line><line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(40 200 200)"></line><line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(50 200 200)"></line><line x1="200" y1="20" x2="200" y2="37" stroke="var(--faceink,#101720)" stroke-width="5" transform="rotate(60 200 200)"></line><line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(70 200 200)"></line><line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(80 200 200)"></line><line x1="200" y1="20" x2="200" y2="37" stroke="var(--faceink,#101720)" stroke-width="5" transform="rotate(90 200 200)"></line><line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(100 200 200)"></line><line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(110 200 200)"></line><line x1="200" y1="20" x2="200" y2="37" stroke="var(--faceink,#101720)" stroke-width="5" transform="rotate(120 200 200)"></line><line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(130 200 200)"></line><line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(140 200 200)"></line><line x1="200" y1="20" x2="200" y2="37" stroke="var(--faceink,#101720)" stroke-width="5" transform="rotate(150 200 200)"></line><line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(160 200 200)"></line><line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(170 200 200)"></line><line x1="200" y1="20" x2="200" y2="37" stroke="var(--faceink,#101720)" stroke-width="5" transform="rotate(180 200 200)"></line><line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(190 200 200)"></line><line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(200 200 200)"></line><line x1="200" y1="20" x2="200" y2="37" stroke="var(--faceink,#101720)" stroke-width="5" transform="rotate(210 200 200)"></line><line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(220 200 200)"></line><line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(230 200 200)"></line><line x1="200" y1="20" x2="200" y2="37" stroke="var(--faceink,#101720)" stroke-width="5" transform="rotate(240 200 200)"></line><line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(250 200 200)"></line><line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(260 200 200)"></line><line x1="200" y1="20" x2="200" y2="37" stroke="var(--faceink,#101720)" stroke-width="5" transform="rotate(270 200 200)"></line><line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(280 200 200)"></line><line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(290 200 200)"></line><line x1="200" y1="20" x2="200" y2="37" stroke="var(--faceink,#101720)" stroke-width="5" transform="rotate(300 200 200)"></line><line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(310 200 200)"></line><line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(320 200 200)"></line><line x1="200" y1="20" x2="200" y2="37" stroke="var(--faceink,#101720)" stroke-width="5" transform="rotate(330 200 200)"></line><line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(340 200 200)"></line><line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(350 200 200)"></line>
+<circle cx="200" cy="200" r="180" fill="none" stroke="var(--faceink,#101720)" stroke-width="3"></circle>
+<text x="200.00" y="52.00" text-anchor="middle" dominant-baseline="central" font-size="22" font-weight="700" fill="var(--faceink,#101720)">0</text><text x="274.00" y="71.83" text-anchor="middle" dominant-baseline="central" font-size="22" font-weight="700" fill="var(--faceink,#101720)">30</text><text x="126.00" y="71.83" text-anchor="middle" dominant-baseline="central" font-size="22" font-weight="700" fill="var(--faceink,#101720)">30</text><text x="328.17" y="126.00" text-anchor="middle" dominant-baseline="central" font-size="22" font-weight="700" fill="var(--faceink,#101720)">60</text><text x="71.83" y="126.00" text-anchor="middle" dominant-baseline="central" font-size="22" font-weight="700" fill="var(--faceink,#101720)">60</text><text x="348.00" y="200.00" text-anchor="middle" dominant-baseline="central" font-size="22" font-weight="700" fill="var(--faceink,#101720)">90</text><text x="52.00" y="200.00" text-anchor="middle" dominant-baseline="central" font-size="22" font-weight="700" fill="var(--faceink,#101720)">90</text><text x="328.17" y="274.00" text-anchor="middle" dominant-baseline="central" font-size="22" font-weight="700" fill="var(--faceink,#101720)">120</text><text x="71.83" y="274.00" text-anchor="middle" dominant-baseline="central" font-size="22" font-weight="700" fill="var(--faceink,#101720)">120</text><text x="274.00" y="328.17" text-anchor="middle" dominant-baseline="central" font-size="22" font-weight="700" fill="var(--faceink,#101720)">150</text><text x="126.00" y="328.17" text-anchor="middle" dominant-baseline="central" font-size="22" font-weight="700" fill="var(--faceink,#101720)">150</text><text x="200.00" y="348.00" text-anchor="middle" dominant-baseline="central" font-size="22" font-weight="700" fill="var(--faceink,#101720)">180</text>
+<defs><linearGradient id="boatfade2" x1="0" y1="148" x2="0" y2="302" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="var(--faceink,#101720)" stop-opacity="1"></stop><stop offset="0.62" stop-color="var(--faceink,#101720)" stop-opacity="1"></stop><stop offset="1" stop-color="var(--faceink,#101720)" stop-opacity="0"></stop></linearGradient></defs><g transform="translate(0 -100) translate(200 302) scale(0.909) translate(-200 -302)"><path d="M232 302 C242 246 238 186 200 148 C162 186 158 246 168 302" fill="none" stroke="url(#boatfade2)" stroke-width="7" stroke-linecap="butt"></path></g>
+<foreignObject x="105" y="248" width="190" height="120">
+  <div style="text-align:center;font-family:'Segoe UI',system-ui,sans-serif;color:var(--faceink,#101720)">
+    <div style="font:800 34px/36px 'Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">${t.v2.t}</div>
+    <div style="font:700 15px/17px 'Segoe UI',system-ui,sans-serif">${t.u2}</div>
+  </div>
+</foreignObject>
+<g transform="${t.awaRot}"><path d="M190.84 222 L193.95 62.6 L200 45 L206.05 62.6 L209.16 222 Z" fill="var(--needle,#ba5f12)" stroke="var(--needledark,#8c4709)" stroke-width="1.5" stroke-linejoin="round"></path><path d="M200 45 L206.05 62.6 L209.16 222 L200 222 Z" fill="var(--needleshade,#95490d)"></path></g><circle cx="200" cy="200" r="22" fill="var(--hub,#d1731a)" stroke="var(--needledark,#7d3d09)" stroke-width="1.8"></circle><circle cx="194" cy="193.5" r="7" fill="var(--needlehl,#e08c34)"></circle>
+</svg>
+                    </div>
+                  </div>
+                  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+                    <div style="flex:1;min-height:0;background:var(--mface,#fff);padding:6px 8px;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;container-type:size">
+                    <div style="font-size:min(13cqh,13cqw);font-weight:800;color:var(--faceink,#101720);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.l3}</div>
+                    <div style="flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:0.9;text-align:center">
+                      <span style="font-size:min(62cqh,52cqw);font-weight:800;color:var(--faceink,#101720);font-variant-numeric:tabular-nums">${t.v3.t}</span>
+                      <span style="font-size:min(16cqh,13cqw);font-weight:700;color:var(--faceink,#101720)">${t.u3}</span>
+                    </div>
+                  </div>
+                    <div style="flex:1;min-height:0;background:var(--mface,#fff);padding:6px 8px;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;container-type:size">
+                    <div style="font-size:min(13cqh,13cqw);font-weight:800;color:var(--faceink,#101720);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.l4}</div>
+                    <div style="flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:0.9;text-align:center">
+                      <span style="font-size:min(62cqh,52cqw);font-weight:800;color:var(--faceink,#101720);font-variant-numeric:tabular-nums">${t.v4.t}</span>
+                      <span style="font-size:min(16cqh,13cqw);font-weight:700;color:var(--faceink,#101720)">${t.u4}</span>
+                    </div>
+                  </div>
+                  </div>
+                </div>
+              </div>`,
+  crs: (t) => `              <div style="position:absolute;inset:0;display:grid;place-items:center;container-type:size">
+              <div style="position:relative;width:min(100cqw,100cqh*1.1269);height:min(100cqh,100cqw*0.8874);overflow:hidden;border-radius:var(--rad,14px);border:1px solid var(--line,#c3cbd6);background:linear-gradient(to top,var(--raybg1,#0b0e12),var(--raybg2,#7d858f));container-type:size">
+                <div style="position:absolute;left:2%;top:2%;z-index:0;border:5px solid var(--mframe,#101720);border-radius:12px;padding:1.2cqh 5px 1.2cqh;background:var(--mface,#fff);width:34%;height:22cqh;box-sizing:border-box;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;container-type:size">
+                  <div style="display:flex;align-items:baseline;justify-content:center;gap:1px;line-height:0.85">
+                    <span style="font-size:min(66cqh,34cqw);font-weight:800;color:var(--faceink,#101720);font-variant-numeric:tabular-nums">${t.v3.t}</span>
+                    <span style="font-size:min(28cqh,14cqw);font-weight:800;color:var(--faceink,#101720)">${t.u3}</span>
+                  </div>
+                  <div style="font-size:min(18cqh,11cqw);font-weight:800;letter-spacing:.02em;color:var(--faceink,#101720);opacity:.9;white-space:nowrap;text-align:center;overflow:hidden;text-overflow:ellipsis">${t.l3}</div>
+                </div>
+                <div style="position:absolute;right:2%;top:2%;z-index:0;border:5px solid var(--mframe,#101720);border-radius:12px;padding:1.2cqh 5px 1.2cqh;background:var(--mface,#fff);width:34%;height:22cqh;box-sizing:border-box;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;container-type:size">
+                  <div style="display:flex;align-items:baseline;justify-content:center;gap:1px;line-height:0.85">
+                    <span style="font-size:min(66cqh,34cqw);font-weight:800;color:var(--faceink,#101720);font-variant-numeric:tabular-nums">${t.v4.t}</span>
+                    <span style="font-size:min(28cqh,14cqw);font-weight:800;color:var(--faceink,#101720)">${t.u4}</span>
+                  </div>
+                  <div style="font-size:min(18cqh,11cqw);font-weight:800;letter-spacing:.02em;color:var(--faceink,#101720);opacity:.9;white-space:nowrap;text-align:center;overflow:hidden;text-overflow:ellipsis">${t.l4}</div>
+                </div>
+<svg viewBox="-22 -14 444 394" style="position:absolute;inset:0;z-index:1;width:100%;height:100%;display:block" preserveAspectRatio="xMidYMid meet">
+        <defs><linearGradient id="raybg" x1="0" y1="400" x2="0" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="var(--raybg1,#0b0e12)"></stop><stop offset="1" stop-color="var(--raybg2,#7d858f)"></stop></linearGradient><radialGradient id="rayface" cx="0.5" cy="0.42" r="0.62"><stop offset="0" stop-color="var(--facedim,#e2e7ee)"></stop><stop offset="1" stop-color="var(--facedim2,#cfd7e1)"></stop></radialGradient></defs>
+        <g transform="translate(200 200) scale(0.93) translate(-200 -188)">
+        <circle cx="200" cy="200" r="153" fill="none" stroke="var(--mface,#ffffff)" stroke-width="54"></circle>
+        <path d="M374.5 200 A174.5 174.5 0 1 1 25.5 200" fill="none" stroke="var(--line,#c3cbd6)" stroke-width="11" stroke-linecap="butt"></path>
+        <path d="M25.5 200 A174.5 174.5 0 0 1 200 25.5" fill="none" stroke="var(--segP,#d92d20)" stroke-width="11" stroke-linecap="butt"></path>
+        <path d="M200 25.5 A174.5 174.5 0 0 1 374.5 200" fill="none" stroke="var(--segS,#17a34a)" stroke-width="11" stroke-linecap="butt"></path>
+        <g transform="${t.ringRot}">
+          <line x1="200" y1="20" x2="200" y2="37" stroke="var(--faceink,#101720)" stroke-width="5" transform="rotate(0 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(10 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(20 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="37" stroke="var(--faceink,#101720)" stroke-width="5" transform="rotate(30 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(40 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(50 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="37" stroke="var(--faceink,#101720)" stroke-width="5" transform="rotate(60 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(70 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(80 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="37" stroke="var(--faceink,#101720)" stroke-width="5" transform="rotate(90 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(100 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(110 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="37" stroke="var(--faceink,#101720)" stroke-width="5" transform="rotate(120 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(130 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(140 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="37" stroke="var(--faceink,#101720)" stroke-width="5" transform="rotate(150 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(160 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(170 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="37" stroke="var(--faceink,#101720)" stroke-width="5" transform="rotate(180 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(190 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(200 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="37" stroke="var(--faceink,#101720)" stroke-width="5" transform="rotate(210 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(220 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(230 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="37" stroke="var(--faceink,#101720)" stroke-width="5" transform="rotate(240 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(250 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(260 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="37" stroke="var(--faceink,#101720)" stroke-width="5" transform="rotate(270 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(280 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(290 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="37" stroke="var(--faceink,#101720)" stroke-width="5" transform="rotate(300 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(310 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(320 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="37" stroke="var(--faceink,#101720)" stroke-width="5" transform="rotate(330 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(340 200 200)"></line>
+          <line x1="200" y1="20" x2="200" y2="32" stroke="var(--faceink,#101720)" stroke-width="2.5" transform="rotate(350 200 200)"></line>
+        </g>
+        <circle cx="200" cy="200" r="180" fill="none" stroke="var(--faceink,#101720)" stroke-width="3"></circle>
+        <circle cx="200" cy="200" r="126" fill="url(#rayface)" stroke="var(--faceink,#101720)" stroke-width="3"></circle>
+        <path d="M152.81 83.17 A126 126 0 0 1 247.19 83.17 L200 36 Z" fill="var(--faceink,#101720)"></path>
+        <g transform="${t.ringRot}"><g transform="rotate(0 200 200)"><g transform="${t.lab0}"><text x="200" y="54" text-anchor="middle" dominant-baseline="middle" font-size="17" font-weight="800" fill="var(--faceink,#101720)">N</text></g></g></g>
+        <g transform="${t.ringRot}"><g transform="rotate(30 200 200)"><g transform="${t.lab30}"><text x="200" y="54" text-anchor="middle" dominant-baseline="middle" font-size="12.5" font-weight="700" fill="var(--faceink,#101720)">030</text></g></g></g>
+        <g transform="${t.ringRot}"><g transform="rotate(60 200 200)"><g transform="${t.lab60}"><text x="200" y="54" text-anchor="middle" dominant-baseline="middle" font-size="12.5" font-weight="700" fill="var(--faceink,#101720)">060</text></g></g></g>
+        <g transform="${t.ringRot}"><g transform="rotate(90 200 200)"><g transform="${t.lab90}"><text x="200" y="54" text-anchor="middle" dominant-baseline="middle" font-size="17" font-weight="800" fill="var(--faceink,#101720)">E</text></g></g></g>
+        <g transform="${t.ringRot}"><g transform="rotate(120 200 200)"><g transform="${t.lab120}"><text x="200" y="54" text-anchor="middle" dominant-baseline="middle" font-size="12.5" font-weight="700" fill="var(--faceink,#101720)">120</text></g></g></g>
+        <g transform="${t.ringRot}"><g transform="rotate(150 200 200)"><g transform="${t.lab150}"><text x="200" y="54" text-anchor="middle" dominant-baseline="middle" font-size="12.5" font-weight="700" fill="var(--faceink,#101720)">150</text></g></g></g>
+        <g transform="${t.ringRot}"><g transform="rotate(180 200 200)"><g transform="${t.lab180}"><text x="200" y="54" text-anchor="middle" dominant-baseline="middle" font-size="17" font-weight="800" fill="var(--faceink,#101720)">S</text></g></g></g>
+        <g transform="${t.ringRot}"><g transform="rotate(210 200 200)"><g transform="${t.lab210}"><text x="200" y="54" text-anchor="middle" dominant-baseline="middle" font-size="12.5" font-weight="700" fill="var(--faceink,#101720)">210</text></g></g></g>
+        <g transform="${t.ringRot}"><g transform="rotate(240 200 200)"><g transform="${t.lab240}"><text x="200" y="54" text-anchor="middle" dominant-baseline="middle" font-size="12.5" font-weight="700" fill="var(--faceink,#101720)">240</text></g></g></g>
+        <g transform="${t.ringRot}"><g transform="rotate(270 200 200)"><g transform="${t.lab270}"><text x="200" y="54" text-anchor="middle" dominant-baseline="middle" font-size="17" font-weight="800" fill="var(--faceink,#101720)">W</text></g></g></g>
+        <g transform="${t.ringRot}"><g transform="rotate(300 200 200)"><g transform="${t.lab300}"><text x="200" y="54" text-anchor="middle" dominant-baseline="middle" font-size="12.5" font-weight="700" fill="var(--faceink,#101720)">300</text></g></g></g>
+        <g transform="${t.ringRot}"><g transform="rotate(330 200 200)"><g transform="${t.lab330}"><text x="200" y="54" text-anchor="middle" dominant-baseline="middle" font-size="12.5" font-weight="700" fill="var(--faceink,#101720)">330</text></g></g></g>
+        <foreignObject x="92" y="126" width="216" height="120">
+          <div style="text-align:center;font-family:'Segoe UI',system-ui,sans-serif">
+            <div style="font:700 17px/20px 'Segoe UI',system-ui,sans-serif;color:var(--faceink,#101720)">${t.l2}</div>
+            <div style="display:flex;align-items:baseline;justify-content:center;gap:2px;color:var(--faceink,#101720);font-variant-numeric:tabular-nums">
+              <span style="font:800 76px/80px 'Segoe UI',system-ui,sans-serif">${t.v2.i}</span>
+              <span style="font:800 42px/58px 'Segoe UI',system-ui,sans-serif">${t.v2.d}</span>
+              <span style="font:700 21px/52px 'Segoe UI',system-ui,sans-serif;padding-left:4px">${t.u2}</span>
+            </div>
+          </div>
+        </foreignObject>
+        <defs><linearGradient id="rayTrapEdge" x1="0" y1="300" x2="0" y2="380" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#5b636d"></stop><stop offset="1" stop-color="#c9cfd6"></stop></linearGradient></defs>
+        <path d="M138.52 301.76 A6 6 0 0 1 142.77 300 L285.17 300 A6 6 0 0 1 289.42 301.76 L367.66 380 L60.28 380 Z" fill="var(--bar,#101720)" stroke="none"></path>
+        <path d="M60.28 380 L138.52 301.76 A6 6 0 0 1 142.77 300 L285.17 300 A6 6 0 0 1 289.42 301.76 L367.66 380" fill="none" stroke="url(#rayTrapEdge)" stroke-width="3"></path>
+        <foreignObject x="96" y="316" width="208" height="80">
+          <div style="display:flex;align-items:baseline;justify-content:center;gap:6px;font-family:'Segoe UI',system-ui,sans-serif;color:var(--barink,#ffffff)">
+            <span style="font:800 16.5px/40px 'Segoe UI',system-ui,sans-serif">${t.l1short}</span>
+            <span style="font:800 44px/48px 'Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">${t.hdg3}<span style="font-size:24px">°</span></span>
+            
+          </div>
+        </foreignObject>
+      </g>
+      </svg>
+              </div>
+              </div>`,
+};
 (function(){
-  // n=numeriek {l,u,min,max,d,ang?}, t=tekst {l,text:1}
-  function n(l,u,min,max,d,ang){return {l:l,u:u,min:min,max:max,d:d,ang:ang};}
-  function T(l){return {l:l,u:'',text:1};}
-  var F={
-    // Performance
-    'Performance-SOG':{l:'Performance (SOG)',u:'%',min:60,max:115,d:0,band:[97,110]},
-    'Performance-waterspeed':{l:'Performance (STW)',u:'%',min:60,max:115,d:0,band:[97,110]},
-    'Performance-incl-current':{l:'Performance incl. stroom',u:'%',min:60,max:115,d:0,band:[97,110]},
-    'Performance-to-windward':{l:'Perf. te loevaart',u:'%',min:60,max:115,d:0,band:[97,110]},
-    'Performance-to-WP':{l:'Perf. naar waypoint',u:'%',min:60,max:115,d:0,band:[97,110]},
-    'Performance-filter':n('Perf.-filter','',0,60,0),
-    'Target-speed':n('Doelsnelheid','kn',0,14,1),'Target-VMG':n('Doel-VMG','kn',0,10,1),
-    'VMG':n('VMG','kn',0,10,1),'VMG-to-WP':n('VMG naar WP','kn',0,10,1),
-    // Snelheid
-    'SOG':n('SOG','kn',0,16,1),'SOG-forward':n('SOG voorwaarts','kn',0,16,1),'STW-corrected':n('STW','kn',0,16,1),
-    'Speed-shortage':n('Snelheidstekort','kn',-3,3,1),'Speed-sideways':n('Zijwaartse snelheid','kn',-3,3,1),
-    'Speed-from-current':n('Snelheid uit stroom','kn',-3,3,1),'Rate-of-Turn':n('Draaisnelheid','°/s',-30,30,0),
-    // Wind
-    'AWA':n('AWA','°',-180,180,0,1),'AWS':n('AWS','kn',0,50,1),
-    'TWA':n('TWA','°',-180,180,0,1),'TWS':n('TWS','kn',0,40,1),'TWS-avg':n('TWS gemiddeld','kn',0,40,1),
-    'TWS-trend':n('TWS-trend','kn',-3,3,1),'Upwash':n('Upwash','°',-10,10,0),
-    'Bow-AWA':n('AWA (boeg)','°',-180,180,0,1),'Bow-TWA':n('TWA (boeg)','°',-180,180,0,1),
-    'Windshift-deg':{l:'Windshift',u:'°',min:-40,max:40,d:0,band:[-5,5]},
-    'GEOWIND':n('Ware windrichting','°',0,360,0),'GEOWIND-TWS':n('Geo-wind TWS','kn',0,40,1),
-    'GEOWIND-TWS-avg':n('Geo-wind TWS gem.','kn',0,40,1),'GEOWIND-TWS-trend':n('Geo-wind trend','kn',-3,3,1),
-    'Shift-limit':n('Shift-grens','°',0,40,0),'App Wind-filter':n('AW-filter','',0,60,0),
-    // Hoeken & doelen
-    'Upwind-angle':n('Doelhoek loef (t-UA)','°',20,70,0),'Downwind-angle':n('Doelhoek lij (t-DA)','°',120,180,0),
-    'Best-angle':n('Beste hoek','°',20,180,0),'Best-angle-error':{l:'Beste-hoek fout',u:'°',min:-40,max:40,d:0,band:[-4,4]},
-    'UA-error':{l:'Hoekfout loef',u:'°',min:-30,max:30,d:0,band:[-3,3]},'DA-error':{l:'Hoekfout lij',u:'°',min:-30,max:30,d:0,band:[-3,3]},
-    'Actual-leeway':n('Leeway','°',-25,25,0),'Expected-leeway':n('Verwachte leeway','°',-25,25,0),
-    // Trim & beweging
-    'Actual-heel':n('Slagzij','°',-45,45,0),'Best-heel':n('Doelslagzij','°',0,40,0),
-    'Heel-error':{l:'Slagzij-fout',u:'°',min:-20,max:20,d:0,band:[-3,3]},
-    'Actual-pitch':n('Stamp','°',-15,15,1),'Actual-yaw':n('Gier','°',-20,20,1),
-    'Heave-vertical':n('Deining','m',-3,3,1),'Rudder-angle':n('Roerhoek','°',-40,40,0),
-    // Stroom & diepte
-    'Current-kts':n('Stroom','kn',0,5,1),'Current-from-degrees':n('Stroom vanuit','°',0,360,0),
-    'Current-to-degrees':n('Stroom naar','°',0,360,0),'Current-degrees-relative':n('Stroom t.o.v. boeg','°',-180,180,0,1),
-    'Current-impact-degrees':n('Stroom-impact','°',-180,180,0,1),'Current-limit-kts':n('Stroom-grens','kn',0,5,1),
-    'Current-limit-degrees':n('Stroom-hoekgrens','°',0,90,0),'Depth-avg':n('Diepte','m',0,30,1),'Depth-change':n('Diepteverloop','m',-5,5,1),
-    // Koers & navigatie
-    'COG':n('COG','°',0,360,0),'HDG-corrected':n('Koers (HDG)','°',0,360,0),'Off Course':n('Koersafwijking','°',-60,60,0),
-    'Rel-COG':n('COG relatief','°',-180,180,0,1),'Rel-HDG':n('HDG relatief','°',-180,180,0,1),'Rel-BTW':n('BTW relatief','°',-180,180,0,1),
-    'BTW':n('Peiling naar WP','°',0,360,0),'DTW':n('Afstand naar WP','nm',0,50,1),'XTE':n('Dwarsafwijking','nm',-2,2,2),
-    'Distance-layline':T('Afstand layline'),'Time-layline':T('Tijd tot layline'),'Direction-to-steer':T('Bijsturen'),
-    'Est-Time en Route':T('Verwachte reistijd'),'TWA-to-WP':T('TWA naar WP'),'Waypoint':T('Waypoint'),
-    // Meldingen & advies
-    'Trim-advice1':T('Trim-advies'),'Trim-advice2':T('Trim-advies 2'),'Trim-advice3':T('Trim-advies 3'),
-    'Wind-message':T('Wind-melding'),'Current-message':T('Stroom-melding'),'BOW':T('Boeg/tak'),
-    // Systeem
-    'Boatname':T('Bootnaam'),'SPD-Version':T('SPD-versie'),'GPS-RMC-time':T('GPS-tijd'),'HDOP':T('HDOP'),
-    'Satellites':T('Satellieten'),'Replay-speed':T('Replay-snelheid'),
-    'Log-nr':n('Log-nummer','',0,999,0),'Records-filter':n('Records-filter','',0,60,0),'Records-processed':n('Records verwerkt','',0,99,0),
+  var TPL = window.SPD_TPL;
+
+  // ── PALETTE ──────────────────────────────────────────────────────────────
+  // modern = mijn eigen (donkere) Modern-stijl. bg + ray = 1-op-1 uit de
+  // goedgekeurde design-bron (B&G en Raymarine).
+  var PALETTE = {
+    modern: {
+      day: { page:'#0e1420', tile:'#161f2e', chrome:'#131b28', screen:'#161f2e', ink:'#eaf0f8', label:'#8b98ab', line:'#283243',
+        accent:'#3b93ff', good:'#28c76f', bad:'#ff5b5b', warn:'#f4a838', sb:'#28c76f', pt:'#ff5b5b', tw:'#3b93ff', cog:'#f4a838',
+        face:'#1c2738', faceink:'#eaf0f8', facefill:'transparent', needle:'#eaf0f8', needlebg:'#3b93ff', ring:'#2b3648', ringink:'#eaf0f8',
+        inner:'#1c2738', innerink:'#8b98ab', boat:'#8aa0be', bar:'#1c2738', barink:'#eaf0f8', gnum:'#8b98ab', tickband:'#2b3648',
+        dialedge:'#3b93ff', gtick:'#8b98ab', rad:'12px', shadow:'none', segP:'transparent', segS:'transparent' },
+      night: { page:'#000', tile:'#0a0000', chrome:'#090000', screen:'#0e0000', ink:'#ff3b30', label:'#a02016', line:'#340c08',
+        accent:'#ff3b30', good:'#ff6a44', bad:'#ff2a1e', warn:'#ff8f4d', sb:'#ff6a44', pt:'#ff2a1e', tw:'#ff8f4d', cog:'#ff8f4d',
+        face:'#140000', faceink:'#ff3b30', facefill:'transparent', needle:'#ff3b30', needlebg:'#ff3b30', ring:'#2a0a07', ringink:'#ff3b30',
+        inner:'#140000', innerink:'#a02016', boat:'#8f1a12', bar:'#0a0000', barink:'#ff3b30', gnum:'#a02016', tickband:'#3a0d0d',
+        dialedge:'#5a1512', gtick:'#a02016', rad:'12px', shadow:'none', segP:'transparent', segS:'transparent' }
+    },
+    bg: {
+      day: { mface:'#ffffff', mframe:'#3f4d61', page:'#c7cfd9', gnum:'#3f4753', screen:'#ffffff', tile:'#ffffff', chrome:'#e7ebf0', ink:'#101720', label:'#2c3f5e', line:'#b8c1cd', input:'#f1f4f8', raybg1:'#0b0e12', raybg2:'#7d858f', facedim:'#dbe1e9', facedim2:'#c8d0db', face:'#dfe5ec', faceink:'#101720', facefill:'transparent', accent:'#1f5fd0', good:'#12a04a', warn:'#c9761a', bad:'#d92d20', sb:'#12a04a', pt:'#d92d20', tw:'#2f6fd0', cog:'#e8862a', ring:'#3f4d61', ringink:'#ffffff', inner:'#3f4d61', innerink:'#ffffff', boat:'#93a0b1', bar:'#3f4d61', barink:'#ffffff', needlebg:'#2b3fb5', gtick:'#ffffff', tickband:'#c9d2dd', dialedge:'#2c3f5e', needle:'#101720', rad:'4px', segP:'transparent', segS:'transparent' },
+      night: { mface:'#1b1211', mframe:'#3a2019', page:'#05070a', gnum:'#c46a35', screen:'#151d29', tile:'#151d29', chrome:'#0e141d', ink:'#ff8f4d', label:'#ff6f5c', line:'#3a2019', input:'#1b1211', raybg1:'#0b0201', raybg2:'#2a0a07', facedim:'#1f1615', facedim2:'#191110', face:'#241a19', faceink:'#ff8f4d', facefill:'transparent', accent:'#ff4133', good:'#ff8f4d', warn:'#ffb066', bad:'#ff4133', sb:'#ff8f4d', pt:'#ff4133', tw:'#ffb066', cog:'#ff8f4d', ring:'#26313f', ringink:'#ff8f4d', inner:'#26313f', innerink:'#ff8f4d', boat:'#3f4b5e', bar:'#1b2432', barink:'#ff8f4d', needlebg:'#ff8f4d', gtick:'#ff8f4d', tickband:'#3a2019', dialedge:'#5a2a1c', needle:'#ff8f4d', rad:'4px', segP:'transparent', segS:'transparent' }
+    },
+    ray: {
+      day: { mface:'#ffffff', mframe:'#101720', page:'#000000', screen:'#ffffff', gnum:'#3f4753', tile:'#ffffff', chrome:'#dfe3e8', ink:'#101720', label:'#3a4A60', line:'#c3cbd6', input:'#f1f4f8', raybg1:'#0b0e12', raybg2:'#7d858f', facedim:'#e2e7ee', facedim2:'#cfd7e1', face:'#e9eef4', faceink:'#101720', facefill:'#ffffff', accent:'#f0a020', good:'#17a34a', warn:'#f0a020', bad:'#d92d20', sb:'#17a34a', pt:'#d92d20', tw:'#2f6fd0', cog:'#f0a020', ring:'#ffffff', ringink:'#101720', inner:'#f4f7fb', innerink:'#101720', boat:'#7f8b9b', gtick:'#ffffff', bar:'#101720', barink:'#ffffff', tickband:'#c9d2dd', dialedge:'#0d1b28', needledark:'#8c4709', needleshade:'#95490d', needlehl:'#e08c34', needle:'#ba5f12', hub:'#d1731a', rad:'14px', segP:'#d92d20', segS:'#17a34a' },
+      night: { mface:'#140403', mframe:'#2c0b08', page:'#000000', screen:'#080000', gnum:'#c43226', tile:'#0d0100', chrome:'#080000', ink:'#ff4133', label:'#a8201a', line:'#2c0b08', input:'#150403', raybg1:'#0b0201', raybg2:'#2a0a07', facedim:'#150403', facedim2:'#100302', face:'#1a0605', faceink:'#ff4133', facefill:'#140403', accent:'#ff4133', good:'#ff6a44', warn:'#ff8f4d', bad:'#ff4133', sb:'#ff6a44', pt:'#ff4133', tw:'#ff8f4d', cog:'#ff8f4d', ring:'#2a0c09', ringink:'#ff4133', inner:'#1a0605', innerink:'#ff4133', boat:'#4a1512', gtick:'#ff4133', bar:'#150403', barink:'#ff4133', tickband:'#3a0d0a', dialedge:'#5a1512', needledark:'#6d1810', needleshade:'#7d2013', needlehl:'#e05a38', needle:'#c04529', hub:'#d94f2e', rad:'14px', segP:'#8f1a14', segS:'#b3452c' }
+    }
   };
-  var GROUPS=[
-    ['Performance',['Performance-SOG','Performance-waterspeed','Performance-incl-current','Performance-to-windward','Performance-to-WP','Target-speed','Target-VMG','VMG','VMG-to-WP','Performance-filter']],
-    ['Snelheid',['SOG','SOG-forward','STW-corrected','Speed-shortage','Speed-sideways','Speed-from-current','Rate-of-Turn']],
-    ['Wind',['AWA','AWS','TWA','TWS','TWS-avg','TWS-trend','Upwash','Bow-AWA','Bow-TWA','Windshift-deg','GEOWIND','GEOWIND-TWS','GEOWIND-TWS-avg','GEOWIND-TWS-trend','Shift-limit','App Wind-filter']],
-    ['Hoeken & doelen',['Upwind-angle','Downwind-angle','Best-angle','Best-angle-error','UA-error','DA-error','Actual-leeway','Expected-leeway']],
-    ['Trim & beweging',['Actual-heel','Best-heel','Heel-error','Actual-pitch','Actual-yaw','Heave-vertical','Rudder-angle']],
-    ['Stroom & diepte',['Current-kts','Current-from-degrees','Current-to-degrees','Current-degrees-relative','Current-impact-degrees','Current-limit-kts','Current-limit-degrees','Depth-avg','Depth-change']],
-    ['Koers & navigatie',['COG','HDG-corrected','Off Course','Rel-COG','Rel-HDG','Rel-BTW','BTW','DTW','XTE','Distance-layline','Time-layline','Direction-to-steer','Est-Time en Route','TWA-to-WP','Waypoint']],
-    ['Meldingen & advies',['Trim-advice1','Trim-advice2','Trim-advice3','Wind-message','Current-message','BOW']],
-    ['Systeem',['Boatname','SPD-Version','GPS-RMC-time','HDOP','Satellites','Replay-speed','Log-nr','Records-filter','Records-processed']],
-  ];
-  var DEFAULT=[
-    {f:'Performance-SOG',t:'gauge',w:2,h:2},{f:'Trim-advice1',t:'num',w:2,h:1},
-    {f:'SOG',t:'num',w:1,h:1},{f:'Target-speed',t:'num',w:1,h:1},
-    {f:'VMG',t:'num',w:1,h:1},{f:'Target-VMG',t:'num',w:1,h:1},
-    {f:'TWA',t:'num',w:1,h:1},{f:'TWS',t:'num',w:1,h:1},
-    {f:'Actual-heel',t:'gauge',w:1,h:1},{f:'Windshift-deg',t:'num',w:1,h:1},
-  ];
 
-  var grid=document.getElementById('grid'),sheet=document.getElementById('sheet');
-  var latest={},tiles=[],sel=null;
-  function load(){try{var s=JSON.parse(localStorage.getItem('spd-panel'));if(Array.isArray(s)&&s.length)return s;}catch(e){}return DEFAULT.map(function(o){return Object.assign({},o)});}
-  function save(){localStorage.setItem('spd-panel',JSON.stringify(state));}
-  var state=load();
-  function cols(){return Math.max(2,Math.min(6,Math.floor(window.innerWidth/210)));}
-  function num(v){var x=parseFloat(v);return isNaN(x)?null:x;}
-
-  function build(){
-    var N=cols();grid.style.gridTemplateColumns='repeat('+N+',1fr)';grid.innerHTML='';tiles=[];
-    state.forEach(function(cfg,idx){
-      var meta=F[cfg.f]||{l:cfg.f,u:'',min:0,max:100,d:0};
-      cfg.w=Math.min(cfg.w||1,N);cfg.h=cfg.h||1;
-      var el=document.createElement('div');el.className='tile'+(sel===idx?' sel':'');
-      el.style.gridColumn='span '+cfg.w;el.style.gridRow='span '+cfg.h;
-      el.innerHTML='<div class="lab"><span>'+meta.l+'</span><span class="u">'+(meta.u||'')+'</span></div><div class="body"></div>';
-      var body=el.querySelector('.body'),ref={cfg:cfg,meta:meta};
-      if(meta.text){ref.kind='text';body.innerHTML='<div class="num txt">—</div>';ref.el=body.firstChild;}
-      else if(cfg.t==='gauge'){ref.kind='gauge';makeGauge(body,ref);}
-      else if(cfg.t==='bar'){ref.kind='bar';body.innerHTML='<div class="barwrap"><div class="barval">--</div><div class="barbar"><div class="f"></div></div></div>';ref.el=body.querySelector('.barval');ref.fill=body.querySelector('.f');}
-      else{ref.kind='num';body.innerHTML='<div class="num">--</div>';ref.el=body.firstChild;}
-      el.addEventListener('click',function(){if(document.body.classList.contains('editing'))selectTile(idx);});
-      grid.appendChild(el);tiles.push(ref);
-    });
-    paint();
+  // ── FIELDS / GROUPS / ZONE / DEFAULT (1-op-1 uit de bron) ─────────────────
+  var _F=null;
+  function FIELDS(){ if(_F) return _F;
+    var n=function(l,u,min,max,d,ang){return {l:l,u:u,min:min,max:max,d:d,ang:ang};};
+    var T=function(l){return {l:l,u:'',text:1};};
+    var raw={
+      'Performance-SOG':{l:'Performance (SOG)',u:'%',min:60,max:115,d:0,band:[97,110]},
+      'Performance-waterspeed':{l:'Performance (STW)',u:'%',min:60,max:115,d:0,band:[97,110]},
+      'Performance-incl-current':{l:'Performance incl. stroom',u:'%',min:60,max:115,d:0,band:[97,110]},
+      'Performance-to-windward':{l:'Perf. te loevaart',u:'%',min:60,max:115,d:0,band:[97,110]},
+      'Performance-to-WP':{l:'Perf. naar waypoint',u:'%',min:60,max:115,d:0,band:[97,110]},
+      'Target-speed':n('Doelsnelheid','kn',0,14,1),'Target-VMG':n('Doel-VMG','kn',0,10,1),
+      'VMG':n('VMG','kn',0,10,1),'VMG-to-WP':n('VMG naar WP','kn',0,10,1),
+      'SOG':n('SOG','kn',0,16,1),'STW-corrected':n('STW','kn',0,16,1),
+      'Speed-shortage':n('Snelheidstekort','kn',-3,3,1),'Speed-sideways':n('Zijwaartse snelheid','kn',-3,3,1),
+      'Rate-of-Turn':n('Draaisnelheid','°/s',-30,30,0),
+      'AWA':n('AWA','°',-180,180,0,1),'AWS':n('AWS','kn',0,50,1),
+      'TWA':n('TWA','°',-180,180,0,1),'TWS':n('TWS','kn',0,40,1),'TWS-avg':n('TWS gemiddeld','kn',0,40,1),
+      'TWS-trend':n('TWS-trend','kn',-3,3,1),
+      'Windshift-deg':{l:'Windshift',u:'°',min:-40,max:40,d:0,band:[-5,5]},
+      'GEOWIND':n('Ware windrichting','°',0,360,0),'GEOWIND-TWS':n('Geo-wind TWS','kn',0,40,1),
+      'Upwind-angle':n('Doelhoek loef','°',20,70,0),'Downwind-angle':n('Doelhoek lij','°',120,180,0),
+      'Best-angle':n('Beste hoek','°',20,180,0),
+      'UA-error':{l:'Hoekfout loef',u:'°',min:-30,max:30,d:0,band:[-3,3]},
+      'DA-error':{l:'Hoekfout lij',u:'°',min:-30,max:30,d:0,band:[-3,3]},
+      'Actual-leeway':n('Leeway','°',-25,25,0),'Expected-leeway':n('Verwachte leeway','°',-25,25,0),
+      'Actual-heel':n('Slagzij','°',-45,45,0),'Best-heel':n('Doelslagzij','°',0,40,0),
+      'Heel-error':{l:'Slagzij-fout',u:'°',min:-20,max:20,d:0,band:[-3,3]},
+      'Actual-pitch':n('Stamp','°',-15,15,1),'Rudder-angle':n('Roerhoek','°',-40,40,0),
+      'Current-kts':n('Stroom','kn',0,5,1),'Current-to-degrees':n('Stroom naar','°',0,360,0),
+      'Current-impact-degrees':n('Stroom-impact','°',-180,180,0,1),
+      'Depth-avg':n('Diepte','m',0,30,1),'Depth-change':n('Diepteverloop','m',-5,5,1),
+      'COG':n('COG','°',0,360,0),'HDG-corrected':n('Koers (HDG)','°',0,360,0),
+      'BTW':n('Peiling naar WP','°',0,360,0),'DTW':n('Afstand naar WP','nm',0,50,1),
+      'Distance-layline':T('Afstand layline'),'Time-layline':T('Tijd tot layline'),'Direction-to-steer':T('Bijsturen'),
+      'Trim-advice1':T('Trim-advies'),'Trim-advice2':T('Trim-advies 2'),'Trim-advice3':T('Trim-advies 3'),
+      'Wind-message':T('Wind-melding'),'Current-message':T('Stroom-melding'),
+      'Boatname':T('Bootnaam'),'GPS-RMC-time':T('GPS-tijd'),'SPD-Version':T('SPD-versie')
+    };
+    _F={}; Object.keys(raw).forEach(function(k){ _F[k]=Object.assign({},raw[k],{l:k}); }); return _F;
   }
-  function makeGauge(body,ref){
-    var NS='http://www.w3.org/2000/svg';
-    var svg=document.createElementNS(NS,'svg');svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('class','gauge');
-    var face=document.createElementNS(NS,'circle');face.setAttribute('cx',50);face.setAttribute('cy',50);face.setAttribute('r',46);face.setAttribute('fill','var(--gauge-face)');svg.appendChild(face);
-    function arc(a0,a1,r,color,w){var p=document.createElementNS(NS,'path');
-      function pt(a){a=(a-90)*Math.PI/180;return[50+r*Math.cos(a),50+r*Math.sin(a)];}
-      var s=pt(a0),e=pt(a1),big=(a1-a0)>180?1:0;
-      p.setAttribute('d','M'+s[0]+' '+s[1]+' A'+r+' '+r+' 0 '+big+' 1 '+e[0]+' '+e[1]);
-      p.setAttribute('fill','none');p.setAttribute('stroke',color);p.setAttribute('stroke-width',w);p.setAttribute('stroke-linecap','round');svg.appendChild(p);return p;}
-    arc(-135,135,40,'var(--arc)',8);
-    // Raymarine-kleursegmenten (transparant in andere stijlen)
-    arc(-135,0,40,'var(--segP)',8); arc(0,135,40,'var(--segS)',8);
-    if(ref.meta.band){var b=ref.meta.band,m=ref.meta,f0=(b[0]-m.min)/(m.max-m.min),f1=(b[1]-m.min)/(m.max-m.min);
-      arc(-135+270*Math.max(0,f0),-135+270*Math.min(1,f1),40,'var(--good)',8);}
-    var needle=document.createElementNS(NS,'line');needle.setAttribute('x1',50);needle.setAttribute('y1',50);needle.setAttribute('x2',50);needle.setAttribute('y2',15);
-    needle.setAttribute('stroke','var(--needle)');needle.setAttribute('stroke-width',3);needle.setAttribute('stroke-linecap','round');svg.appendChild(needle);
-    var hub=document.createElementNS(NS,'circle');hub.setAttribute('cx',50);hub.setAttribute('cy',50);hub.setAttribute('r',4);hub.setAttribute('fill','var(--needle)');svg.appendChild(hub);
-    body.appendChild(svg);
-    var val=document.createElement('div');val.className='gval';val.textContent='--';body.appendChild(val);
-    ref.needle=needle;ref.el=val;
+  function GROUPS(){ return [
+    ['Performance',['Performance-SOG','Performance-waterspeed','Performance-incl-current','Performance-to-windward','Performance-to-WP','Target-speed','Target-VMG','VMG','VMG-to-WP']],
+    ['Speed',['SOG','STW-corrected','Speed-shortage','Speed-sideways','Rate-of-Turn']],
+    ['Wind',['AWA','AWS','TWA','TWS','TWS-avg','TWS-trend','Windshift-deg','GEOWIND','GEOWIND-TWS']],
+    ['Angles & targets',['Upwind-angle','Downwind-angle','Best-angle','UA-error','DA-error','Actual-leeway','Expected-leeway']],
+    ['Trim & motion',['Actual-heel','Best-heel','Heel-error','Actual-pitch','Rudder-angle']],
+    ['Current & depth',['Current-kts','Current-to-degrees','Current-impact-degrees','Depth-avg','Depth-change']],
+    ['Course & navigation',['COG','HDG-corrected','BTW','DTW','Distance-layline','Time-layline','Direction-to-steer']],
+    ['Messages & advice',['Trim-advice1','Trim-advice2','Trim-advice3','Wind-message','Current-message']],
+    ['System',['Boatname','GPS-RMC-time','SPD-Version']]
+  ]; }
+  function ZONE(k){
+    if(/^Performance/.test(k)) return 'up';
+    var UP=['SOG','SOG-forward','STW-corrected','VMG','VMG-to-WP','Depth-avg'];
+    var DOWN=['Actual-heel','Actual-leeway','Expected-leeway','Rudder-angle','Actual-pitch','Current-kts','XTE','DTW','Speed-sideways'];
+    var CENTER=['UA-error','DA-error','Heel-error','Best-angle-error','Windshift-deg','Speed-shortage'];
+    if(UP.indexOf(k)>=0)return 'up'; if(DOWN.indexOf(k)>=0)return 'down'; if(CENTER.indexOf(k)>=0)return 'center'; return 'none';
   }
-  function fmtNum(v,d){var s=v.toFixed(d),i=s.indexOf('.');return i<0?s:s.slice(0,i)+'<span class="dec">'+s.slice(i)+'</span>';}
-  function paint(){
-    tiles.forEach(function(r){
-      var raw=latest[r.cfg.f],m=r.meta;
-      if(r.kind==='text'){r.el.textContent=(raw==null||raw==='')?'—':String(raw).trim()||'—';return;}
-      var v=num(raw);
-      if(r.kind==='num'){r.el.innerHTML=(v==null)?'--':fmtNum(m.ang?Math.abs(v):v,m.d);return;}
-      if(r.kind==='bar'){r.el.textContent=(v==null)?'--':(m.ang?Math.abs(v):v).toFixed(m.d);
-        r.fill.style.width=(v==null?0:Math.max(0,Math.min(1,(v-m.min)/(m.max-m.min)))*100)+'%';return;}
-      if(r.kind==='gauge'){r.el.innerHTML=(v==null)?'--':fmtNum(m.ang?Math.abs(v):v,m.d);
-        var f=v==null?0:Math.max(0,Math.min(1,(v-m.min)/(m.max-m.min)));
-        r.needle.setAttribute('transform','rotate('+(-135+270*f)+' 50 50)');}
-    });
+  function DEFAULT(){ return [
+    {f:'HDG-corrected',f2:'STW-corrected',f3:'GEOWIND',f4:'Depth-avg',t:'gauge',m:'crs',w:3,h:4},
+    {f:'AWA',f2:'AWS',f3:'Depth-avg',f4:'STW-corrected',t:'gauge',m:'wind',w:3,h:4},
+    {f:'GEOWIND',t:'num',w:1,h:1},{f:'Depth-avg',t:'num',w:1,h:1},
+    {f:'TWS',t:'num',w:1,h:1},{f:'TWA',t:'num',w:1,h:1},
+    {f:'Performance-SOG',t:'gauge',m:'gen',w:3,h:4},
+    {f:'VMG',t:'num',w:1,h:1},{f:'Target-speed',t:'num',w:1,h:1},
+    {f:'Trim-advice1',t:'num',w:2,h:1}
+  ]; }
+
+  // ── Helpers (uit de bron) ─────────────────────────────────────────────────
+  function num(x){ var y=parseFloat(x); return isNaN(y)?null:y; }
+  function split(x,dec){ var y=num(x); if(y==null) return {i:'--',d:'',t:'--'};
+    var s=Math.abs(y).toFixed(dec==null?1:dec), sign=y<0?'-':'', k=s.indexOf('.');
+    return k<0?{i:sign+s,d:'',t:sign+s}:{i:sign+s.slice(0,k),d:s.slice(k),t:sign+s}; }
+  function perf(x,sog){ var p=num(x),s=num(sog); if(p==null||p>150||(s!=null&&s<0.4)) return {i:'--',d:'',t:'--'}; return split(p,0); }
+  function polar(cx,cy,r,a){ var rad=(a-90)*Math.PI/180; return [cx+r*Math.cos(rad),cy+r*Math.sin(rad)]; }
+  function arc(cx,cy,r,a0,a1){ var s=polar(cx,cy,r,a0),e=polar(cx,cy,r,a1),big=Math.abs(a1-a0)>180?1:0;
+    return 'M'+s[0].toFixed(1)+' '+s[1].toFixed(1)+' A'+r+' '+r+' 0 '+big+' 1 '+e[0].toFixed(1)+' '+e[1].toFixed(1); }
+
+  // ── State ─────────────────────────────────────────────────────────────────
+  function lg(k,d){ try{ var x=localStorage.getItem(k); return x==null?d:x; }catch(e){ return d; } }
+  var stiles=null; try{ stiles=JSON.parse(localStorage.getItem('spd-tiles-v6')); }catch(e){}
+  var state={
+    skin: lg('spd-skin-v2','modern'), night: lg('spd-night-v1','')==='1',
+    tiles: (Array.isArray(stiles)&&stiles.length)?stiles:DEFAULT(),
+    editing:false, sel:null, data:{}, live:false, cols:4
+  };
+  if(['modern','bg','ray'].indexOf(state.skin)<0) state.skin='modern';
+  function setTiles(tiles,extra){ try{ localStorage.setItem('spd-tiles-v6',JSON.stringify(tiles)); }catch(e){}
+    state.tiles=tiles; if(extra) Object.assign(state,extra); render(); }
+  function put(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+
+  // ── Compute één tegel (port van renderVals tiles.map) ─────────────────────
+  function computeTile(cfg,idx,d,pal,sog){
+    var F=FIELDS(), meta=F[cfg.f]||{l:cfg.f,u:'',min:0,max:100,d:0};
+    var w=Math.min(cfg.w||1,state.cols), h=cfg.h||1;
+    var raw=d[cfg.f], vNum=num(raw), mk=cfg.m||'gen', meta2=cfg.f2?F[cfg.f2]:null;
+    var ex=function(key){ var m=cfg[key]?F[cfg[key]]:null; if(!m) return {l:'—',u:'',v:{i:'--',d:'',t:'--'}};
+      var r=d[cfg[key]], nn=num(r); return {l:m.l,u:m.u||'',v:/^Performance/.test(cfg[key])?perf(r,sog):split(m.ang?Math.abs(nn):nn,m.d)}; };
+    var e3=ex('f3'), e4=ex('f4');
+    var raw2=cfg.f2?d[cfg.f2]:null, v2Num=num(raw2);
+    var v2=meta2?(/^Performance/.test(cfg.f2)?perf(raw2,sog):split(meta2.ang?Math.abs(v2Num):v2Num,meta2.d)):{i:'--',d:'',t:'--'};
+    var angN=vNum==null?0:vNum, isText=!!meta.text;
+    var val=isText?{i:'',d:''}:(/^Performance/.test(cfg.f)?perf(raw,sog):split(meta.ang?Math.abs(vNum):vNum,meta.d));
+    var frac=vNum==null?0:Math.max(0,Math.min(1,(vNum-meta.min)/(meta.max-meta.min)));
+    var sel=state.editing&&state.sel===idx;
+    var zone=ZONE(cfg.f), none='transparent';
+    var zc = zone==='up'?{lo:pal.bad,mid:none,hi:pal.good}
+      : zone==='down'?{lo:pal.good,mid:none,hi:pal.bad}
+      : zone==='center'?{lo:pal.bad,mid:pal.good,hi:pal.bad}
+      : {lo:none,mid:none,hi:none};
+    var isMeterBG = cfg.t==='gauge' && (mk==='wind'||mk==='crs') && state.skin==='bg';
+    var isMeterRayWind = cfg.t==='gauge' && mk==='wind' && state.skin==='ray';
+    var isMeterRayCrs  = cfg.t==='gauge' && mk==='crs'  && state.skin==='ray';
+    var bareMeter = isMeterBG||isMeterRayWind||isMeterRayCrs;
+    var scale=(function(){var o={},sp=meta.max-meta.min;for(var i=0;i<=10;i++){var vv=meta.min+sp*i/10;o['s'+i]=String(Math.abs(sp)>=10?Math.round(vv):Math.round(vv*10)/10);}return o;})();
+    var bgNeedle=(function(){var a=-158.5+317.0*frac, ar=Math.abs(a)*Math.PI/180, c=Math.abs(Math.cos(ar)), rr=Math.min(43.5,c>0.02?30/c:43.5)-1.5;
+      return 'rotate('+a+' 50 50) translate(0 50) scale(1 '+(rr/30).toFixed(3)+') translate(0 -50)';})();
+    var labRot={}; for(var a=0;a<360;a+=30) labRot['lab'+a]='rotate('+(angN-a).toFixed(1)+' 200 54)';
+    var styleStr = bareMeter
+      ? 'grid-column:span '+w+';grid-row:span '+h+';background:transparent;border:none;outline:'+(sel?'2px solid '+pal.accent:'none')+';outline-offset:-2px;position:relative;display:flex;flex-direction:column;padding:0;overflow:hidden;min-height:0;touch-action:'+(state.editing?'none':'auto')+';cursor:'+(state.editing?'grab':'default')
+      : 'grid-column:span '+w+';grid-row:span '+h+';background:'+pal.tile+';box-shadow:'+(pal.shadow||'none')+';border:1px solid '+(sel?pal.accent:pal.line)+';outline:'+(sel?'2px solid '+pal.accent:'none')+';outline-offset:-3px;border-radius:'+pal.rad+';position:relative;display:flex;flex-direction:column;padding:5px 7px;overflow:hidden;min-height:0;touch-action:'+(state.editing?'none':'auto')+';cursor:'+(state.editing?'grab':'default');
+    return {
+      idx:idx, styleStr:styleStr,
+      showHead: !bareMeter,
+      label: (mk==='gen'||cfg.t!=='gauge')?meta.l:meta.l+' · '+(meta2?meta2.l:'—'),
+      unit: meta.u||'', val:val, v2:v2,
+      v1:{i:mk==='wind'?split(Math.abs(angN),meta.d).i:split(angN,meta.d).i, d:mk==='wind'?split(Math.abs(angN),meta.d).d:split(angN,meta.d).d},
+      u1:meta.u||'', l3:e3.l,u3:e3.u,v3:e3.v, l4:e4.l,u4:e4.u,v4:e4.v,
+      l1:meta.l, l1short:String(meta.l).split('-')[0], l2:meta2?meta2.l:'—', u2:meta2?(meta2.u||''):'',
+      hdg3:('00'+Math.round((angN+360)%360)).slice(-3),
+      awaRot:'rotate('+angN.toFixed(1)+' 200 200)',
+      awaRotB: mk==='wind'?'rotate('+angN.toFixed(1)+' 200 200)':'rotate(0 200 200)',
+      ringRotB: mk==='crs'?'rotate('+(-angN).toFixed(1)+' 200 200)':'rotate(0 200 200)',
+      twdRotB:(mk==='wind'&&meta2&&meta2.ang)?'rotate('+v2Num.toFixed(1)+' 200 200)':'rotate(0 200 200)',
+      twdOpB:(mk==='wind'&&meta2&&meta2.ang)?'1':'0',
+      sbLayB:'rotate('+(mk==='wind'?angN+32:32).toFixed(1)+' 200 200)',
+      ptLayB:'rotate('+(mk==='wind'?angN-32:-32).toFixed(1)+' 200 200)',
+      ringRot:'rotate('+(-angN).toFixed(1)+' 200 200)',
+      lab0:labRot.lab0,lab30:labRot.lab30,lab60:labRot.lab60,lab90:labRot.lab90,lab120:labRot.lab120,lab150:labRot.lab150,lab180:labRot.lab180,lab210:labRot.lab210,lab240:labRot.lab240,lab270:labRot.lab270,lab300:labRot.lab300,lab330:labRot.lab330,
+      text:(raw==null||String(raw).trim()==='')?'—':String(raw).trim(),
+      isText:isText, isNum:!isText&&cfg.t==='num', isBar:!isText&&cfg.t==='bar',
+      needle:'rotate('+(-135+270*frac)+' 50 50)',
+      isGauge:!isText&&cfg.t==='gauge'&&mk==='gen'&&state.skin==='modern',
+      isGaugeBG:!isText&&cfg.t==='gauge'&&mk==='gen'&&state.skin==='bg',
+      isGaugeRay:!isText&&cfg.t==='gauge'&&mk==='gen'&&state.skin==='ray',
+      isMeterRoseBG:isMeterBG, isMeterWind:isMeterRayWind, isMeterCrs:isMeterRayCrs,
+      isModernMeter:!isText&&cfg.t==='gauge'&&(mk==='wind'||mk==='crs')&&state.skin==='modern',
+      numStyle:'font-weight:800;font-variant-numeric:tabular-nums;line-height:.92;color:'+pal.ink+';font-size:clamp(20px,'+(4.6*w)+'vmin,'+(34*h)+'px);text-align:center',
+      track:arc(50,50,40,-135,135), arc:arc(50,50,40,-135,-135+270*frac), scale:scale,
+      bandLo:arc(50,50,46,-135,-135+270*0.13), bandMid:arc(50,50,46,-135+270*0.42,-135+270*0.58), bandHi:arc(50,50,46,-135+270*0.87,135),
+      bgNeedle:bgNeedle,
+      rayTrack:arc(50,50,42.8,-125,125), rayEdgeOut:arc(50,50,44.7,-125,125), rayNeedle:'rotate('+(-125+250*frac)+' 50 54)',
+      rayLo:arc(50,50,42.8,-125,-125+250*0.13), rayMid:arc(50,50,42.8,-125+250*0.42,-125+250*0.58), rayHi:arc(50,50,42.8,-125+250*0.87,125),
+      loCol:zc.lo, midCol:zc.mid, hiCol:zc.hi, unit:meta.u||'',
+      fill:'position:absolute;left:0;top:0;bottom:0;width:'+(frac*100)+'%;background:'+pal.accent+';border-radius:8px',
+      showGrip:state.editing
+    };
   }
-  function render(d){latest=d;
-    if(d.Boatname)document.getElementById('boat').textContent=String(d.Boatname).trim()||'SailingPD';
-    if(d['GPS-RMC-time'])document.getElementById('clock').textContent=String(d['GPS-RMC-time']).trim();
-    paint();
+
+  // ── Tegel → HTML ──────────────────────────────────────────────────────────
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+  function tileInner(t){
+    if(t.isText) return TPL.text(t);
+    if(t.isNum) return TPL.num(t);
+    if(t.isBar) return TPL.bar(t);
+    if(t.isGaugeBG) return TPL.gaugeBG(t);
+    if(t.isGaugeRay) return TPL.gaugeRay(t);
+    if(t.isMeterRoseBG) return TPL.roseBG(t);
+    if(t.isMeterWind) return TPL.wind(t);
+    if(t.isMeterCrs) return TPL.crs(t);
+    return TPL.gaugeModern(t); // modern (gen, of wind/crs → we tonen een gewone meter)
+  }
+  function tileHTML(t){
+    return '<div style="'+t.styleStr+'" data-tile="'+t.idx+'" data-act="tile">'
+      + (t.showHead?'<div style="display:flex;justify-content:space-between;gap:6px;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--label)"><span>'+esc(t.label)+'</span><span style="opacity:.8">'+esc(t.unit)+'</span></div>':'')
+      + '<div style="flex:1;display:grid;place-items:center;min-height:0;position:relative">'+tileInner(t)+'</div>'
+      + (t.showGrip?'<div data-grip="'+t.idx+'" style="position:absolute;right:2px;bottom:2px;width:16px;height:16px;cursor:nwse-resize;border-right:3px solid var(--accent);border-bottom:3px solid var(--accent);opacity:.7;touch-action:none"></div>':'')
+      + '</div>';
   }
 
-  var sField=document.getElementById('s-field');
-  (function(){var h='';GROUPS.forEach(function(g){h+='<optgroup label="'+g[0]+'">';g[1].forEach(function(k){h+='<option value="'+k+'">'+(F[k]?F[k].l:k)+'</option>';});h+='</optgroup>';});sField.innerHTML=h;})();
-  function fillSheet(){if(sel==null)return;var cfg=state[sel],isText=!!(F[cfg.f]&&F[cfg.f].text);
-    sField.value=cfg.f;
-    document.getElementById('s-type').style.display=isText?'none':'';
-    document.getElementById('s-note').style.display=isText?'':'none';
-    sheet.querySelectorAll('#s-type .c').forEach(function(c){c.classList.toggle('on',c.dataset.t===cfg.t);});}
-  function selectTile(idx){sel=idx;sheet.classList.add('open');fillSheet();build();}
-  sField.addEventListener('change',function(){if(sel==null)return;state[sel].f=this.value;if(F[this.value]&&F[this.value].text)state[sel].t='num';save();fillSheet();build();});
-  sheet.querySelectorAll('#s-type .c').forEach(function(c){c.addEventListener('click',function(){if(sel==null)return;state[sel].t=this.dataset.t;save();fillSheet();build();});});
-  sheet.querySelectorAll('[data-s]').forEach(function(b){b.addEventListener('click',function(){if(sel==null)return;var s=this.dataset.s,cfg=state[sel];
-    if(s==='w+')cfg.w=Math.min(cols(),(cfg.w||1)+1);if(s==='w-')cfg.w=Math.max(1,(cfg.w||1)-1);
-    if(s==='h+')cfg.h=Math.min(3,(cfg.h||1)+1);if(s==='h-')cfg.h=Math.max(1,(cfg.h||1)-1);save();build();});});
-  document.getElementById('s-rm').addEventListener('click',function(){if(sel==null)return;state.splice(sel,1);sel=null;sheet.classList.remove('open');save();build();});
+  // ── Render ────────────────────────────────────────────────────────────────
+  var root=document.getElementById('app');
+  function render(){
+    var P=PALETTE, pal=(P[state.skin]||P.modern)[state.night?'night':'day'];
+    var rs=document.documentElement.style;
+    Object.keys(pal).forEach(function(k){ rs.setProperty('--'+k,pal[k]); });
+    document.body.style.background=pal.page; document.body.style.color=pal.ink;
+    var d=state.data||{}, sog=d['SOG'];
 
-  document.getElementById('editbtn').addEventListener('click',function(){
-    var on=!document.body.classList.contains('editing');document.body.classList.toggle('editing',on);
-    this.classList.toggle('on',on);this.textContent=on?'Klaar':'Bewerken';
-    document.getElementById('addbtn').style.display=on?'':'none';document.getElementById('resetbtn').style.display=on?'':'none';
-    if(!on){sel=null;sheet.classList.remove('open');build();}});
-  document.getElementById('addbtn').addEventListener('click',function(){state.push({f:'SOG',t:'num',w:1,h:1});save();selectTile(state.length-1);});
-  document.getElementById('resetbtn').addEventListener('click',function(){if(confirm('Terug naar standaardindeling?')){state=DEFAULT.map(function(o){return Object.assign({},o)});sel=null;sheet.classList.remove('open');save();build();}});
+    // Header
+    document.getElementById('boat').textContent = d['Boatname']?String(d['Boatname']).trim():'SailingPD';
+    document.getElementById('status').textContent = (state.live?'LIVE':'DEMO — geen verbinding')+' · '+(d['GPS-RMC-time']?String(d['GPS-RMC-time']).trim():'--:--:--');
+    ['modern','bg','ray'].forEach(function(k){ document.getElementById('skin-'+k).classList.toggle('on',state.skin===k); });
+    document.getElementById('night').classList.toggle('on',state.night);
+    var eb=document.getElementById('editbtn'); eb.classList.toggle('on',state.editing); eb.textContent=state.editing?'Klaar':'Bewerken';
+    document.getElementById('addbtn').style.display=state.editing?'':'none';
+    document.getElementById('resetbtn').style.display=state.editing?'':'none';
+    document.getElementById('hint').textContent=state.editing?'Tik een meter om te wijzigen · sleep om te verplaatsen · hoek om te vergroten':'';
 
-  // Stijl (skin) + nacht — onthouden
-  function applySkin(k){if(k)document.documentElement.setAttribute('data-skin',k);else document.documentElement.removeAttribute('data-skin');
-    document.querySelectorAll('#skin .c').forEach(function(c){c.classList.toggle('on',c.dataset.k===k);});localStorage.setItem('spd-skin',k);}
-  document.querySelectorAll('#skin .c').forEach(function(c){c.addEventListener('click',function(){applySkin(this.dataset.k);});});
-  var nb=document.getElementById('nightbtn');
-  function applyNight(on){if(on)document.documentElement.setAttribute('data-mode','night');else document.documentElement.removeAttribute('data-mode');nb.classList.toggle('on',on);localStorage.setItem('spd-night',on?'1':'');}
-  nb.addEventListener('click',function(){applyNight(document.documentElement.getAttribute('data-mode')!=='night');});
-  applySkin(localStorage.getItem('spd-skin')||''); applyNight(localStorage.getItem('spd-night')==='1');
+    // Grid
+    var grid=document.getElementById('grid');
+    grid.style.gridTemplateColumns='repeat('+state.cols+',1fr)';
+    grid.innerHTML=state.tiles.map(function(cfg,idx){ return tileHTML(computeTile(cfg,idx,d,pal,sog)); }).join('');
 
-  var rt;window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(build,200);});
-  var q=new URLSearchParams(location.search);
-  var host=q.get('host')||location.hostname||'localhost',port=q.get('port')||(location.port||'9090');
-  (function connect(){var ws;try{ws=new WebSocket('ws://'+host+':'+port+'/ws');}catch(e){return setTimeout(connect,2000);}
-    ws.onmessage=function(ev){try{render(JSON.parse(ev.data));}catch(e){}};
-    ws.onclose=function(){setTimeout(connect,2000);};ws.onerror=function(){try{ws.close();}catch(e){}};})();
-  build();
+    renderSheet(pal);
+  }
+
+  // ── Bewerk-sheet ──────────────────────────────────────────────────────────
+  function fieldSelect(id,val){ var h='<select data-sel="'+id+'" style="background:var(--input,var(--chrome));color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:.4rem;font-size:.82rem;font-weight:600;max-width:44vw">';
+    GROUPS().forEach(function(g){ h+='<optgroup label="'+g[0]+'">'; g[1].forEach(function(k){ h+='<option value="'+k+'"'+(k===val?' selected':'')+'>'+k+'</option>'; }); h+='</optgroup>'; }); return h+'</select>'; }
+  function seg(items){ var h='<div style="display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden">'; items.forEach(function(it){ h+='<div data-act="'+it.a+'" style="padding:.42rem .7rem;font-size:.72rem;font-weight:800;text-transform:uppercase;color:'+(it.on?'#fff':'var(--label)')+';background:'+(it.on?'var(--accent)':'transparent')+';cursor:pointer">'+it.t+'</div>'; }); return h+'</div>'; }
+  function renderSheet(pal){
+    var sh=document.getElementById('sheet');
+    if(!(state.editing&&state.sel!=null)){ sh.style.display='none'; return; }
+    sh.style.display='flex'; var c=state.tiles[state.sel], F=FIELDS(), isGauge=c.t==='gauge', mk=c.m||'gen', flavored=isGauge&&(mk==='wind'||mk==='crs');
+    var html='<span style="font-size:.72rem;font-weight:800;text-transform:uppercase;color:var(--label)">Tegel</span>'
+      + fieldSelect('field',c.f);
+    if(flavored){ html+=fieldSelect('field2',c.f2||'AWS')+fieldSelect('field3',c.f3||'Depth-avg')+fieldSelect('field4',c.f4||'STW-corrected'); }
+    html+=seg([{a:'tNum',t:'Getal',on:c.t==='num'},{a:'tGauge',t:'Meter',on:c.t==='gauge'},{a:'tBar',t:'Balk',on:c.t==='bar'}]);
+    if(isGauge) html+=seg([{a:'mGen',t:'Generiek',on:mk==='gen'},{a:'mWind',t:'Wind',on:mk==='wind'},{a:'mCrs',t:'Koers',on:mk==='crs'}]);
+    html+='<span style="display:flex;align-items:center;gap:.25rem;font-size:.72rem;font-weight:800;color:var(--label)">Breed <button data-act="wMin" class="stp">–</button><button data-act="wPlus" class="stp">+</button></span>';
+    html+='<span style="display:flex;align-items:center;gap:.25rem;font-size:.72rem;font-weight:800;color:var(--label)">Hoog <button data-act="hMin" class="stp">–</button><button data-act="hPlus" class="stp">+</button></span>';
+    html+='<span style="flex:1"></span><button data-act="del" style="border:1px solid var(--bad);color:var(--bad);background:transparent;border-radius:7px;padding:.4rem .7rem;font-size:.72rem;font-weight:800;text-transform:uppercase;cursor:pointer">Verwijder</button>';
+    sh.innerHTML=html;
+  }
+
+  // ── Acties ────────────────────────────────────────────────────────────────
+  function upd(patch){ var t=state.tiles.slice(); t[state.sel]=Object.assign({},t[state.sel],patch); setTiles(t); }
+  var ACT={
+    'skin-modern':function(){ put('spd-skin-v2','modern'); state.skin='modern'; render(); },
+    'skin-bg':function(){ put('spd-skin-v2','bg'); state.skin='bg'; render(); },
+    'skin-ray':function(){ put('spd-skin-v2','ray'); state.skin='ray'; render(); },
+    night:function(){ state.night=!state.night; put('spd-night-v1',state.night?'1':''); render(); },
+    edit:function(){ state.editing=!state.editing; state.sel=null; render(); },
+    add:function(){ var t=state.tiles.concat([{f:'SOG',t:'num',w:1,h:1}]); setTiles(t,{sel:t.length-1}); },
+    reset:function(){ setTiles(DEFAULT(),{sel:null}); },
+    del:function(){ var t=state.tiles.slice(); t.splice(state.sel,1); setTiles(t,{sel:null}); },
+    tNum:function(){ upd({t:'num'}); }, tGauge:function(){ upd({t:'gauge'}); }, tBar:function(){ upd({t:'bar'}); },
+    mGen:function(){ upd({m:'gen'}); },
+    mWind:function(){ var c=state.tiles[state.sel],F=FIELDS(); upd({m:'wind',f:(F[c.f]&&F[c.f].ang)?c.f:'AWA',f2:c.f2||'AWS',f3:c.f3||'Depth-avg',f4:c.f4||'STW-corrected',w:Math.max(3,c.w||1),h:Math.max(4,c.h||1)}); },
+    mCrs:function(){ var c=state.tiles[state.sel]; upd({m:'crs',f:'HDG-corrected',f2:c.f2||'STW-corrected',f3:c.f3||'GEOWIND',f4:c.f4||'Depth-avg',w:Math.max(3,c.w||1),h:Math.max(4,c.h||1)}); },
+    wPlus:function(){ var c=state.tiles[state.sel]; upd({w:Math.min(state.cols,(c.w||1)+1)}); },
+    wMin:function(){ var c=state.tiles[state.sel]; upd({w:Math.max(1,(c.w||1)-1)}); },
+    hPlus:function(){ var c=state.tiles[state.sel]; upd({h:Math.min(6,(c.h||1)+1)}); },
+    hMin:function(){ var c=state.tiles[state.sel]; upd({h:Math.max(1,(c.h||1)-1)}); }
+  };
+  document.addEventListener('click',function(e){
+    var el=e.target.closest('[data-act]'); if(!el) return;
+    var a=el.getAttribute('data-act');
+    if(a==='tile'){ if(state.editing){ var host=el.closest('[data-tile]'); state.sel=parseInt(host.getAttribute('data-tile'),10); render(); } return; }
+    if(ACT[a]) ACT[a]();
+  });
+  document.addEventListener('change',function(e){
+    var s=e.target.closest('[data-sel]'); if(!s||state.sel==null) return;
+    var which=s.getAttribute('data-sel'), v=s.value, F=FIELDS();
+    if(which==='field') upd({f:v, t:(F[v]&&F[v].text)?'num':state.tiles[state.sel].t});
+    else if(which==='field2') upd({f2:v}); else if(which==='field3') upd({f3:v}); else if(which==='field4') upd({f4:v});
+  });
+
+  // Drag (verplaatsen) + resize (grip)
+  var drag=null;
+  document.addEventListener('pointerdown',function(e){
+    if(!state.editing) return;
+    var grip=e.target.closest('[data-grip]');
+    if(grip){ e.preventDefault(); e.stopPropagation();
+      var idx=parseInt(grip.getAttribute('data-grip'),10), c0=state.tiles[idx];
+      var start={x:e.clientX,y:e.clientY,w:c0.w||1,h:c0.h||1};
+      var mv=function(ev){ var dw=Math.round((ev.clientX-start.x)/110), dh=Math.round((ev.clientY-start.y)/110);
+        var t=state.tiles.slice(); t[idx]=Object.assign({},t[idx],{w:Math.max(1,Math.min(state.cols,start.w+dw)),h:Math.max(1,Math.min(6,start.h+dh))}); setTiles(t); };
+      var up=function(){ window.removeEventListener('pointermove',mv); window.removeEventListener('pointerup',up); };
+      window.addEventListener('pointermove',mv); window.addEventListener('pointerup',up); return;
+    }
+    var host=e.target.closest('[data-tile]'); if(!host) return;
+    drag={from:parseInt(host.getAttribute('data-tile'),10)};
+    var mv=function(ev){ if(!drag) return; var el=document.elementFromPoint(ev.clientX,ev.clientY);
+      var h=el&&el.closest?el.closest('[data-tile]'):null; if(!h) return;
+      var to=parseInt(h.getAttribute('data-tile'),10); if(isNaN(to)||to===drag.from) return;
+      var t=state.tiles.slice(), moved=t.splice(drag.from,1)[0]; t.splice(to,0,moved); drag.from=to; setTiles(t,{sel:to}); };
+    var up=function(){ window.removeEventListener('pointermove',mv); window.removeEventListener('pointerup',up); drag=null; };
+    window.addEventListener('pointermove',mv); window.addEventListener('pointerup',up);
+  });
+
+  // ── WebSocket + demo ──────────────────────────────────────────────────────
+  function connect(){ if(!location.hostname) return; var host=location.hostname, port=location.port||'9090', ws;
+    try{ ws=new WebSocket('ws://'+host+':'+port+'/ws'); }catch(e){ setTimeout(connect,4000); return; }
+    ws.onmessage=function(ev){ try{ state.data=JSON.parse(ev.data); state.live=true; render(); }catch(e){} };
+    ws.onclose=function(){ state.live=false; setTimeout(connect,4000); };
+    ws.onerror=function(){ try{ws.close();}catch(e){} }; }
+  var sim={t:0,twdRef:67,adv:0};
+  function tick(){ if(state.live){ render(); return; }
+    var s=sim; s.t+=0.2; var t=s.t, sin=Math.sin;
+    var tws=9.6+1.5*sin(t/17)+0.4*sin(t/3.1), twd=67+9*sin(t/23)+2.5*sin(t/6.5), ua=42-0.35*(tws-9.6);
+    var wob=9*sin(t/11)+3*sin(t/4.1), hdg=twd-ua+wob, twa=-(ua+wob), tgt=6.35+0.16*(tws-9.6), stw=tgt*(0.955+0.045*sin(t/9.1)), heel=20.5+2.4*sin(t/5.7);
+    var advs=['low heel less twist, slack forestay','meer voorlijkspanning, traveller iets naar lij','iets meer twist, backstay losser'];
+    if(t%24<0.2) s.adv=(s.adv+1)%3;
+    state.data={ 'Boatname':'Penny Lane','GPS-RMC-time':new Date().toTimeString().slice(0,8),
+      'SOG':stw+0.35,'STW-corrected':stw,'TWS':tws,'TWS-avg':9.5,'TWS-trend':0.9*sin(t/17+1.57),
+      'TWA':twa,'AWA':twa*0.62,'AWS':tws*1.35,'GEOWIND':twd,'HDG-corrected':(hdg+360)%360,'COG':(hdg+4.5+360)%360,
+      'Windshift-deg':twd-s.twdRef,'Upwind-angle':ua,'Downwind-angle':150,'UA-error':twa<0?(-twa-ua):(twa-ua),'DA-error':0,
+      'Target-speed':tgt,'Target-VMG':tgt*Math.cos(ua*Math.PI/180)*1.02,'VMG':stw*Math.cos(ua*Math.PI/180),
+      'Performance-SOG':stw/tgt*100,'Performance-waterspeed':stw/tgt*100-0.7,'Performance-to-windward':stw/tgt*100-1.8,
+      'Best-heel':18,'Actual-heel':heel,'Heel-error':heel-18,'Actual-pitch':1.7,'Actual-leeway':-4+0.6*sin(t/8),
+      'Current-kts':0.4,'Current-to-degrees':210,'Current-impact-degrees':8,'Depth-avg':6.2+0.4*sin(t/11),'Depth-change':0.1,
+      'Trim-advice1':advs[s.adv],'Trim-advice2':'','Trim-advice3':'' };
+    render();
+  }
+  function onResize(){ var c=Math.max(2,Math.min(10,Math.floor(window.innerWidth/135))); if(c!==state.cols){ state.cols=c; render(); } }
+  window.addEventListener('resize',onResize); onResize();
+  connect(); setInterval(tick,200); render();
 })();
+
 </script>
 </body>
 </html>
