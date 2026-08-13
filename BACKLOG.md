@@ -15,6 +15,11 @@ Losse verbeter-/bugpunten. Afgevinkte items blijven staan met datum voor de hist
 
 ## Gerepareerd
 
+- [x] 2026-08-13 — **Header + meter-conversie**:
+  - Skins zijn nu een **dropdown** (SPD-Default, Modern, Raymarine, B&G) i.p.v. 4 knoppen.
+  - Header logisch gegroepeerd: skin-dropdown links, Bewerken + dag/nacht rechts.
+  - Nacht-knop is nu een **zon/maan-icoon** dat de doel-modus toont en toggelt.
+  - **Bestaande meter → getal/balk lukte niet**: de bewerk-balk werd elke 200ms herbouwd voor live-cijfers, waardoor een tik (vooral traag op touchscreen) de knop miste. De balk wordt tijdens die verversing niet meer herbouwd.
 - [x] 2026-08-13 — **Teststronde met 4 audit-agents + interactief: 13 bugs gevonden en verholpen** (commit volgt):
   - CRASH: wind-roos met hoek-f2 zonder waarde → `v2Num.toFixed()` bevroor de hele grid. Nu guard.
   - `Performance-filter` werd als perf-% behandeld (geguard/gezoneerd) → nu alleen echte perf-velden (`isPerf()`).
