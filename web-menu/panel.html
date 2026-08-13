@@ -463,18 +463,32 @@ window.SPD_TPL = {
       'Wind-message':T('Wind-melding'),'Current-message':T('Stroom-melding'),
       'Boatname':T('Bootnaam'),'GPS-RMC-time':T('GPS-tijd'),'SPD-Version':T('SPD-versie')
     };
+    Object.assign(raw, {
+      'Bow-AWA':n('Bow-AWA','°',-180,180,0,1),'Bow-TWA':n('Bow-TWA','°',-180,180,0,1),'Upwash':n('Upwash','°',-10,10,0),
+      'BOW':T('BOW'),'TWA-to-WP':T('TWA-to-WP'),'Waypoint':T('Waypoint'),'Est-Time en Route':T('Est-Time en Route'),
+      'GEOWIND-TWS-avg':n('GEOWIND-TWS-avg','kn',0,40,1),'GEOWIND-TWS-trend':n('GEOWIND-TWS-trend','kn',-3,3,1),
+      'Current-degrees-relative':n('Current-degrees-relative','°',-180,180,0,1),'Current-from-degrees':n('Current-from-degrees','°',0,360,0),
+      'Current-limit-kts':n('Current-limit-kts','kn',0,5,1),'Current-limit-degrees':n('Current-limit-degrees','°',0,90,0),
+      'Rel-BTW':n('Rel-BTW','°',-180,180,0,1),'Rel-COG':n('Rel-COG','°',-180,180,0,1),'Rel-HDG':n('Rel-HDG','°',-180,180,0,1),
+      'Off Course':n('Off Course','°',-60,60,0),'SOG-forward':n('SOG-forward','kn',0,16,1),'Speed-from-current':n('Speed-from-current','kn',-3,3,1),
+      'Heave-vertical':n('Heave-vertical','m',-3,3,1),'Actual-yaw':n('Actual-yaw','°',-20,20,1),'XTE':n('XTE','nm',-2,2,2),
+      'Best-angle-error':{l:'Best-angle-error',u:'°',min:-40,max:40,d:0,band:[-4,4]},'Shift-limit':n('Shift-limit','°',0,40,0),
+      'Replay-speed':T('Replay-speed'),'Log-nr':n('Log-nr','',0,999,0),'Records-processed':n('Records-processed','',0,99,0),
+      'Speed-source SOG':T('Speed-source SOG'),'Performance-filter':n('Performance-filter','',0,60,0),'Records-filter':n('Records-filter','',0,60,0),
+      'App Wind-filter':n('App Wind-filter','',0,60,0),'Satellites':T('Satellites'),'HDOP':T('HDOP')
+    });
     _F={}; Object.keys(raw).forEach(function(k){ _F[k]=Object.assign({},raw[k],{l:k}); }); return _F;
   }
   function GROUPS(){ return [
-    ['Performance',['Performance-SOG','Performance-waterspeed','Performance-incl-current','Performance-to-windward','Performance-to-WP','Target-speed','Target-VMG','VMG','VMG-to-WP']],
-    ['Speed',['SOG','STW-corrected','Speed-shortage','Speed-sideways','Rate-of-Turn']],
-    ['Wind',['AWA','AWS','TWA','TWS','TWS-avg','TWS-trend','Windshift-deg','GEOWIND','GEOWIND-TWS']],
-    ['Angles & targets',['Upwind-angle','Downwind-angle','Best-angle','UA-error','DA-error','Actual-leeway','Expected-leeway']],
-    ['Trim & motion',['Actual-heel','Best-heel','Heel-error','Actual-pitch','Rudder-angle']],
-    ['Current & depth',['Current-kts','Current-to-degrees','Current-impact-degrees','Depth-avg','Depth-change']],
-    ['Course & navigation',['COG','HDG-corrected','BTW','DTW','Distance-layline','Time-layline','Direction-to-steer']],
+    ['Performance',['Performance-SOG','Performance-incl-current','Performance-waterspeed','Performance-to-windward','Performance-to-WP','Target-speed','Target-VMG','VMG','VMG-to-WP','Performance-filter']],
+    ['Speed',['SOG','SOG-forward','STW-corrected','Speed-shortage','Speed-sideways','Speed-from-current','Speed-source SOG','Rate-of-Turn']],
+    ['Wind',['AWA','AWS','TWA','TWS','TWS-avg','TWS-trend','Upwash','Bow-AWA','Bow-TWA','Windshift-deg','GEOWIND','GEOWIND-TWS','GEOWIND-TWS-avg','GEOWIND-TWS-trend','Shift-limit','App Wind-filter']],
+    ['Angles & targets',['Upwind-angle','Downwind-angle','Best-angle','Best-angle-error','UA-error','DA-error','Actual-leeway','Expected-leeway']],
+    ['Trim & motion',['Actual-heel','Best-heel','Heel-error','Actual-pitch','Actual-yaw','Heave-vertical','Rudder-angle']],
+    ['Current & depth',['Current-kts','Current-from-degrees','Current-to-degrees','Current-degrees-relative','Current-impact-degrees','Current-limit-kts','Current-limit-degrees','Depth-avg','Depth-change']],
+    ['Course & navigation',['COG','HDG-corrected','Off Course','Rel-COG','Rel-HDG','Rel-BTW','BTW','DTW','XTE','Distance-layline','Time-layline','Direction-to-steer','Est-Time en Route','TWA-to-WP','Waypoint','BOW']],
     ['Messages & advice',['Trim-advice1','Trim-advice2','Trim-advice3','Wind-message','Current-message']],
-    ['System',['Boatname','GPS-RMC-time','SPD-Version']]
+    ['System',['Boatname','GPS-RMC-time','SPD-Version','HDOP','Satellites','Replay-speed','Log-nr','Records-filter','Records-processed']]
   ]; }
   function ZONE(k){
     if(/^Performance/.test(k)) return 'up';
@@ -546,9 +560,31 @@ window.SPD_TPL = {
     var styleStr = bareMeter
       ? 'grid-column:span '+w+';grid-row:span '+h+';background:transparent;border:none;outline:'+(sel?'2px solid '+pal.accent:'none')+';outline-offset:-2px;position:relative;display:flex;flex-direction:column;padding:0;overflow:hidden;min-height:0;touch-action:'+(state.editing?'none':'auto')+';cursor:'+(state.editing?'grab':'default')
       : 'grid-column:span '+w+';grid-row:span '+h+';background:'+pal.tile+';box-shadow:'+(pal.shadow||'none')+';border:1px solid '+(sel?pal.accent:pal.line)+';outline:'+(sel?'2px solid '+pal.accent:'none')+';outline-offset:-3px;border-radius:'+pal.rad+';position:relative;display:flex;flex-direction:column;padding:5px 7px;overflow:hidden;min-height:0;touch-action:'+(state.editing?'none':'auto')+';cursor:'+(state.editing?'grab':'default');
+    // ── SPD-default skin: Google-gauge (dial) + ruwe SPD-datatabel ──
+    var isSpd = state.skin==='spd';
+    var isGoogle = isSpd && !isText && cfg.t==='gauge';
+    var isSpdTable = isSpd && !bareMeter && !isGoogle && (cfg.t==='num'||cfg.t==='bar'||isText);
+    var gRim='', gTicks='';
+    if(isGoogle){
+      var A=function(f){return -135+270*f;};
+      var bands = zone==='up'   ? [[0,.33,pal.bad],[.33,.66,pal.warn],[.66,1,pal.good]]
+                : zone==='down' ? [[0,.33,pal.good],[.33,.66,pal.warn],[.66,1,pal.bad]]
+                : zone==='center'?[[0,.2,pal.bad],[.2,.4,pal.warn],[.4,.6,pal.good],[.6,.8,pal.warn],[.8,1,pal.bad]]
+                : [[0,1,pal.tickband]];
+      gRim = bands.map(function(b){ return '<path d="'+arc(50,50,34,A(b[0]),A(b[1]))+'" fill="none" stroke="'+b[2]+'" stroke-width="6"/>'; }).join('');
+      [0,2,4,6,8,10].forEach(function(i){
+        var pn=polar(50,50,41,A(i/10)), t0=polar(50,50,37.5,A(i/10)), t1=polar(50,50,30.5,A(i/10));
+        gTicks += '<line x1="'+t0[0].toFixed(1)+'" y1="'+t0[1].toFixed(1)+'" x2="'+t1[0].toFixed(1)+'" y2="'+t1[1].toFixed(1)+'" stroke="'+pal.gnum+'" stroke-width="0.7"/>'
+               +  '<text x="'+pn[0].toFixed(1)+'" y="'+pn[1].toFixed(1)+'" text-anchor="middle" dominant-baseline="central" font-size="6" fill="'+pal.gnum+'" font-family="inherit">'+scale['s'+i]+'</text>';
+      });
+    }
     return {
+      isGaugeGoogle:isGoogle, isSpdTable:isSpdTable,
+      gRim:gRim, gTicks:gTicks, gFaceFill:pal.tile, gFaceStroke:pal.line, gNeedleCol:pal.bad, gHubCol:pal.ink, gInk:pal.ink,
+      gValStr: isText?'':(val.i+(val.d||'')),
+      hf2:!!cfg.f2, hf3:!!cfg.f3, hf4:!!cfg.f4, tBorder:pal.line, tLabel:pal.label, tInk:pal.ink,
       idx:idx, styleStr:styleStr,
-      showHead: !bareMeter,
+      showHead: !bareMeter && !isSpdTable,
       label: (mk==='gen'||cfg.t!=='gauge')?meta.l:meta.l+' · '+(meta2?meta2.l:'—'),
       unit: meta.u||'', val:val, v2:v2,
       v1:{i:mk==='wind'?split(Math.abs(angN),meta.d).i:split(angN,meta.d).i, d:mk==='wind'?split(Math.abs(angN),meta.d).d:split(angN,meta.d).d},
@@ -586,7 +622,32 @@ window.SPD_TPL = {
 
   // ── Tegel → HTML ──────────────────────────────────────────────────────────
   function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+  // SPD-default: Google-Charts-achtige wijzerplaat (offline, in SVG nagemaakt).
+  function gaugeGoogle(t){
+    return '<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%" font-family="inherit">'
+      + '<circle cx="50" cy="50" r="47" fill="'+t.gFaceFill+'" stroke="'+t.gFaceStroke+'" stroke-width="1"/>'
+      + t.gRim + t.gTicks
+      + '<g transform="'+t.needle+'"><line x1="50" y1="50" x2="50" y2="20" stroke="'+t.gNeedleCol+'" stroke-width="1.8" stroke-linecap="round"/></g>'
+      + '<circle cx="50" cy="50" r="3.2" fill="'+t.gHubCol+'"/>'
+      + '<text x="50" y="75" text-anchor="middle" font-size="13" font-weight="800" fill="'+t.gInk+'" font-family="inherit" style="font-variant-numeric:tabular-nums">'+esc(t.gValStr)+'</text>'
+      + '</svg>';
+  }
+  // SPD-default: ruwe SPD-datatabel (dunne grijze randen, label links / waarde rechts).
+  function spdTable(t){
+    var bc=t.tBorder, lc=t.tLabel, ic=t.tInk;
+    function row(l,vt,u){ return '<tr>'
+      + '<td style="border:1px solid '+bc+';padding:2px 6px;text-align:left;color:'+lc+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(l)+'</td>'
+      + '<td style="border:1px solid '+bc+';padding:2px 6px;text-align:right;font-weight:800;color:'+ic+';font-variant-numeric:tabular-nums;white-space:nowrap">'+esc(vt)+(u?' <span style="opacity:.55;font-weight:600">'+esc(u)+'</span>':'')+'</td>'
+      + '</tr>'; }
+    var rows = row(t.l1, t.isText?t.text:t.val.t, t.isText?'':t.u1);
+    if(t.hf2) rows+=row(t.l2, t.v2.t, t.u2);
+    if(t.hf3) rows+=row(t.l3, t.v3.t, t.u3);
+    if(t.hf4) rows+=row(t.l4, t.v4.t, t.u4);
+    return '<table style="width:100%;border-collapse:collapse;font-size:clamp(11px,3.4vmin,15px);font-family:inherit">'+rows+'</table>';
+  }
   function tileInner(t){
+    if(t.isGaugeGoogle) return gaugeGoogle(t);
+    if(t.isSpdTable) return spdTable(t);
     if(t.isText) return TPL.text(t);
     if(t.isNum) return TPL.num(t);
     if(t.isBar) return TPL.bar(t);
