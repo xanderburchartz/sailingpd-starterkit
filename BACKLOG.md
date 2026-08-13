@@ -15,6 +15,10 @@ Losse verbeter-/bugpunten. Afgevinkte items blijven staan met datum voor de hist
 
 ## Gerepareerd
 
+- [x] 2026-08-14 — **Gestructureerde teststronde** (plan→review→6 parallelle agents→rapport→hertest, 161 asserties, jsdom-harness incl. live-modus). Zie [TESTRAPPORT.md](TESTRAPPORT.md). Bevestigde alle eerdere fixes én vond+fixte 2 nieuwe bugs:
+  - **XSS via tekst-subvelden (f2/f3/f4) op B&G/Raymarine-meters**: `roseBG/wind/crs` renderden tekst ongeëscaped → nu geëscaped (`_esc` in spd_templates.js).
+  - **Koers `360` i.p.v. `000`** in de B&G-koershoek (hoek-uitlezing gebruikte `split` zonder wrap) → nu gewrapt.
+  - Meter→balk/getal in **live-modus** bewezen opgelost (de oorspronkelijke klacht).
 - [x] 2026-08-13 — **Header + meter-conversie**:
   - Skins zijn nu een **dropdown** (SPD-Default, Modern, Raymarine, B&G) i.p.v. 4 knoppen.
   - Header logisch gegroepeerd: skin-dropdown links, Bewerken + dag/nacht rechts.

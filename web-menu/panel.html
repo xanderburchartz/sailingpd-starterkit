@@ -51,6 +51,8 @@
   <div id="sheet"></div>
 </div>
 <script>
+// Escape server-tekst die als sub-veld (f2/f3/f4) in de SVG-meters komt (XSS-preventie).
+var _esc = function(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); };
 window.SPD_TPL = {
   text: (t) => `              <div style="font-size:17px;font-weight:700;line-height:1.2;text-align:center;color:var(--ink,#101720);text-wrap:pretty">${t.textHtml}</div>`,
   num: (t) => `              <div style="${t.numStyle}">${t.val.i}<span style="font-size:.58em">${t.val.d}</span></div>`,
@@ -246,11 +248,11 @@ window.SPD_TPL = {
                 <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;container-type:size">
                   <div style="display:flex;flex-direction:column;align-items:flex-start">
           <span style="font-size:min(8cqw,14px);font-weight:800;letter-spacing:.07em;color:var(--label,#2c3f5e)">${t.l3}</span>
-          <span style="font-size:min(15cqw,30px);font-weight:800;line-height:.9;color:var(--ink,#101720);font-variant-numeric:tabular-nums">${t.v3.t}<span style="font-size:.6em"> ${t.u3}</span></span>
+          <span style="font-size:min(15cqw,30px);font-weight:800;line-height:.9;color:var(--ink,#101720);font-variant-numeric:tabular-nums">${_esc(t.v3.t)}<span style="font-size:.6em"> ${t.u3}</span></span>
         </div>
                   <div style="display:flex;flex-direction:column;align-items:flex-end">
           <span style="font-size:min(8cqw,14px);font-weight:800;letter-spacing:.07em;color:var(--label,#2c3f5e)">${t.l4}</span>
-          <span style="font-size:min(15cqw,30px);font-weight:800;line-height:.9;color:var(--ink,#101720);font-variant-numeric:tabular-nums">${t.v4.t}<span style="font-size:.6em"> ${t.u4}</span></span>
+          <span style="font-size:min(15cqw,30px);font-weight:800;line-height:.9;color:var(--ink,#101720);font-variant-numeric:tabular-nums">${_esc(t.v4.t)}<span style="font-size:.6em"> ${t.u4}</span></span>
         </div>
                 </div>
               </div>`,
@@ -267,7 +269,7 @@ window.SPD_TPL = {
 <defs><linearGradient id="boatfade2" x1="0" y1="148" x2="0" y2="302" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="var(--faceink,#101720)" stop-opacity="1"></stop><stop offset="0.62" stop-color="var(--faceink,#101720)" stop-opacity="1"></stop><stop offset="1" stop-color="var(--faceink,#101720)" stop-opacity="0"></stop></linearGradient></defs><g transform="translate(0 -100) translate(200 302) scale(0.909) translate(-200 -302)"><path d="M232 302 C242 246 238 186 200 148 C162 186 158 246 168 302" fill="none" stroke="url(#boatfade2)" stroke-width="7" stroke-linecap="butt"></path></g>
 <foreignObject x="105" y="248" width="190" height="120">
   <div style="text-align:center;font-family:'Segoe UI',system-ui,sans-serif;color:var(--faceink,#101720)">
-    <div style="font:800 34px/36px 'Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">${t.v2.t}</div>
+    <div style="font:800 34px/36px 'Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">${_esc(t.v2.t)}</div>
     <div style="font:700 15px/17px 'Segoe UI',system-ui,sans-serif">${t.u2}</div>
   </div>
 </foreignObject>
@@ -279,14 +281,14 @@ window.SPD_TPL = {
                     <div style="flex:1;min-height:0;background:var(--mface,#fff);padding:6px 8px;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;container-type:size">
                     <div style="font-size:min(13cqh,13cqw);font-weight:800;color:var(--faceink,#101720);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.l3}</div>
                     <div style="flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:0.9;text-align:center">
-                      <span style="font-size:min(62cqh,52cqw);font-weight:800;color:var(--faceink,#101720);font-variant-numeric:tabular-nums">${t.v3.t}</span>
+                      <span style="font-size:min(62cqh,52cqw);font-weight:800;color:var(--faceink,#101720);font-variant-numeric:tabular-nums">${_esc(t.v3.t)}</span>
                       <span style="font-size:min(16cqh,13cqw);font-weight:700;color:var(--faceink,#101720)">${t.u3}</span>
                     </div>
                   </div>
                     <div style="flex:1;min-height:0;background:var(--mface,#fff);padding:6px 8px;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;container-type:size">
                     <div style="font-size:min(13cqh,13cqw);font-weight:800;color:var(--faceink,#101720);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.l4}</div>
                     <div style="flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:0.9;text-align:center">
-                      <span style="font-size:min(62cqh,52cqw);font-weight:800;color:var(--faceink,#101720);font-variant-numeric:tabular-nums">${t.v4.t}</span>
+                      <span style="font-size:min(62cqh,52cqw);font-weight:800;color:var(--faceink,#101720);font-variant-numeric:tabular-nums">${_esc(t.v4.t)}</span>
                       <span style="font-size:min(16cqh,13cqw);font-weight:700;color:var(--faceink,#101720)">${t.u4}</span>
                     </div>
                   </div>
@@ -297,14 +299,14 @@ window.SPD_TPL = {
               <div style="position:relative;width:min(100cqw,100cqh*1.1269);height:min(100cqh,100cqw*0.8874);overflow:hidden;border-radius:var(--rad,14px);border:1px solid var(--line,#c3cbd6);background:linear-gradient(to top,var(--raybg1,#0b0e12),var(--raybg2,#7d858f));container-type:size">
                 <div style="position:absolute;left:2%;top:2%;z-index:0;border:5px solid var(--mframe,#101720);border-radius:12px;padding:1.2cqh 5px 1.2cqh;background:var(--mface,#fff);width:34%;height:22cqh;box-sizing:border-box;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;container-type:size">
                   <div style="display:flex;align-items:baseline;justify-content:center;gap:1px;line-height:0.85">
-                    <span style="font-size:min(66cqh,34cqw);font-weight:800;color:var(--faceink,#101720);font-variant-numeric:tabular-nums">${t.v3.t}</span>
+                    <span style="font-size:min(66cqh,34cqw);font-weight:800;color:var(--faceink,#101720);font-variant-numeric:tabular-nums">${_esc(t.v3.t)}</span>
                     <span style="font-size:min(28cqh,14cqw);font-weight:800;color:var(--faceink,#101720)">${t.u3}</span>
                   </div>
                   <div style="font-size:min(18cqh,11cqw);font-weight:800;letter-spacing:.02em;color:var(--faceink,#101720);opacity:.9;white-space:nowrap;text-align:center;overflow:hidden;text-overflow:ellipsis">${t.l3}</div>
                 </div>
                 <div style="position:absolute;right:2%;top:2%;z-index:0;border:5px solid var(--mframe,#101720);border-radius:12px;padding:1.2cqh 5px 1.2cqh;background:var(--mface,#fff);width:34%;height:22cqh;box-sizing:border-box;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;container-type:size">
                   <div style="display:flex;align-items:baseline;justify-content:center;gap:1px;line-height:0.85">
-                    <span style="font-size:min(66cqh,34cqw);font-weight:800;color:var(--faceink,#101720);font-variant-numeric:tabular-nums">${t.v4.t}</span>
+                    <span style="font-size:min(66cqh,34cqw);font-weight:800;color:var(--faceink,#101720);font-variant-numeric:tabular-nums">${_esc(t.v4.t)}</span>
                     <span style="font-size:min(28cqh,14cqw);font-weight:800;color:var(--faceink,#101720)">${t.u4}</span>
                   </div>
                   <div style="font-size:min(18cqh,11cqw);font-weight:800;letter-spacing:.02em;color:var(--faceink,#101720);opacity:.9;white-space:nowrap;text-align:center;overflow:hidden;text-overflow:ellipsis">${t.l4}</div>
@@ -545,7 +547,7 @@ window.SPD_TPL = {
     state.tiles=tiles; if(extra) Object.assign(state,extra); render(); }
   function persistTiles(){ try{ localStorage.setItem('spd-tiles-v6',JSON.stringify(state.tiles)); }catch(e){} }
   function put(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
-  var gesture=false, ticking=false;
+  var gesture=false, ticking=false, sheetSig=null;
 
   // ── Compute één tegel (port van renderVals tiles.map) ─────────────────────
   function computeTile(cfg,idx,d,pal,sog){
@@ -607,7 +609,7 @@ window.SPD_TPL = {
       showHead: !bareMeter && !isSpdTable,
       label: (mk==='gen'||cfg.t!=='gauge'||isGoogle)?meta.l:meta.l+' · '+(meta2?meta2.l:'—'),
       unit: meta.u||'', val:val, v2:v2,
-      v1:{i:mk==='wind'?split(Math.abs(angN),meta.d).i:split(angN,meta.d).i, d:mk==='wind'?split(Math.abs(angN),meta.d).d:split(angN,meta.d).d},
+      v1:(function(){ var a=mk==='wind'?Math.abs(angN):((meta.min===0&&meta.max===360&&meta.d===0)?(Math.round(angN)%360+360)%360:angN); var s=split(a,meta.d); return {i:s.i,d:s.d}; })(),
       u1:meta.u||'', l3:e3.l,u3:e3.u,v3:e3.v, l4:e4.l,u4:e4.u,v4:e4.v,
       l1:meta.l, l1short:String(meta.l).split('-')[0], l2:meta2?meta2.l:'—', u2:meta2?(meta2.u||''):'',
       hdg3:('00'+((Math.round(angN)%360+360)%360)).slice(-3),
@@ -736,12 +738,17 @@ window.SPD_TPL = {
   function seg(items){ var h='<div style="display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden">'; items.forEach(function(it){ h+='<div data-act="'+it.a+'" style="padding:.42rem .7rem;font-size:.72rem;font-weight:800;text-transform:uppercase;color:'+(it.on?'#fff':'var(--label)')+';background:'+(it.on?'var(--accent)':'transparent')+';cursor:pointer">'+it.t+'</div>'; }); return h+'</div>'; }
   function renderSheet(pal){
     var sh=document.getElementById('sheet');
-    if(!(state.editing&&state.sel!=null)){ sh.style.display='none'; return; }
+    if(!(state.editing&&state.sel!=null)){ sh.style.display='none'; sheetSig=null; return; }
     sh.style.display='flex';
-    // De sheet hangt alleen af van de geselecteerde tegel, niet van live data.
-    // Tijdens een periodieke tick-render dus NIET herbouwen — anders wordt een knop/dropdown
-    // midden in een klik vervangen en registreert de klik niet (meter → getal/balk "lukt niet").
-    if(ticking) return; var c=state.tiles[state.sel], F=FIELDS(), isGauge=c.t==='gauge', mk=c.m||'gen', flavored=isGauge&&(mk==='wind'||mk==='crs');
+    var c=state.tiles[state.sel];
+    // De bewerk-balk hangt ALLEEN af van de geselecteerde tegel + z'n config, niet van live data.
+    // Alleen herbouwen als die signatuur wijzigt — anders wordt een knop/dropdown midden in een
+    // klik vervangen (bij elke datapush, ook via de WebSocket) en registreert de klik niet
+    // (meter → getal/balk "lukt niet"). Kleur/skin volgen de CSS-variabelen, geen herbouw nodig.
+    var sig=state.sel+'|'+JSON.stringify(c);
+    if(sig===sheetSig && sh.childNodes.length) return;
+    sheetSig=sig;
+    var F=FIELDS(), isGauge=c.t==='gauge', mk=c.m||'gen', flavored=isGauge&&(mk==='wind'||mk==='crs');
     var html='<span style="font-size:.72rem;font-weight:800;text-transform:uppercase;color:var(--label)">Tegel</span>'
       + fieldSelect('field',c.f);
     if(flavored){ html+=fieldSelect('field2',c.f2)+fieldSelect('field3',c.f3)+fieldSelect('field4',c.f4); }
