@@ -24,7 +24,12 @@
   .btn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
   .stp{width:30px;height:30px;border-radius:7px;border:1px solid var(--line);background:transparent;color:var(--ink);font-weight:800;cursor:pointer;font-size:1rem}
   #grid{display:grid;gap:6px;grid-auto-rows:86px;align-content:start;flex:1;min-height:0;overflow:auto;padding:8px}
-  #sheet{display:none;flex-wrap:wrap;align-items:center;gap:.5rem;background:var(--chrome);border-top:1px solid var(--line);padding:.55rem .7rem;flex:none}
+  #sheet{display:none;flex-direction:column;align-items:stretch;gap:.5rem;background:var(--chrome);border-top:1px solid var(--line);padding:.55rem .7rem;flex:none}
+  .sheetrow{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+  .sheetrow.fields{flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px}
+  .sheetlbl{font-size:.72rem;font-weight:800;text-transform:uppercase;color:var(--label);flex:none}
+  .sizectl{display:flex;align-items:center;gap:.25rem;font-size:.72rem;font-weight:800;color:var(--label);flex:none}
+  .delbtn{border:1px solid var(--bad);color:var(--bad);background:transparent;border-radius:7px;padding:.4rem .7rem;font-size:.72rem;font-weight:800;text-transform:uppercase;cursor:pointer;flex:none}
 </style>
 </head>
 <body>
@@ -748,16 +753,19 @@ window.SPD_TPL = {
     var sig=state.sel+'|'+JSON.stringify(c);
     if(sig===sheetSig && sh.childNodes.length) return;
     sheetSig=sig;
-    var F=FIELDS(), isGauge=c.t==='gauge', mk=c.m||'gen', flavored=isGauge&&(mk==='wind'||mk==='crs');
-    var html='<span style="font-size:.72rem;font-weight:800;text-transform:uppercase;color:var(--label)">Tegel</span>'
-      + fieldSelect('field',c.f);
-    if(flavored){ html+=fieldSelect('field2',c.f2)+fieldSelect('field3',c.f3)+fieldSelect('field4',c.f4); }
-    html+=seg([{a:'tNum',t:'Getal',on:c.t==='num'},{a:'tGauge',t:'Meter',on:c.t==='gauge'},{a:'tBar',t:'Balk',on:c.t==='bar'}]);
-    if(isGauge) html+=seg([{a:'mGen',t:'Generiek',on:mk==='gen'},{a:'mWind',t:'Wind',on:mk==='wind'},{a:'mCrs',t:'Koers',on:mk==='crs'}]);
-    html+='<span style="display:flex;align-items:center;gap:.25rem;font-size:.72rem;font-weight:800;color:var(--label)">Breed <button data-act="wMin" class="stp">–</button><button data-act="wPlus" class="stp">+</button></span>';
-    html+='<span style="display:flex;align-items:center;gap:.25rem;font-size:.72rem;font-weight:800;color:var(--label)">Hoog <button data-act="hMin" class="stp">–</button><button data-act="hPlus" class="stp">+</button></span>';
-    html+='<span style="flex:1"></span><button data-act="del" style="border:1px solid var(--bad);color:var(--bad);background:transparent;border-radius:7px;padding:.4rem .7rem;font-size:.72rem;font-weight:800;text-transform:uppercase;cursor:pointer">Verwijder</button>';
-    sh.innerHTML=html;
+    var isGauge=c.t==='gauge', mk=c.m||'gen', flavored=isGauge&&(mk==='wind'||mk==='crs');
+    // Rij 1 — veld-dropdowns (variabel aantal, eigen rij zodat de knoppen hieronder NIET verspringen)
+    var fields='<span class="sheetlbl">Tegel</span>'+fieldSelect('field',c.f)
+      + (flavored?(fieldSelect('field2',c.f2)+fieldSelect('field3',c.f3)+fieldSelect('field4',c.f4)):'');
+    // Rij 2 — besturing op VASTE posities: type | smaak(gereserveerd) | grootte | verwijder(rechts)
+    var typeSeg=seg([{a:'tNum',t:'Getal',on:c.t==='num'},{a:'tGauge',t:'Meter',on:c.t==='gauge'},{a:'tBar',t:'Balk',on:c.t==='bar'}]);
+    var flavorSeg=seg([{a:'mGen',t:'Generiek',on:mk==='gen'},{a:'mWind',t:'Wind',on:mk==='wind'},{a:'mCrs',t:'Koers',on:mk==='crs'}]);
+    var size='<span class="sizectl">Breed <button data-act="wMin" class="stp">–</button><button data-act="wPlus" class="stp">+</button></span>'
+      + '<span class="sizectl">Hoog <button data-act="hMin" class="stp">–</button><button data-act="hPlus" class="stp">+</button></span>';
+    var ctrl=typeSeg
+      + '<span class="flavorslot"'+(isGauge?'':' style="visibility:hidden;pointer-events:none"')+'>'+flavorSeg+'</span>'
+      + size + '<span style="flex:1"></span><button data-act="del" class="delbtn">Verwijder</button>';
+    sh.innerHTML='<div class="sheetrow fields">'+fields+'</div><div class="sheetrow ctrl">'+ctrl+'</div>';
   }
 
   // ── Acties ────────────────────────────────────────────────────────────────
