@@ -40,7 +40,7 @@
 </div>
 <script>
 window.SPD_TPL = {
-  text: (t) => `              <div style="font-size:17px;font-weight:700;line-height:1.2;text-align:center;color:var(--ink,#101720);text-wrap:pretty">${t.text}</div>`,
+  text: (t) => `              <div style="font-size:17px;font-weight:700;line-height:1.2;text-align:center;color:var(--ink,#101720);text-wrap:pretty">${t.textHtml}</div>`,
   num: (t) => `              <div style="${t.numStyle}">${t.val.i}<span style="font-size:.58em">${t.val.d}</span></div>`,
   bar: (t) => `              <div style="width:100%">
                 <div style="font-size:28px;font-weight:800;color:var(--ink,#101720);font-variant-numeric:tabular-nums;line-height:1;margin-bottom:6px">${t.val.i}<span style="font-size:18px">${t.val.d}</span></div>
@@ -382,6 +382,7 @@ window.SPD_TPL = {
               </div>
               </div>`,
 };
+
 (function(){
   var TPL = window.SPD_TPL;
 
@@ -490,8 +491,10 @@ window.SPD_TPL = {
     ['Messages & advice',['Trim-advice1','Trim-advice2','Trim-advice3','Wind-message','Current-message']],
     ['System',['Boatname','GPS-RMC-time','SPD-Version','HDOP','Satellites','Replay-speed','Log-nr','Records-filter','Records-processed']]
   ]; }
+  // Alleen de echte performance-%-velden (NIET 'Performance-filter', een telling 0-60).
+  function isPerf(k){ return /^Performance-(SOG|waterspeed|incl-current|to-)/.test(k); }
   function ZONE(k){
-    if(/^Performance/.test(k)) return 'up';
+    if(isPerf(k)) return 'up';
     var UP=['SOG','SOG-forward','STW-corrected','VMG','VMG-to-WP','Depth-avg'];
     var DOWN=['Actual-heel','Actual-leeway','Expected-leeway','Rudder-angle','Actual-pitch','Current-kts','XTE','DTW','Speed-sideways'];
     var CENTER=['UA-error','DA-error','Heel-error','Best-angle-error','Windshift-deg','Speed-shortage'];
@@ -522,27 +525,32 @@ window.SPD_TPL = {
   var stiles=null; try{ stiles=JSON.parse(localStorage.getItem('spd-tiles-v6')); }catch(e){}
   var state={
     skin: lg('spd-skin-v2','modern'), night: lg('spd-night-v1','')==='1',
-    tiles: (Array.isArray(stiles)&&stiles.length)?stiles:DEFAULT(),
+    tiles: Array.isArray(stiles)?stiles:DEFAULT(),
     editing:false, sel:null, data:{}, live:false, cols:4
   };
   if(['modern','bg','ray','spd'].indexOf(state.skin)<0) state.skin='modern';
   function setTiles(tiles,extra){ try{ localStorage.setItem('spd-tiles-v6',JSON.stringify(tiles)); }catch(e){}
     state.tiles=tiles; if(extra) Object.assign(state,extra); render(); }
+  function persistTiles(){ try{ localStorage.setItem('spd-tiles-v6',JSON.stringify(state.tiles)); }catch(e){} }
   function put(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+  var gesture=false, ticking=false;
 
   // ── Compute één tegel (port van renderVals tiles.map) ─────────────────────
   function computeTile(cfg,idx,d,pal,sog){
     var F=FIELDS(), meta=F[cfg.f]||{l:cfg.f,u:'',min:0,max:100,d:0};
     var w=Math.min(cfg.w||1,state.cols), h=cfg.h||1;
     var raw=d[cfg.f], vNum=num(raw), mk=cfg.m||'gen', meta2=cfg.f2?F[cfg.f2]:null;
+    var txtVal=function(r){ return {i:'',d:'',t:(r==null||String(r).trim()==='')?'—':String(r).trim()}; };
     var ex=function(key){ var m=cfg[key]?F[cfg[key]]:null; if(!m) return {l:'—',u:'',v:{i:'--',d:'',t:'--'}};
-      var r=d[cfg[key]], nn=num(r); return {l:m.l,u:m.u||'',v:/^Performance/.test(cfg[key])?perf(r,sog):split(m.ang?Math.abs(nn):nn,m.d)}; };
+      var r=d[cfg[key]]; if(m.text) return {l:m.l,u:'',v:txtVal(r)};
+      var nn=num(r); return {l:m.l,u:m.u||'',v:isPerf(cfg[key])?perf(r,sog):split(nn==null?null:(m.ang?Math.abs(nn):nn),m.d)}; };
     var e3=ex('f3'), e4=ex('f4');
     var raw2=cfg.f2?d[cfg.f2]:null, v2Num=num(raw2);
-    var v2=meta2?(/^Performance/.test(cfg.f2)?perf(raw2,sog):split(meta2.ang?Math.abs(v2Num):v2Num,meta2.d)):{i:'--',d:'',t:'--'};
+    var v2=!meta2?{i:'--',d:'',t:'--'}:(meta2.text?txtVal(raw2):(isPerf(cfg.f2)?perf(raw2,sog):split(v2Num==null?null:(meta2.ang?Math.abs(v2Num):v2Num),meta2.d)));
     var angN=vNum==null?0:vNum, isText=!!meta.text;
-    var val=isText?{i:'',d:''}:(/^Performance/.test(cfg.f)?perf(raw,sog):split(meta.ang?Math.abs(vNum):vNum,meta.d));
-    var frac=vNum==null?0:Math.max(0,Math.min(1,(vNum-meta.min)/(meta.max-meta.min)));
+    var val=isText?{i:'',d:''}:(isPerf(cfg.f)?perf(raw,sog):split(vNum==null?null:(meta.ang?Math.abs(vNum):vNum),meta.d));
+    var perfBlank=isPerf(cfg.f)&&val.t==='--';
+    var frac=(vNum==null||perfBlank)?0:Math.max(0,Math.min(1,(vNum-meta.min)/(meta.max-meta.min)));
     var sel=state.editing&&state.sel===idx;
     var zone=ZONE(cfg.f), none='transparent';
     var zc = zone==='up'?{lo:pal.bad,mid:none,hi:pal.good}
@@ -585,22 +593,23 @@ window.SPD_TPL = {
       hf2:!!cfg.f2, hf3:!!cfg.f3, hf4:!!cfg.f4, tBorder:pal.line, tLabel:pal.label, tInk:pal.ink,
       idx:idx, styleStr:styleStr,
       showHead: !bareMeter && !isSpdTable,
-      label: (mk==='gen'||cfg.t!=='gauge')?meta.l:meta.l+' · '+(meta2?meta2.l:'—'),
+      label: (mk==='gen'||cfg.t!=='gauge'||isGoogle)?meta.l:meta.l+' · '+(meta2?meta2.l:'—'),
       unit: meta.u||'', val:val, v2:v2,
       v1:{i:mk==='wind'?split(Math.abs(angN),meta.d).i:split(angN,meta.d).i, d:mk==='wind'?split(Math.abs(angN),meta.d).d:split(angN,meta.d).d},
       u1:meta.u||'', l3:e3.l,u3:e3.u,v3:e3.v, l4:e4.l,u4:e4.u,v4:e4.v,
       l1:meta.l, l1short:String(meta.l).split('-')[0], l2:meta2?meta2.l:'—', u2:meta2?(meta2.u||''):'',
-      hdg3:('00'+Math.round((angN+360)%360)).slice(-3),
+      hdg3:('00'+((Math.round(angN)%360+360)%360)).slice(-3),
       awaRot:'rotate('+angN.toFixed(1)+' 200 200)',
       awaRotB: mk==='wind'?'rotate('+angN.toFixed(1)+' 200 200)':'rotate(0 200 200)',
       ringRotB: mk==='crs'?'rotate('+(-angN).toFixed(1)+' 200 200)':'rotate(0 200 200)',
-      twdRotB:(mk==='wind'&&meta2&&meta2.ang)?'rotate('+v2Num.toFixed(1)+' 200 200)':'rotate(0 200 200)',
-      twdOpB:(mk==='wind'&&meta2&&meta2.ang)?'1':'0',
+      twdRotB:(mk==='wind'&&meta2&&meta2.ang&&v2Num!=null)?'rotate('+v2Num.toFixed(1)+' 200 200)':'rotate(0 200 200)',
+      twdOpB:(mk==='wind'&&meta2&&meta2.ang&&v2Num!=null)?'1':'0',
       sbLayB:'rotate('+(mk==='wind'?angN+32:32).toFixed(1)+' 200 200)',
       ptLayB:'rotate('+(mk==='wind'?angN-32:-32).toFixed(1)+' 200 200)',
       ringRot:'rotate('+(-angN).toFixed(1)+' 200 200)',
       lab0:labRot.lab0,lab30:labRot.lab30,lab60:labRot.lab60,lab90:labRot.lab90,lab120:labRot.lab120,lab150:labRot.lab150,lab180:labRot.lab180,lab210:labRot.lab210,lab240:labRot.lab240,lab270:labRot.lab270,lab300:labRot.lab300,lab330:labRot.lab330,
       text:(raw==null||String(raw).trim()==='')?'—':String(raw).trim(),
+      textHtml:(raw==null||String(raw).trim()==='')?'—':esc(String(raw).trim()),
       isText:isText, isNum:!isText&&cfg.t==='num', isBar:!isText&&cfg.t==='bar',
       needle:'rotate('+(-135+270*frac)+' 50 50)',
       isGauge:!isText&&cfg.t==='gauge'&&mk==='gen'&&state.skin==='modern',
@@ -622,27 +631,35 @@ window.SPD_TPL = {
 
   // ── Tegel → HTML ──────────────────────────────────────────────────────────
   function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
-  // SPD-default: Google-Charts-achtige wijzerplaat (offline, in SVG nagemaakt).
+  // SPD-default: gedeelde tabel-rij (dunne grijze randen, label links / waarde rechts).
+  function spdRow(bc,lc,ic,l,vt,u){ return '<tr>'
+    + '<td style="border:1px solid '+bc+';padding:2px 6px;text-align:left;color:'+lc+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(l)+'</td>'
+    + '<td style="border:1px solid '+bc+';padding:2px 6px;text-align:right;font-weight:800;color:'+ic+';font-variant-numeric:tabular-nums;white-space:nowrap">'+esc(vt)+(u?' <span style="opacity:.55;font-weight:600">'+esc(u)+'</span>':'')+'</td>'
+    + '</tr>'; }
+  // SPD-default: Google-Charts-achtige wijzerplaat (offline, in SVG nagemaakt) + evt. sub-uitlezing f2/f3/f4.
   function gaugeGoogle(t){
-    return '<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%" font-family="inherit">'
+    var svg = '<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%" font-family="inherit">'
       + '<circle cx="50" cy="50" r="47" fill="'+t.gFaceFill+'" stroke="'+t.gFaceStroke+'" stroke-width="1"/>'
       + t.gRim + t.gTicks
       + '<g transform="'+t.needle+'"><line x1="50" y1="50" x2="50" y2="20" stroke="'+t.gNeedleCol+'" stroke-width="1.8" stroke-linecap="round"/></g>'
       + '<circle cx="50" cy="50" r="3.2" fill="'+t.gHubCol+'"/>'
       + '<text x="50" y="75" text-anchor="middle" font-size="13" font-weight="800" fill="'+t.gInk+'" font-family="inherit" style="font-variant-numeric:tabular-nums">'+esc(t.gValStr)+'</text>'
       + '</svg>';
+    if(!(t.hf2||t.hf3||t.hf4)) return svg;
+    var rows='';
+    if(t.hf2) rows+=spdRow(t.tBorder,t.tLabel,t.tInk,t.l2,t.v2.t,t.u2);
+    if(t.hf3) rows+=spdRow(t.tBorder,t.tLabel,t.tInk,t.l3,t.v3.t,t.u3);
+    if(t.hf4) rows+=spdRow(t.tBorder,t.tLabel,t.tInk,t.l4,t.v4.t,t.u4);
+    return '<div style="width:100%;height:100%;display:flex;flex-direction:column;min-height:0;gap:3px">'
+      + '<div style="flex:1;min-height:0;display:grid;place-items:center">'+svg+'</div>'
+      + '<table style="width:100%;border-collapse:collapse;font-size:clamp(9px,2.6vmin,12px);font-family:inherit">'+rows+'</table></div>';
   }
-  // SPD-default: ruwe SPD-datatabel (dunne grijze randen, label links / waarde rechts).
+  // SPD-default: ruwe SPD-datatabel voor getal-/tekst-tegels.
   function spdTable(t){
-    var bc=t.tBorder, lc=t.tLabel, ic=t.tInk;
-    function row(l,vt,u){ return '<tr>'
-      + '<td style="border:1px solid '+bc+';padding:2px 6px;text-align:left;color:'+lc+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(l)+'</td>'
-      + '<td style="border:1px solid '+bc+';padding:2px 6px;text-align:right;font-weight:800;color:'+ic+';font-variant-numeric:tabular-nums;white-space:nowrap">'+esc(vt)+(u?' <span style="opacity:.55;font-weight:600">'+esc(u)+'</span>':'')+'</td>'
-      + '</tr>'; }
-    var rows = row(t.l1, t.isText?t.text:t.val.t, t.isText?'':t.u1);
-    if(t.hf2) rows+=row(t.l2, t.v2.t, t.u2);
-    if(t.hf3) rows+=row(t.l3, t.v3.t, t.u3);
-    if(t.hf4) rows+=row(t.l4, t.v4.t, t.u4);
+    var rows = spdRow(t.tBorder,t.tLabel,t.tInk, t.l1, t.isText?t.text:t.val.t, t.isText?'':t.u1);
+    if(t.hf2) rows+=spdRow(t.tBorder,t.tLabel,t.tInk,t.l2,t.v2.t,t.u2);
+    if(t.hf3) rows+=spdRow(t.tBorder,t.tLabel,t.tInk,t.l3,t.v3.t,t.u3);
+    if(t.hf4) rows+=spdRow(t.tBorder,t.tLabel,t.tInk,t.l4,t.v4.t,t.u4);
     return '<table style="width:100%;border-collapse:collapse;font-size:clamp(11px,3.4vmin,15px);font-family:inherit">'+rows+'</table>';
   }
   function tileInner(t){
@@ -668,10 +685,13 @@ window.SPD_TPL = {
 
   // ── Render ────────────────────────────────────────────────────────────────
   var root=document.getElementById('app');
+  // Unie van alle palet-sleutels (over alle skins/modes), zodat we skin-specifieke
+  // vars kunnen wissen bij een skinwissel i.p.v. een stale kleur te laten staan.
+  var ALLKEYS=(function(){ var s={}; Object.keys(PALETTE).forEach(function(sk){ ['day','night'].forEach(function(mo){ Object.keys(PALETTE[sk][mo]).forEach(function(k){ s[k]=1; }); }); }); return Object.keys(s); })();
   function render(){
     var P=PALETTE, pal=(P[state.skin]||P.modern)[state.night?'night':'day'];
     var rs=document.documentElement.style;
-    Object.keys(pal).forEach(function(k){ rs.setProperty('--'+k,pal[k]); });
+    ALLKEYS.forEach(function(k){ if(pal[k]!=null) rs.setProperty('--'+k,pal[k]); else rs.removeProperty('--'+k); });
     document.body.style.background=pal.page; document.body.style.color=pal.ink; document.body.style.fontFamily=state.skin==='spd'?"Consolas,'Courier New',ui-monospace,monospace":"";
     var d=state.data||{}, sog=d['SOG'];
 
@@ -695,15 +715,19 @@ window.SPD_TPL = {
 
   // ── Bewerk-sheet ──────────────────────────────────────────────────────────
   function fieldSelect(id,val){ var h='<select data-sel="'+id+'" style="background:var(--input,var(--chrome));color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:.4rem;font-size:.82rem;font-weight:600;max-width:44vw">';
+    if(id!=='field') h+='<option value=""'+(val?'':' selected')+'>— geen —</option>';
     GROUPS().forEach(function(g){ h+='<optgroup label="'+g[0]+'">'; g[1].forEach(function(k){ h+='<option value="'+k+'"'+(k===val?' selected':'')+'>'+k+'</option>'; }); h+='</optgroup>'; }); return h+'</select>'; }
   function seg(items){ var h='<div style="display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden">'; items.forEach(function(it){ h+='<div data-act="'+it.a+'" style="padding:.42rem .7rem;font-size:.72rem;font-weight:800;text-transform:uppercase;color:'+(it.on?'#fff':'var(--label)')+';background:'+(it.on?'var(--accent)':'transparent')+';cursor:pointer">'+it.t+'</div>'; }); return h+'</div>'; }
   function renderSheet(pal){
     var sh=document.getElementById('sheet');
     if(!(state.editing&&state.sel!=null)){ sh.style.display='none'; return; }
-    sh.style.display='flex'; var c=state.tiles[state.sel], F=FIELDS(), isGauge=c.t==='gauge', mk=c.m||'gen', flavored=isGauge&&(mk==='wind'||mk==='crs');
+    sh.style.display='flex';
+    // Tijdens een periodieke tick-render de sheet niet herbouwen als de gebruiker er in bezig is
+    // (anders klapt een geopende dropdown dicht / verliest focus).
+    if(ticking && sh.contains(document.activeElement)) return; var c=state.tiles[state.sel], F=FIELDS(), isGauge=c.t==='gauge', mk=c.m||'gen', flavored=isGauge&&(mk==='wind'||mk==='crs');
     var html='<span style="font-size:.72rem;font-weight:800;text-transform:uppercase;color:var(--label)">Tegel</span>'
       + fieldSelect('field',c.f);
-    if(flavored){ html+=fieldSelect('field2',c.f2||'AWS')+fieldSelect('field3',c.f3||'Depth-avg')+fieldSelect('field4',c.f4||'STW-corrected'); }
+    if(flavored){ html+=fieldSelect('field2',c.f2)+fieldSelect('field3',c.f3)+fieldSelect('field4',c.f4); }
     html+=seg([{a:'tNum',t:'Getal',on:c.t==='num'},{a:'tGauge',t:'Meter',on:c.t==='gauge'},{a:'tBar',t:'Balk',on:c.t==='bar'}]);
     if(isGauge) html+=seg([{a:'mGen',t:'Generiek',on:mk==='gen'},{a:'mWind',t:'Wind',on:mk==='wind'},{a:'mCrs',t:'Koers',on:mk==='crs'}]);
     html+='<span style="display:flex;align-items:center;gap:.25rem;font-size:.72rem;font-weight:800;color:var(--label)">Breed <button data-act="wMin" class="stp">–</button><button data-act="wPlus" class="stp">+</button></span>';
@@ -726,8 +750,8 @@ window.SPD_TPL = {
     del:function(){ var t=state.tiles.slice(); t.splice(state.sel,1); setTiles(t,{sel:null}); },
     tNum:function(){ upd({t:'num'}); }, tGauge:function(){ upd({t:'gauge'}); }, tBar:function(){ upd({t:'bar'}); },
     mGen:function(){ upd({m:'gen'}); },
-    mWind:function(){ var c=state.tiles[state.sel],F=FIELDS(); upd({m:'wind',f:(F[c.f]&&F[c.f].ang)?c.f:'AWA',f2:c.f2||'AWS',f3:c.f3||'Depth-avg',f4:c.f4||'STW-corrected',w:Math.max(3,c.w||1),h:Math.max(4,c.h||1)}); },
-    mCrs:function(){ var c=state.tiles[state.sel]; upd({m:'crs',f:'HDG-corrected',f2:c.f2||'STW-corrected',f3:c.f3||'GEOWIND',f4:c.f4||'Depth-avg',w:Math.max(3,c.w||1),h:Math.max(4,c.h||1)}); },
+    mWind:function(){ var c=state.tiles[state.sel],F=FIELDS(); upd({m:'wind',f:(F[c.f]&&!F[c.f].text)?c.f:'AWA',f2:c.f2||'AWS',f3:c.f3||'Depth-avg',f4:c.f4||'STW-corrected',w:Math.max(3,c.w||1),h:Math.max(4,c.h||1)}); },
+    mCrs:function(){ var c=state.tiles[state.sel],F=FIELDS(); upd({m:'crs',f:(F[c.f]&&!F[c.f].text)?c.f:'HDG-corrected',f2:c.f2||'STW-corrected',f3:c.f3||'GEOWIND',f4:c.f4||'Depth-avg',w:Math.max(3,c.w||1),h:Math.max(4,c.h||1)}); },
     wPlus:function(){ var c=state.tiles[state.sel]; upd({w:Math.min(state.cols,(c.w||1)+1)}); },
     wMin:function(){ var c=state.tiles[state.sel]; upd({w:Math.max(1,(c.w||1)-1)}); },
     hPlus:function(){ var c=state.tiles[state.sel]; upd({h:Math.min(6,(c.h||1)+1)}); },
@@ -743,7 +767,7 @@ window.SPD_TPL = {
     var s=e.target.closest('[data-sel]'); if(!s||state.sel==null) return;
     var which=s.getAttribute('data-sel'), v=s.value, F=FIELDS();
     if(which==='field') upd({f:v, t:(F[v]&&F[v].text)?'num':state.tiles[state.sel].t});
-    else if(which==='field2') upd({f2:v}); else if(which==='field3') upd({f3:v}); else if(which==='field4') upd({f4:v});
+    else if(which==='field2') upd({f2:v||undefined}); else if(which==='field3') upd({f3:v||undefined}); else if(which==='field4') upd({f4:v||undefined});
   });
 
   // Drag (verplaatsen) + resize (grip)
@@ -753,30 +777,39 @@ window.SPD_TPL = {
     var grip=e.target.closest('[data-grip]');
     if(grip){ e.preventDefault(); e.stopPropagation();
       var idx=parseInt(grip.getAttribute('data-grip'),10), c0=state.tiles[idx];
+      // celmaat uit de tegel zelf: breedte/hoogte gedeeld door huidige w/h
+      var host=grip.closest('[data-tile]'), r=host.getBoundingClientRect();
+      var cw=Math.max(1,r.width/Math.max(1,c0.w||1)), ch=Math.max(1,r.height/Math.max(1,c0.h||1));
       var start={x:e.clientX,y:e.clientY,w:c0.w||1,h:c0.h||1};
-      var mv=function(ev){ var dw=Math.round((ev.clientX-start.x)/110), dh=Math.round((ev.clientY-start.y)/110);
-        var t=state.tiles.slice(); t[idx]=Object.assign({},t[idx],{w:Math.max(1,Math.min(state.cols,start.w+dw)),h:Math.max(1,Math.min(6,start.h+dh))}); setTiles(t); };
-      var up=function(){ window.removeEventListener('pointermove',mv); window.removeEventListener('pointerup',up); };
-      window.addEventListener('pointermove',mv); window.addEventListener('pointerup',up); return;
+      gesture=true; state.sel=idx; render();
+      var mv=function(ev){ if(!state.editing){ cleanup(); return; }
+        var dw=Math.round((ev.clientX-start.x)/cw), dh=Math.round((ev.clientY-start.y)/ch);
+        var t=state.tiles.slice(); t[idx]=Object.assign({},t[idx],{w:Math.max(1,Math.min(state.cols,start.w+dw)),h:Math.max(1,Math.min(6,start.h+dh))}); state.tiles=t; render(); };
+      var cleanup=function(){ window.removeEventListener('pointermove',mv); window.removeEventListener('pointerup',up); window.removeEventListener('pointercancel',up); gesture=false; };
+      var up=function(){ cleanup(); persistTiles(); };
+      window.addEventListener('pointermove',mv); window.addEventListener('pointerup',up); window.addEventListener('pointercancel',up); return;
     }
-    var host=e.target.closest('[data-tile]'); if(!host) return;
-    drag={from:parseInt(host.getAttribute('data-tile'),10)};
-    var mv=function(ev){ if(!drag) return; var el=document.elementFromPoint(ev.clientX,ev.clientY);
+    var host2=e.target.closest('[data-tile]'); if(!host2) return;
+    drag={from:parseInt(host2.getAttribute('data-tile'),10)}; gesture=true;
+    var mv=function(ev){ if(!drag||!state.editing){ cleanup(); return; } var el=document.elementFromPoint(ev.clientX,ev.clientY);
       var h=el&&el.closest?el.closest('[data-tile]'):null; if(!h) return;
       var to=parseInt(h.getAttribute('data-tile'),10); if(isNaN(to)||to===drag.from) return;
-      var t=state.tiles.slice(), moved=t.splice(drag.from,1)[0]; t.splice(to,0,moved); drag.from=to; setTiles(t,{sel:to}); };
-    var up=function(){ window.removeEventListener('pointermove',mv); window.removeEventListener('pointerup',up); drag=null; };
-    window.addEventListener('pointermove',mv); window.addEventListener('pointerup',up);
+      var t=state.tiles.slice(), moved=t.splice(drag.from,1)[0]; t.splice(to,0,moved); drag.from=to; state.sel=to; state.tiles=t; render(); };
+    var cleanup=function(){ window.removeEventListener('pointermove',mv); window.removeEventListener('pointerup',up); window.removeEventListener('pointercancel',up); drag=null; gesture=false; };
+    var up=function(){ cleanup(); persistTiles(); };
+    window.addEventListener('pointermove',mv); window.addEventListener('pointerup',up); window.addEventListener('pointercancel',up);
   });
 
   // ── WebSocket + demo ──────────────────────────────────────────────────────
   function connect(){ if(!location.hostname) return; var host=location.hostname, port=location.port||'9090', ws;
     try{ ws=new WebSocket('ws://'+host+':'+port+'/ws'); }catch(e){ setTimeout(connect,4000); return; }
-    ws.onmessage=function(ev){ try{ state.data=JSON.parse(ev.data); state.live=true; render(); }catch(e){} };
+    ws.onmessage=function(ev){ try{ state.data=JSON.parse(ev.data); state.live=true; state.lastMsg=Date.now(); render(); }catch(e){} };
     ws.onclose=function(){ state.live=false; setTimeout(connect,4000); };
     ws.onerror=function(){ try{ws.close();}catch(e){} }; }
   var sim={t:0,twdRef:67,adv:0};
-  function tick(){ if(state.live){ render(); return; }
+  function tick(){ if(gesture) return; ticking=true;
+    if(state.live && (Date.now()-(state.lastMsg||0))>5000) state.live=false; // bevroren feed → val terug op demo
+    if(state.live){ render(); ticking=false; return; }
     var s=sim; s.t+=0.2; var t=s.t, sin=Math.sin;
     var tws=9.6+1.5*sin(t/17)+0.4*sin(t/3.1), twd=67+9*sin(t/23)+2.5*sin(t/6.5), ua=42-0.35*(tws-9.6);
     var wob=9*sin(t/11)+3*sin(t/4.1), hdg=twd-ua+wob, twa=-(ua+wob), tgt=6.35+0.16*(tws-9.6), stw=tgt*(0.955+0.045*sin(t/9.1)), heel=20.5+2.4*sin(t/5.7);
@@ -791,7 +824,7 @@ window.SPD_TPL = {
       'Best-heel':18,'Actual-heel':heel,'Heel-error':heel-18,'Actual-pitch':1.7,'Actual-leeway':-4+0.6*sin(t/8),
       'Current-kts':0.4,'Current-to-degrees':210,'Current-impact-degrees':8,'Depth-avg':6.2+0.4*sin(t/11),'Depth-change':0.1,
       'Trim-advice1':advs[s.adv],'Trim-advice2':'','Trim-advice3':'' };
-    render();
+    render(); ticking=false;
   }
   function onResize(){ var c=Math.max(2,Math.min(10,Math.floor(window.innerWidth/135))); if(c!==state.cols){ state.cols=c; render(); } }
   window.addEventListener('resize',onResize); onResize();
