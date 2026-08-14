@@ -16,20 +16,21 @@
   .grid { display:-webkit-box; display:-webkit-flex; display:flex;
     -webkit-flex-wrap:wrap; flex-wrap:wrap; padding:5px; }
   .tile { background:#fff; border:1px solid #ccd2da;
-    -webkit-flex:1 1 30%; flex:1 1 30%; margin:5px; min-height:112px;
-    padding:8px 11px; position:relative; overflow:hidden; }
+    -webkit-flex:1 1 30%; flex:1 1 30%; margin:5px; min-height:86px;
+    padding:7px 11px; position:relative; overflow:hidden; }
   .tile.half { -webkit-flex-basis:46%; flex-basis:46%; }
-  .tile.wide { -webkit-flex-basis:97%; flex-basis:97%; }
-  .tile.tall { min-height:210px; }
+  .tile.wide { -webkit-flex-basis:97%; flex-basis:97%; border-left:6px solid #1f5fd0; }
+  .tile.tall { min-height:184px; }
   .lbl { font-size:12px; font-weight:bold; text-transform:uppercase;
     color:#3a4658; letter-spacing:.04em; }
-  .val { font-size:46px; font-weight:bold; line-height:1.02; margin-top:2px; }
-  .unit { font-size:18px; color:#3a4658; font-weight:normal; }
-  .sub { margin-top:7px; padding-top:6px; border-top:1px solid #e3e6ea; font-size:15px; color:#3a4658; }
-  .sub b { font-size:19px; color:#14171c; }
-  .advice { font-size:21px; font-weight:bold; line-height:1.3; margin-top:3px; }
-  .advice .n { display:inline-block; width:20px; height:20px; line-height:20px; text-align:center;
-    background:#1f5fd0; color:#fff; border-radius:10px; font-size:12px; margin-right:6px; }
+  .val { font-size:40px; font-weight:bold; line-height:1.02; margin-top:1px; }
+  .unit { font-size:17px; color:#3a4658; font-weight:normal; }
+  .sub { margin-top:5px; padding-top:5px; border-top:1px solid #e3e6ea; font-size:14px; color:#3a4658; }
+  .sub b { font-size:18px; color:#14171c; }
+  .advice { font-size:22px; font-weight:bold; line-height:1.32; margin-top:4px; }
+  .advice.empty { font-size:16px; font-weight:normal; font-style:italic; color:#8a94a2; }
+  .advice .n { display:inline-block; width:21px; height:21px; line-height:21px; text-align:center;
+    background:#1f5fd0; color:#fff; border-radius:11px; font-size:12px; margin-right:7px; }
   .gwrap { text-align:center; }
   svg { display:block; width:100%; height:168px; }
   .gval { font-size:34px; font-weight:bold; margin-top:-38px; }
@@ -44,18 +45,26 @@
 var DATA = {}, LIVE = false, LAST = 0;
 
 var TILES = [
+  { k:'text', f:'Trim-advice1', l:'Trimadvies & boodschappen', cls:'wide',
+    extra:['Trim-advice2','Trim-advice3','Wind-message','Current-message'],
+    empty:'Nog geen advies — verschijnt zodra je vaart' },
   { k:'gauge', f:'Performance-waterspeed', l:'Performance (STW)', u:'%', min:60, max:115, zone:'up', cls:'half tall' },
   { k:'gauge', f:'Performance-to-windward', l:'Perf. te loevaart', u:'%', min:60, max:115, zone:'up', cls:'half tall' },
   { k:'pair', f:'STW-corrected', l:'Snelheid (STW)', u:'kn', d:1, f2:'Target-speed', l2:'doel' },
   { k:'pair', f:'VMG', l:'VMG', u:'kn', d:1, f2:'Target-VMG', l2:'doel' },
-  { k:'pair', f:'Actual-heel', l:'Slagzij', u:'°', d:0, f2:'Best-heel', l2:'doel' },
+  { k:'pair', f:'Actual-heel', l:'Slagzij', u:'°', d:0, abs:true, f2:'Best-heel', l2:'doel' },
   { k:'num', f:'SOG', l:'SOG', u:'kn', d:1 },
-  { k:'num', f:'Depth-avg', l:'Diepte', u:'m', d:1 },
   { k:'hdg', f:'HDG-corrected', l:'Koers', u:'°' },
+  { k:'hdg', f:'COG', l:'COG', u:'°' },
+  { k:'num', f:'Depth-avg', l:'Diepte', u:'m', d:1 },
   { k:'num', f:'AWA', l:'AWA', u:'°', d:0, abs:true },
+  { k:'num', f:'TWA', l:'TWA', u:'°', d:0, abs:true },
   { k:'num', f:'AWS', l:'AWS', u:'kn', d:1 },
   { k:'num', f:'TWS', l:'TWS', u:'kn', d:1 },
-  { k:'text', f:'Trim-advice1', l:'Trimadvies', cls:'wide', extra:['Trim-advice2','Trim-advice3'] }
+  { k:'hdg', f:'GEOWIND', l:'Ware wind', u:'°' },
+  { k:'num', f:'Actual-leeway', l:'Drift (leeway)', u:'°', d:0 },
+  { k:'num', f:'Upwind-angle', l:'Doelhoek op', u:'°', d:0 },
+  { k:'num', f:'Rate-of-Turn', l:'Draaisnelheid', u:'°/s', d:0 }
 ];
 
 function numOf(x){ var y = parseFloat(x); return isNaN(y) ? null : y; }
@@ -108,10 +117,14 @@ function tileHTML(t){
     if (v1 != null && String(v1).replace(/\s/g,'') !== '') lines.push(String(v1));
     if (t.extra){ for (var j = 0; j < t.extra.length; j++){ var e = DATA[t.extra[j]];
       if (e != null && String(e).replace(/\s/g,'') !== '') lines.push(String(e)); } }
-    if (!lines.length) lines.push('—');
-    var body = '';
-    for (var m = 0; m < lines.length; m++){
-      body += '<div class="advice">' + (lines.length > 1 ? '<span class="n">' + (m + 1) + '</span>' : '') + esc(lines[m]) + '</div>';
+    var body, m;
+    if (!lines.length){
+      body = '<div class="advice empty">' + esc(t.empty || '—') + '</div>';
+    } else {
+      body = '';
+      for (m = 0; m < lines.length; m++){
+        body += '<div class="advice">' + (lines.length > 1 ? '<span class="n">' + (m + 1) + '</span>' : '') + esc(lines[m]) + '</div>';
+      }
     }
     return '<div class="' + cls + '">' + head + body + '</div>';
   }
@@ -153,12 +166,15 @@ function demo(){
   sim += 0.2; var t = sim, sin = Math.sin;
   var tws = 9.6 + 1.5 * sin(t / 17), tgt = 6.35 + 0.16 * (tws - 9.6), stw = tgt * (0.955 + 0.045 * sin(t / 9));
   DATA = { 'Boatname':'Penny Lane', 'GPS-RMC-time':'demo',
-    'SOG': stw + 0.3, 'STW-corrected': stw, 'Target-speed': tgt, 'TWS': tws,
+    'SOG': stw + 0.3, 'STW-corrected': stw, 'Target-speed': tgt, 'TWS': tws, 'TWA': -42,
     'AWA': -26, 'AWS': tws * 1.35, 'HDG-corrected': (72 + 6 * sin(t / 11) + 360) % 360,
-    'Depth-avg': 6.2 + 0.4 * sin(t / 11), 'Actual-heel': 20 + 2 * sin(t / 6), 'Best-heel': 18,
+    'COG': (76 + 6 * sin(t / 11) + 360) % 360, 'GEOWIND': (135 + 4 * sin(t / 23) + 360) % 360,
+    'Depth-avg': 6.2 + 0.4 * sin(t / 11), 'Depth-change': 0.1, 'Actual-heel': 20 + 2 * sin(t / 6), 'Best-heel': 18,
+    'Actual-leeway': -4 + 0.6 * sin(t / 8), 'Upwind-angle': 42, 'Rate-of-Turn': 2 * sin(t / 4),
     'VMG': stw * 0.72, 'Target-VMG': tgt * 0.74,
     'Performance-waterspeed': stw / tgt * 100, 'Performance-to-windward': stw / tgt * 100 - 1.5,
-    'Trim-advice1': 'Minder heel, minder twist', 'Trim-advice2':'Traveller iets naar lij' };
+    'Trim-advice1': 'Minder heel, minder twist', 'Trim-advice2':'Traveller iets naar lij',
+    'Wind-message':'Lift — stuur 3° hoger', 'Current-message':'Stroom zet je 0,4 kn naar lij' };
 }
 
 connect();
