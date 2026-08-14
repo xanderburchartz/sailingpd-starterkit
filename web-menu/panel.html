@@ -715,10 +715,18 @@ window.SPD_TPL = {
     var gRim='', gTicks='';
     if(isGoogle){
       var A=function(f){return -135+270*f;};
-      var bands = zone==='up'   ? [[0,.33,pal.bad],[.33,.66,pal.warn],[.66,1,pal.good]]
-                : zone==='down' ? [[0,.33,pal.good],[.33,.66,pal.warn],[.66,1,pal.bad]]
-                : zone==='center'?[[0,.2,pal.bad],[.2,.4,pal.warn],[.4,.6,pal.good],[.6,.8,pal.warn],[.8,1,pal.bad]]
-                : [[0,1,pal.tickband]];
+      var bands;
+      if(mk==='wind'||mk==='crs'){
+        // Zoals B&G/Raymarine: rood (bakboord, links) + groen (stuurboord, rechts) rond het
+        // midden (kop-in-de-wind / boeg boven). Wind ±60°, koers ±90°.
+        var sp=(mk==='wind'?60:90)/(meta.max-meta.min);
+        bands=[[0,0.5-sp,pal.tickband],[0.5-sp,0.5,pal.bad],[0.5,0.5+sp,pal.good],[0.5+sp,1,pal.tickband]];
+      } else {
+        bands = zone==='up'   ? [[0,.33,pal.bad],[.33,.66,pal.warn],[.66,1,pal.good]]
+              : zone==='down' ? [[0,.33,pal.good],[.33,.66,pal.warn],[.66,1,pal.bad]]
+              : zone==='center'?[[0,.2,pal.bad],[.2,.4,pal.warn],[.4,.6,pal.good],[.6,.8,pal.warn],[.8,1,pal.bad]]
+              : [[0,1,pal.tickband]];
+      }
       gRim = bands.map(function(b){ return '<path d="'+arc(50,50,34,A(b[0]),A(b[1]))+'" fill="none" stroke="'+b[2]+'" stroke-width="6"/>'; }).join('');
       [0,2,4,6,8,10].forEach(function(i){
         var pn=polar(50,50,41,A(i/10)), t0=polar(50,50,37.5,A(i/10)), t1=polar(50,50,30.5,A(i/10));
@@ -731,7 +739,7 @@ window.SPD_TPL = {
     var modSub = state.skin==='modern' && !isText && (!!cfg.f2||!!cfg.f3||!!cfg.f4) && (cfg.t==='num'||cfg.t==='bar'||(cfg.t==='gauge'&&mk==='gen'));
     return {
       isGaugeGoogle:isGoogle, isSpdTable:isSpdTable, modernSub:modSub,
-      gRim:gRim, gTicks:gTicks, gFaceFill:pal.tile, gFaceStroke:pal.line, gNeedleCol:(state.mode==='bw'?pal.ink:pal.bad), gHubCol:pal.ink, gInk:pal.ink,
+      gRim:gRim, gTicks:gTicks, gFaceFill:pal.tile, gFaceStroke:pal.line, gNeedleCol:((state.mode==='bw'||mk==='wind'||mk==='crs')?pal.ink:pal.bad), gHubCol:pal.ink, gInk:pal.ink,
       gValStr: isText?'':(val.i+(val.d||'')),
       hf2:!!cfg.f2, hf3:!!cfg.f3, hf4:!!cfg.f4, tBorder:pal.line, tLabel:pal.label, tInk:pal.ink,
       idx:idx, styleStr:styleStr,
