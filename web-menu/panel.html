@@ -267,6 +267,65 @@ window.SPD_TPL = {
         </div>
                 </div>
               </div>`,
+  roseBGwind: (t) => `              <div style="position:absolute;inset:0;display:flex;flex-direction:column;gap:6px;padding:8px;box-sizing:border-box;background:var(--tile,#fff);border:1px solid var(--line,#b8c1cd);border-radius:var(--rad,4px);container-type:size">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;container-type:size">
+                  <div style="display:flex;flex-direction:column;align-items:flex-start">
+          <span style="font-size:min(8cqw,14px);font-weight:800;letter-spacing:.07em;color:var(--label,#2c3f5e)">${t.l1}</span>
+          <span style="font-size:min(15cqw,30px);font-weight:800;line-height:.9;color:var(--ink,#101720);font-variant-numeric:tabular-nums">${t.v1.i}${t.v1.d}<span style="font-size:.6em"> ${t.u1}</span></span>
+        </div>
+                  <div style="display:flex;flex-direction:column;align-items:flex-end">
+          <span style="font-size:min(8cqw,14px);font-weight:800;letter-spacing:.07em;color:var(--label,#2c3f5e)">${t.l2}</span>
+          <span style="font-size:min(15cqw,30px);font-weight:800;line-height:.9;color:var(--ink,#101720);font-variant-numeric:tabular-nums">${t.v2.i}${t.v2.d}<span style="font-size:.6em"> ${t.u2}</span></span>
+        </div>
+                </div>
+                <div style="flex:1;min-height:0;position:relative;overflow:hidden">
+<svg viewBox="0 0 400 400" style="position:absolute;inset:0;width:100%;height:100%;display:block" preserveAspectRatio="xMidYMid meet">
+          <circle cx="200" cy="200" r="172" fill="none" stroke="var(--ring,#3f4d61)" stroke-width="30"></circle>
+          <g stroke-width="30" fill="none" stroke-linecap="butt">
+            <path d="M200 28 A172 172 0 0 1 286.00 51.04" stroke="var(--sb,#12a04a)"></path>
+            <path d="M286.00 51.04 A172 172 0 0 1 298.66 59.10" stroke="var(--sb,#12a04a)" opacity="0.78"></path>
+            <path d="M298.66 59.10 A172 172 0 0 1 310.56 68.25" stroke="var(--sb,#12a04a)" opacity="0.56"></path>
+            <path d="M310.56 68.25 A172 172 0 0 1 321.62 78.38" stroke="var(--sb,#12a04a)" opacity="0.36"></path>
+            <path d="M321.62 78.38 A172 172 0 0 1 331.75 89.44" stroke="var(--sb,#12a04a)" opacity="0.17"></path>
+            <path d="M114.00 51.04 A172 172 0 0 1 200 28" stroke="var(--pt,#d92d20)"></path>
+            <path d="M101.34 59.10 A172 172 0 0 1 114.00 51.04" stroke="var(--pt,#d92d20)" opacity="0.78"></path>
+            <path d="M89.44 68.25 A172 172 0 0 1 101.34 59.10" stroke="var(--pt,#d92d20)" opacity="0.56"></path>
+            <path d="M78.38 78.38 A172 172 0 0 1 89.44 68.25" stroke="var(--pt,#d92d20)" opacity="0.36"></path>
+            <path d="M68.25 89.44 A172 172 0 0 1 78.38 78.38" stroke="var(--pt,#d92d20)" opacity="0.17"></path>
+          </g>
+          <g transform="rotate(0 200 200)">
+            <line x1="200" y1="16" x2="200" y2="34" stroke="var(--ringink,#fff)" stroke-width="5" transform="rotate(0 200 200)"></line>
+            <line x1="200" y1="16" x2="200" y2="34" stroke="var(--ringink,#fff)" stroke-width="5" transform="rotate(30 200 200)"></line>
+            <line x1="200" y1="16" x2="200" y2="34" stroke="var(--ringink,#fff)" stroke-width="5" transform="rotate(60 200 200)"></line>
+            <line x1="200" y1="16" x2="200" y2="34" stroke="var(--ringink,#fff)" stroke-width="5" transform="rotate(90 200 200)"></line>
+            <line x1="200" y1="16" x2="200" y2="34" stroke="var(--ringink,#fff)" stroke-width="5" transform="rotate(120 200 200)"></line>
+            <line x1="200" y1="16" x2="200" y2="34" stroke="var(--ringink,#fff)" stroke-width="5" transform="rotate(150 200 200)"></line>
+            <line x1="200" y1="16" x2="200" y2="34" stroke="var(--ringink,#fff)" stroke-width="5" transform="rotate(180 200 200)"></line>
+            <line x1="200" y1="16" x2="200" y2="34" stroke="var(--ringink,#fff)" stroke-width="5" transform="rotate(210 200 200)"></line>
+            <line x1="200" y1="16" x2="200" y2="34" stroke="var(--ringink,#fff)" stroke-width="5" transform="rotate(240 200 200)"></line>
+            <line x1="200" y1="16" x2="200" y2="34" stroke="var(--ringink,#fff)" stroke-width="5" transform="rotate(270 200 200)"></line>
+            <line x1="200" y1="16" x2="200" y2="34" stroke="var(--ringink,#fff)" stroke-width="5" transform="rotate(300 200 200)"></line>
+            <line x1="200" y1="16" x2="200" y2="34" stroke="var(--ringink,#fff)" stroke-width="5" transform="rotate(330 200 200)"></line>
+              <g transform="${t.sbLayB}"><path d="M198.6 200 L189.0 77.5 A123 123 0 0 1 211.0 77.5 L201.4 200 Z" fill="var(--pt,#d92d20)"></path></g>
+            <g transform="${t.ptLayB}"><path d="M198.6 200 L189.0 77.5 A123 123 0 0 1 211.0 77.5 L201.4 200 Z" fill="var(--sb,#12a04a)"></path></g>
+            <g transform="${t.twdRotB}" opacity="${t.twdOpB}"><path d="M200 96 L216 6 L184 6 Z" fill="var(--tw,#2f6fd0)" opacity="0.85"></path><text x="200" y="25" text-anchor="middle" font-size="14" font-weight="800" fill="#fff">T</text></g>
+            <g transform="${t.awaRotB}"><path d="M200 46 L221 6 L179 6 Z" fill="var(--tw,#2f6fd0)"></path><text x="200" y="25" text-anchor="middle" font-size="15" font-weight="800" fill="#fff">A</text></g>
+          </g>
+          <defs><linearGradient id="boatfade" x1="0" y1="148" x2="0" y2="302" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="var(--boat,#8a97a8)" stop-opacity="1"></stop><stop offset="0.62" stop-color="var(--boat,#8a97a8)" stop-opacity="1"></stop><stop offset="1" stop-color="var(--boat,#8a97a8)" stop-opacity="0"></stop></linearGradient></defs>
+          <path d="M232 302 C242 246 238 186 200 148 C162 186 158 246 168 302" fill="none" stroke="url(#boatfade)" stroke-width="7" stroke-linecap="butt" transform="translate(200 302) scale(1.325) translate(-200 -302)"></path>
+        </svg>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;container-type:size">
+                  <div style="display:flex;flex-direction:column;align-items:flex-start">
+          <span style="font-size:min(8cqw,14px);font-weight:800;letter-spacing:.07em;color:var(--label,#2c3f5e)">${t.l3}</span>
+          <span style="font-size:min(15cqw,30px);font-weight:800;line-height:.9;color:var(--ink,#101720);font-variant-numeric:tabular-nums">${_esc(t.v3.t)}<span style="font-size:.6em"> ${t.u3}</span></span>
+        </div>
+                  <div style="display:flex;flex-direction:column;align-items:flex-end">
+          <span style="font-size:min(8cqw,14px);font-weight:800;letter-spacing:.07em;color:var(--label,#2c3f5e)">${t.l4}</span>
+          <span style="font-size:min(15cqw,30px);font-weight:800;line-height:.9;color:var(--ink,#101720);font-variant-numeric:tabular-nums">${_esc(t.v4.t)}<span style="font-size:.6em"> ${t.u4}</span></span>
+        </div>
+                </div>
+              </div>`,
   wind: (t) => `              <div style="position:absolute;inset:0;display:grid;place-items:center;container-type:size">
                 <div style="width:100%;height:100%;display:flex;gap:2px;background:var(--mframe,#101720);border-radius:var(--rad,14px);overflow:hidden;box-sizing:border-box;container-type:size">
                   <div style="flex:2.55;min-width:0;background:var(--mface,#fff);position:relative;overflow:hidden;container-type:size">
@@ -699,7 +758,7 @@ window.SPD_TPL = {
       isGauge:!isText&&cfg.t==='gauge'&&mk==='gen'&&state.skin==='modern',
       isGaugeBG:!isText&&cfg.t==='gauge'&&mk==='gen'&&state.skin==='bg',
       isGaugeRay:!isText&&cfg.t==='gauge'&&mk==='gen'&&state.skin==='ray',
-      isMeterRoseBG:isMeterBG, isMeterWind:isMeterRayWind, isMeterCrs:isMeterRayCrs,
+      isMeterRoseBG:isMeterBG, roseWind:isMeterBG&&mk==='wind', isMeterWind:isMeterRayWind, isMeterCrs:isMeterRayCrs,
       isModernMeter:isModMeter,
       numStyle:'font-weight:800;font-variant-numeric:tabular-nums;line-height:.92;color:'+pal.ink+';font-size:clamp(20px,'+(4.6*w)+'vmin,'+(34*h)+'px);text-align:center',
       track:arc(50,50,40,-135,135), arc:arc(50,50,40,-135,-135+270*frac), scale:scale,
@@ -795,7 +854,7 @@ window.SPD_TPL = {
     if(t.isBar) return TPL.bar(t);
     if(t.isGaugeBG) return TPL.gaugeBG(t);
     if(t.isGaugeRay) return TPL.gaugeRay(t);
-    if(t.isMeterRoseBG) return TPL.roseBG(t);
+    if(t.isMeterRoseBG) return t.roseWind ? TPL.roseBGwind(t) : TPL.roseBG(t);
     if(t.isMeterWind) return TPL.wind(t);
     if(t.isMeterCrs) return TPL.crs(t);
     return TPL.gaugeModern(t); // modern (gen, of wind/crs → we tonen een gewone meter)
