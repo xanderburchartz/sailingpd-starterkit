@@ -37,6 +37,12 @@
   <div class="bar">
     <div class="idcol"><span class="b" id="boat">SailingPD</span><span class="s" id="status">--</span></div>
     <div class="grp">
+      <select id="tplsel" data-sel="tpl" aria-label="Sjabloon" class="btn skinsel" title="Kies een dashboard-template">
+        <option value="">Sjabloon…</option>
+        <option value="beginner">Beginner</option>
+        <option value="intermediate">Gevorderd</option>
+        <option value="advanced">Expert</option>
+      </select>
       <select id="skinsel" data-sel="skin" aria-label="Stijl" class="btn skinsel">
         <option value="spd">SPD-Default</option>
         <option value="modern">Modern</option>
@@ -519,6 +525,47 @@ window.SPD_TPL = {
     var CENTER=['UA-error','DA-error','Heel-error','Best-angle-error','Windshift-deg','Speed-shortage'];
     if(UP.indexOf(k)>=0)return 'up'; if(DOWN.indexOf(k)>=0)return 'down'; if(CENTER.indexOf(k)>=0)return 'center'; return 'none';
   }
+  // ── Dashboard-templates (los van skin: template = tegels, skin kies je apart) ──
+  // Regel: max 1 geavanceerde koersmeter (roos) per template — geen dubbele heading.
+  var TEMPLATES = {
+    beginner: [
+      {f:'HDG-corrected',f2:'STW-corrected',f3:'Depth-avg',f4:'GEOWIND',t:'gauge',m:'crs',w:3,h:4},
+      {f:'AWA',f2:'AWS',f3:'TWS',f4:'TWA',t:'gauge',m:'wind',w:3,h:4},
+      {f:'Performance-SOG',t:'gauge',m:'gen',w:2,h:2},
+      {f:'SOG',t:'num',w:1,h:1},{f:'Depth-avg',t:'num',w:1,h:1},
+      {f:'Actual-heel',t:'num',w:2,h:1},
+      {f:'Trim-advice1',t:'num',w:2,h:2}
+    ],
+    intermediate: [
+      {f:'AWA',f2:'AWS',f3:'TWS',f4:'TWA',t:'gauge',m:'wind',w:3,h:4},
+      {f:'Performance-waterspeed',t:'gauge',m:'gen',w:2,h:3},
+      {f:'STW-corrected',f2:'Target-speed',t:'num',w:2,h:1},
+      {f:'VMG',f2:'Target-VMG',t:'num',w:2,h:1},
+      {f:'Windshift-deg',t:'gauge',m:'gen',w:2,h:2},
+      {f:'Actual-heel',f2:'Best-heel',f3:'Heel-error',t:'num',w:2,h:2},
+      {f:'TWS',f2:'TWA',f3:'TWS-trend',t:'num',w:2,h:2},
+      {f:'HDG-corrected',f2:'COG',f3:'Depth-avg',f4:'SOG',t:'num',w:2,h:2},
+      {f:'Trim-advice1',f2:'Trim-advice2',f3:'Trim-advice3',t:'num',w:2,h:2}
+    ],
+    advanced: [
+      {f:'STW-corrected',f2:'Target-speed',t:'gauge',m:'gen',w:2,h:3},
+      {f:'Performance-waterspeed',t:'gauge',m:'gen',w:2,h:3},
+      {f:'Performance-to-windward',t:'gauge',m:'gen',w:2,h:3},
+      {f:'Windshift-deg',t:'gauge',m:'gen',w:2,h:3},
+      {f:'Trim-advice1',f2:'Trim-advice2',f3:'Trim-advice3',t:'num',w:3,h:3},
+      {f:'VMG',f2:'Target-VMG',t:'num',w:2,h:1},
+      {f:'TWS',f2:'TWA',f3:'TWS-trend',f4:'GEOWIND',t:'num',w:2,h:2},
+      {f:'Actual-heel',f2:'Best-heel',f3:'Heel-error',t:'num',w:2,h:2},
+      {f:'Actual-leeway',f2:'Expected-leeway',t:'num',w:2,h:1},
+      {f:'Current-kts',f2:'Current-to-degrees',f3:'Current-impact-degrees',t:'num',w:2,h:2},
+      {f:'Upwind-angle',f2:'UA-error',f3:'Best-angle',t:'num',w:2,h:2},
+      {f:'HDG-corrected',f2:'COG',f3:'Depth-avg',f4:'SOG',t:'num',w:2,h:2}
+    ]
+  };
+  var TEMPLATE_LABELS = {beginner:'Beginner',intermediate:'Gevorderd',advanced:'Expert'};
+  function cloneTiles(a){ return a.map(function(o){ return Object.assign({},o); }); }
+  // Eerste-start-indeling (bewust ongewijzigd t.o.v. de bestaande; de betere indelingen
+  // kies je via de Sjabloon-dropdown). Beginner/Gevorderd/Expert staan in TEMPLATES.
   function DEFAULT(){ return [
     {f:'HDG-corrected',f2:'STW-corrected',f3:'GEOWIND',f4:'Depth-avg',t:'gauge',m:'crs',w:3,h:4},
     {f:'AWA',f2:'AWS',f3:'Depth-avg',f4:'STW-corrected',t:'gauge',m:'wind',w:3,h:4},
@@ -845,6 +892,7 @@ window.SPD_TPL = {
     var s=e.target.closest('[data-sel]'); if(!s) return;
     var which=s.getAttribute('data-sel'), v=s.value, F=FIELDS();
     if(which==='skin'){ if(['modern','bg','ray','spd'].indexOf(v)<0) v='modern'; put('spd-skin-v2',v); state.skin=v; render(); return; }
+    if(which==='tpl'){ s.value=''; if(v&&TEMPLATES[v]){ if(!state.tiles.length || confirm('Huidige indeling vervangen door template "'+TEMPLATE_LABELS[v]+'"?')) setTiles(cloneTiles(TEMPLATES[v]),{sel:null}); } return; }
     if(state.sel==null) return;
     if(which==='field') upd({f:v, t:(F[v]&&F[v].text)?'num':state.tiles[state.sel].t});
     else if(which==='field2') upd({f2:v||undefined}); else if(which==='field3') upd({f3:v||undefined}); else if(which==='field4') upd({f4:v||undefined});

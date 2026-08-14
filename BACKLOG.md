@@ -4,7 +4,8 @@ Losse verbeter-/bugpunten. Afgevinkte items blijven staan met datum voor de hist
 
 ## Features / nog te bouwen
 
-- [ ] **Dashboard-templates.** Kant-en-klare tegel-layouts die je in één klik kiest, zodat je niet vanaf nul hoeft te bouwen. Minimaal een **Beginner**- en een **Gevorderd/Race**-template (uit de bruikbaarheidstest van 2026-08-14: wat wil een zeiler écht zien), plus ruimte voor eigen opgeslagen layouts. Overweeg: template = benoemde set `{tiles, skin?}`; kiezen laadt de tiles (met bevestiging bij overschrijven van de huidige indeling); eventueel "opslaan als template". Koppelt aan de bestaande skins (SPD-default/Modern/B&G/Raymarine) — template bepaalt de tegels, skin de look.
+- [ ] **Eigen templates opslaan.** De 3 vaste templates staan er (zie Gerepareerd); nog te doen: "huidige indeling opslaan als template" + beheren.
+- [ ] **Beginner-template als eerste-start-default?** Nu is de eerste-start-indeling nog de oude (om test-fixtures niet te breken die de default-indices hardcoderen). Overweeg: `DEFAULT()` = Beginner-template maken en de test-fixtures ontkoppelen (laten seeden i.p.v. op `DEFAULT()` leunen).
 - [ ] **Zwart/wit-kleurmode per skin.** Nu heeft elke skin (Modern/B&G/Raymarine/SPD-default) twee modes: kleur (dag) + rood/zwart (nacht). De derde mode uit het plan — zwart/wit (grijstinten, hoog contrast, geen kleur) — ontbreekt nog. Palet per skin definiëren en een derde toggle-stand toevoegen.
 - [ ] **Skins vs losse menu-layouts.** B&G/Raymarine/SPD-default zitten nu als skins binnen één paneel (matcht de Claude Design-handoff). Eerdere schets was 4 losse layouts in het menu. Afstemmen of dit zo blijft.
 
@@ -16,6 +17,10 @@ Losse verbeter-/bugpunten. Afgevinkte items blijven staan met datum voor de hist
 
 ## Gerepareerd
 
+- [x] 2026-08-14 — **Dashboard-templates + Modern-uitbreiding** (uit de bruikbaarheidstest, gegrond in SPD's eigen 16 pagina's — o.a. `perf-coach` met nu/doel/delta-triplets):
+  - **Modern toont nu f2/f3/f4**: wind/koers-meters krijgen 4 hoekwaarden; getal/gen-tegels een doel-sub-regel. Zo werken doel-vs-werkelijk-paren in élke skin.
+  - **Trimadvies-tegel** als coaching-blok (wrapt, gestapelde adviezen + boodschappen, min-grootte 2×2).
+  - **3 templates** (los van skin) via een Sjabloon-dropdown: **Beginner** (7 tegels, beeldgericht), **Gevorderd** (9), **Expert** (12, dicht, doel-paren + tactiek). Max 1 geavanceerde koersroos per template. Kiezen vraagt bevestiging bij overschrijven.
 - [x] 2026-08-14 — **Gestructureerde teststronde** (plan→review→6 parallelle agents→rapport→hertest, 161 asserties, jsdom-harness incl. live-modus). Zie [TESTRAPPORT.md](TESTRAPPORT.md). Bevestigde alle eerdere fixes én vond+fixte 2 nieuwe bugs:
   - **XSS via tekst-subvelden (f2/f3/f4) op B&G/Raymarine-meters**: `roseBG/wind/crs` renderden tekst ongeëscaped → nu geëscaped (`_esc` in spd_templates.js).
   - **Koers `360` i.p.v. `000`** in de B&G-koershoek (hoek-uitlezing gebruikte `split` zonder wrap) → nu gewrapt.
