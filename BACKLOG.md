@@ -4,6 +4,7 @@ Losse verbeter-/bugpunten. Afgevinkte items blijven staan met datum voor de hist
 
 ## Features / nog te bouwen
 
+- [ ] **Dashboard-templates.** Kant-en-klare tegel-layouts die je in één klik kiest, zodat je niet vanaf nul hoeft te bouwen. Minimaal een **Beginner**- en een **Gevorderd/Race**-template (uit de bruikbaarheidstest van 2026-08-14: wat wil een zeiler écht zien), plus ruimte voor eigen opgeslagen layouts. Overweeg: template = benoemde set `{tiles, skin?}`; kiezen laadt de tiles (met bevestiging bij overschrijven van de huidige indeling); eventueel "opslaan als template". Koppelt aan de bestaande skins (SPD-default/Modern/B&G/Raymarine) — template bepaalt de tegels, skin de look.
 - [ ] **Zwart/wit-kleurmode per skin.** Nu heeft elke skin (Modern/B&G/Raymarine/SPD-default) twee modes: kleur (dag) + rood/zwart (nacht). De derde mode uit het plan — zwart/wit (grijstinten, hoog contrast, geen kleur) — ontbreekt nog. Palet per skin definiëren en een derde toggle-stand toevoegen.
 - [ ] **Skins vs losse menu-layouts.** B&G/Raymarine/SPD-default zitten nu als skins binnen één paneel (matcht de Claude Design-handoff). Eerdere schets was 4 losse layouts in het menu. Afstemmen of dit zo blijft.
 

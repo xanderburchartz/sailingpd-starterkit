@@ -27,5 +27,30 @@ De eerder deze sessie gefixte bugs zijn nu met een expliciete regressietest bewe
 1. **XSS via tekst-subvelden op B&G/Raymarine-meters (kritiek).** `roseBG`, `wind` en `crs` renderden `f2/f3/f4`-tekst (bv. Trim-advice) ongeëscaped in de SVG → een string als `<i>x</i>` werd een live DOM-element. De eerdere XSS-fix dekte alleen `TPL.text` en de SPD-tabel. **Fix:** de tekst-subvelden worden nu geëscaped (`_esc` in `spd_templates.js`). Hertest: 3 cases (bg-roos, ray-wind, ray-koers) nu PASS — geen injectie meer.
 2. **Koers toonde `360` i.p.v. `000` in de B&G-koershoek.** De centrale badge was al gefixt, maar de hoek-uitlezing gebruikte `split(angN)` → `Math.abs(359.7).toFixed(0)='360'`, terwijl het midden `000` toonde. **Fix:** de hoek-uitlezing wrapt nu 0-360 voor whole-degree headings. Hertest: PASS — geen `360` meer in de tegel.
 
-## Wat headless niet dekt (visueel, apart door de hoofdagent)
-Pixel-/kleur-precisie en het echte sleep-gevoel van de resize-grip (jsdom doet geen layout). De renderlogica, grenzen, persistentie en selectie zijn wél volledig gedekt.
+## Visuele teststronde (2026-08-14) — echte rendering (Playwright/Chromium)
+Zelfde aanpak: plan (52 cases) → review (verdict NEEDS-WORK, verscherpte de twee door de
+gebruiker gemelde defecten) → uitvoeren met een **echte-render-harness** (Chromium, echte layout)
+met een overflow/overlap/spill-scanner over alle skins × tegeltypes × groottes.
+
+**Bevestigde visuele bugs — gefixt en her-gescand:**
+1. **Tegel-header labels pasten niet → wrapten** (lange sleutels als "Performance-incl-current"
+   braken af, lieten de header groeien en klemden de inhoud). De header-`span` had geen
+   `nowrap/ellipsis`. **Fix:** één regel met ellipsis + tooltip (`title`). Her-scan: 0 header-wraps.
+2. **SPD-default getal/tabel-tegels spilden buiten de kaart** (lang label duwde de `<table>`
+   breder dan de tegel, 30-151px eruit). **Fix:** `table-layout:fixed` + vaste kolombreedtes +
+   ellipsis op de waarde-cel. Her-scan: 0 spills.
+
+**Vals-positieven (met screenshot weerlegd):** de scanner meldde "overlap" op de B&G/Raymarine-
+koersroos (bv. "030 ∩ 026"). Screenshots tonen dat die netjes rendert — het zijn geroteerde
+kompasgetallen (andere radius) en een bewust op de voorgrond liggende HDG-badge; hun
+as-uitgelijnde bounding-boxes overlappen wel, maar visueel botsen ze niet. Geen fix nodig.
+
+**Bewust gedrag (geen bug):** op een piepkleine 1×1-tegel kan een 24-tekens veldnaam nooit
+volledig passen; die kapt nu netjes af met "…" (volledige tekst bij hover), i.p.v. te wrappen/spillen.
+
+Na de visuele fixes bleef de headless-suite **161/161** (twee tests bijgewerkt naar de nieuwe,
+uniforme balk waarin het smaak-slot aanwezig-maar-verborgen is i.p.v. afwezig).
+
+## Wat ook headless/echte-render niet volledig dekt
+Kleur-/contrast-oordeel en het echte sleep-gevoel blijven deels een menselijke check; screenshots
+per skin (dag+nacht) zijn beschikbaar in de sessie.

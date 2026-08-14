@@ -653,8 +653,9 @@ window.SPD_TPL = {
   // SPD-default: gedeelde tabel-rij (dunne grijze randen, label links / waarde rechts).
   function spdRow(bc,lc,ic,l,vt,u){ return '<tr>'
     + '<td style="border:1px solid '+bc+';padding:2px 6px;text-align:left;color:'+lc+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(l)+'</td>'
-    + '<td style="border:1px solid '+bc+';padding:2px 6px;text-align:right;font-weight:800;color:'+ic+';font-variant-numeric:tabular-nums;white-space:nowrap">'+esc(vt)+(u?' <span style="opacity:.55;font-weight:600">'+esc(u)+'</span>':'')+'</td>'
+    + '<td style="border:1px solid '+bc+';padding:2px 6px;text-align:right;font-weight:800;color:'+ic+';font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(vt)+(u?' <span style="opacity:.55;font-weight:600">'+esc(u)+'</span>':'')+'</td>'
     + '</tr>'; }
+  var SPDTABLE_COLS='<colgroup><col style="width:58%"><col style="width:42%"></colgroup>';
   // SPD-default: Google-Charts-achtige wijzerplaat (offline, in SVG nagemaakt) + evt. sub-uitlezing f2/f3/f4.
   function gaugeGoogle(t){
     var svg = '<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%" font-family="inherit">'
@@ -671,7 +672,7 @@ window.SPD_TPL = {
     if(t.hf4) rows+=spdRow(t.tBorder,t.tLabel,t.tInk,t.l4,t.v4.t,t.u4);
     return '<div style="width:100%;height:100%;display:flex;flex-direction:column;min-height:0;gap:3px">'
       + '<div style="flex:1;min-height:0;display:grid;place-items:center">'+svg+'</div>'
-      + '<table style="width:100%;border-collapse:collapse;font-size:clamp(9px,2.6vmin,12px);font-family:inherit">'+rows+'</table></div>';
+      + '<table style="width:100%;table-layout:fixed;border-collapse:collapse;font-size:clamp(9px,2.6vmin,12px);font-family:inherit">'+SPDTABLE_COLS+rows+'</table></div>';
   }
   // SPD-default: ruwe SPD-datatabel voor getal-/tekst-tegels.
   function spdTable(t){
@@ -679,7 +680,7 @@ window.SPD_TPL = {
     if(t.hf2) rows+=spdRow(t.tBorder,t.tLabel,t.tInk,t.l2,t.v2.t,t.u2);
     if(t.hf3) rows+=spdRow(t.tBorder,t.tLabel,t.tInk,t.l3,t.v3.t,t.u3);
     if(t.hf4) rows+=spdRow(t.tBorder,t.tLabel,t.tInk,t.l4,t.v4.t,t.u4);
-    return '<table style="width:100%;border-collapse:collapse;font-size:clamp(11px,3.4vmin,15px);font-family:inherit">'+rows+'</table>';
+    return '<table style="width:100%;table-layout:fixed;border-collapse:collapse;font-size:clamp(11px,3.4vmin,15px);font-family:inherit">'+SPDTABLE_COLS+rows+'</table>';
   }
   function tileInner(t){
     if(t.isGaugeGoogle) return gaugeGoogle(t);
@@ -696,7 +697,7 @@ window.SPD_TPL = {
   }
   function tileHTML(t){
     return '<div style="'+t.styleStr+'" data-tile="'+t.idx+'" data-act="tile">'
-      + (t.showHead?'<div style="display:flex;justify-content:space-between;gap:6px;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--label)"><span>'+esc(t.label)+'</span><span style="opacity:.8">'+esc(t.unit)+'</span></div>':'')
+      + (t.showHead?'<div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--label)"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(t.label)+'">'+esc(t.label)+'</span><span style="flex:none;opacity:.8">'+esc(t.unit)+'</span></div>':'')
       + '<div style="flex:1;display:grid;place-items:center;min-height:0;position:relative">'+tileInner(t)+'</div>'
       + (t.showGrip?'<div data-grip="'+t.idx+'" style="position:absolute;right:2px;bottom:2px;width:16px;height:16px;cursor:nwse-resize;border-right:3px solid var(--accent);border-bottom:3px solid var(--accent);opacity:.7;touch-action:none"></div>':'')
       + '</div>';
