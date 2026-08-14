@@ -14,17 +14,18 @@
   .bar .b { font-size:16px; font-weight:bold; letter-spacing:.06em; }
   .bar .s { font-size:12px; color:#9fb0c4; }
   .grid { display:-webkit-box; display:-webkit-flex; display:flex;
-    -webkit-flex-wrap:wrap; flex-wrap:wrap; padding:5px; }
+    -webkit-flex-wrap:wrap; flex-wrap:wrap;
+    -webkit-align-items:flex-start; align-items:flex-start; padding:5px; }
   .tile { background:#fff; border:1px solid #ccd2da;
-    -webkit-flex:1 1 30%; flex:1 1 30%; margin:5px; min-height:86px;
-    padding:7px 11px; position:relative; overflow:hidden; }
-  .tile.half { -webkit-flex-basis:46%; flex-basis:46%; }
-  .tile.wide { -webkit-flex-basis:97%; flex-basis:97%; border-left:6px solid #1f5fd0; }
-  .tile.tall { min-height:184px; }
+    -webkit-flex:1 1 14%; flex:1 1 14%; margin:4px; min-height:82px;
+    padding:6px 9px; position:relative; overflow:hidden; }
+  .tile.half { -webkit-flex-basis:22.5%; flex-basis:22.5%; }
+  .tile.wide { -webkit-flex-basis:98%; flex-basis:98%; border-left:6px solid #1f5fd0; }
+  .tile.tall { min-height:172px; }
   .lbl { font-size:12px; font-weight:bold; text-transform:uppercase;
     color:#3a4658; letter-spacing:.04em; }
-  .val { font-size:40px; font-weight:bold; line-height:1.02; margin-top:1px; }
-  .unit { font-size:17px; color:#3a4658; font-weight:normal; }
+  .val { font-size:33px; font-weight:bold; line-height:1.03; margin-top:1px; }
+  .unit { font-size:15px; color:#3a4658; font-weight:normal; }
   .sub { margin-top:5px; padding-top:5px; border-top:1px solid #e3e6ea; font-size:14px; color:#3a4658; }
   .sub b { font-size:18px; color:#14171c; }
   .advice { font-size:22px; font-weight:bold; line-height:1.32; margin-top:4px; }
