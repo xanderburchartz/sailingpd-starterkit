@@ -605,13 +605,16 @@ window.SPD_TPL = {
                +  '<text x="'+pn[0].toFixed(1)+'" y="'+pn[1].toFixed(1)+'" text-anchor="middle" dominant-baseline="central" font-size="6" fill="'+pal.gnum+'" font-family="inherit">'+scale['s'+i]+'</text>';
       });
     }
+    // Modern toont nu ook f2/f3/f4: wind/koers-meter → hoekwaarden; getal/gen → sub-regel.
+    var isModMeter = !isText && cfg.t==='gauge' && (mk==='wind'||mk==='crs') && state.skin==='modern';
+    var modSub = state.skin==='modern' && !isText && (!!cfg.f2||!!cfg.f3||!!cfg.f4) && (cfg.t==='num'||cfg.t==='bar'||(cfg.t==='gauge'&&mk==='gen'));
     return {
-      isGaugeGoogle:isGoogle, isSpdTable:isSpdTable,
+      isGaugeGoogle:isGoogle, isSpdTable:isSpdTable, modernSub:modSub,
       gRim:gRim, gTicks:gTicks, gFaceFill:pal.tile, gFaceStroke:pal.line, gNeedleCol:pal.bad, gHubCol:pal.ink, gInk:pal.ink,
       gValStr: isText?'':(val.i+(val.d||'')),
       hf2:!!cfg.f2, hf3:!!cfg.f3, hf4:!!cfg.f4, tBorder:pal.line, tLabel:pal.label, tInk:pal.ink,
       idx:idx, styleStr:styleStr,
-      showHead: !bareMeter && !isSpdTable,
+      showHead: !bareMeter && !isSpdTable && !isModMeter,
       label: (mk==='gen'||cfg.t!=='gauge'||isGoogle)?meta.l:meta.l+' · '+(meta2?meta2.l:'—'),
       unit: meta.u||'', val:val, v2:v2,
       v1:(function(){ var a=mk==='wind'?Math.abs(angN):((meta.min===0&&meta.max===360&&meta.d===0)?(Math.round(angN)%360+360)%360:angN); var s=split(a,meta.d); return {i:s.i,d:s.d}; })(),
@@ -635,7 +638,7 @@ window.SPD_TPL = {
       isGaugeBG:!isText&&cfg.t==='gauge'&&mk==='gen'&&state.skin==='bg',
       isGaugeRay:!isText&&cfg.t==='gauge'&&mk==='gen'&&state.skin==='ray',
       isMeterRoseBG:isMeterBG, isMeterWind:isMeterRayWind, isMeterCrs:isMeterRayCrs,
-      isModernMeter:!isText&&cfg.t==='gauge'&&(mk==='wind'||mk==='crs')&&state.skin==='modern',
+      isModernMeter:isModMeter,
       numStyle:'font-weight:800;font-variant-numeric:tabular-nums;line-height:.92;color:'+pal.ink+';font-size:clamp(20px,'+(4.6*w)+'vmin,'+(34*h)+'px);text-align:center',
       track:arc(50,50,40,-135,135), arc:arc(50,50,40,-135,-135+270*frac), scale:scale,
       bandLo:arc(50,50,46,-135,-135+270*0.13), bandMid:arc(50,50,46,-135+270*0.42,-135+270*0.58), bandHi:arc(50,50,46,-135+270*0.87,135),
@@ -682,7 +685,34 @@ window.SPD_TPL = {
     if(t.hf4) rows+=spdRow(t.tBorder,t.tLabel,t.tInk,t.l4,t.v4.t,t.u4);
     return '<table style="width:100%;table-layout:fixed;border-collapse:collapse;font-size:clamp(11px,3.4vmin,15px);font-family:inherit">'+SPDTABLE_COLS+rows+'</table>';
   }
+  // Modern skin: wind/koers-meter met 4 hoekwaarden (zoals de rozen), in de neutrale look.
+  function modernCornersHTML(t){
+    var c=function(pos,l,v,u,al){ return '<div style="position:absolute;'+pos+';max-width:47%;pointer-events:none">'
+      + '<div style="font-size:10px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:'+al+'">'+esc(l)+'</div>'
+      + '<div style="font-size:clamp(15px,4.6vmin,23px);font-weight:800;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap;text-align:'+al+'">'+esc(v)+(u?'<span style="font-size:.6em;color:var(--label)"> '+esc(u)+'</span>':'')+'</div></div>'; };
+    return c('top:4px;left:7px', t.l1, t.v1.i+t.v1.d, t.u1, 'left')
+      + (t.hf2?c('top:4px;right:7px', t.l2, t.v2.t, t.u2, 'right'):'')
+      + (t.hf3?c('bottom:4px;left:7px', t.l3, t.v3.t, t.u3, 'left'):'')
+      + (t.hf4?c('bottom:4px;right:7px', t.l4, t.v4.t, t.u4, 'right'):'');
+  }
+  function modernMeter(t){ return '<div style="position:absolute;inset:16% 20%">'+TPL.gaugeModern(t)+'</div>'+modernCornersHTML(t); }
+  // Modern skin: sub-regel(s) met f2/f3/f4 onder een getal/gen-meter (doel-vs-werkelijk).
+  function modernSubHTML(t){
+    var line=function(l,v,u){ return '<div style="display:flex;justify-content:space-between;gap:8px;font-size:clamp(11px,3vmin,14px);line-height:1.35">'
+      + '<span style="font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(l)+'</span>'
+      + '<span style="font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap">'+esc(v)+(u?'<span style="color:var(--label);font-weight:600"> '+esc(u)+'</span>':'')+'</span></div>'; };
+    var rows=''; if(t.hf2) rows+=line(t.l2,t.v2.t,t.u2); if(t.hf3) rows+=line(t.l3,t.v3.t,t.u3); if(t.hf4) rows+=line(t.l4,t.v4.t,t.u4);
+    return '<div style="width:100%;border-top:1px solid var(--line);margin-top:5px;padding-top:5px;display:flex;flex-direction:column;gap:2px">'+rows+'</div>';
+  }
+  function modernWithSub(t){
+    var base = t.isNum?TPL.num(t):t.isBar?TPL.bar(t):TPL.gaugeModern(t);
+    return '<div style="position:absolute;inset:0;display:flex;flex-direction:column;min-height:0">'
+      + '<div style="flex:1;min-height:0;position:relative;display:grid;place-items:center">'+base+'</div>'
+      + modernSubHTML(t) + '</div>';
+  }
   function tileInner(t){
+    if(t.isModernMeter) return modernMeter(t);
+    if(t.modernSub) return modernWithSub(t);
     if(t.isGaugeGoogle) return gaugeGoogle(t);
     if(t.isSpdTable) return spdTable(t);
     if(t.isText) return TPL.text(t);
