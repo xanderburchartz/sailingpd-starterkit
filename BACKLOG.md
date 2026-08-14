@@ -6,7 +6,6 @@ Losse verbeter-/bugpunten. Afgevinkte items blijven staan met datum voor de hist
 
 - [ ] **Eigen templates opslaan.** De 3 vaste templates staan er (zie Gerepareerd); nog te doen: "huidige indeling opslaan als template" + beheren.
 - [ ] **Beginner-template als eerste-start-default?** Nu is de eerste-start-indeling nog de oude (om test-fixtures niet te breken die de default-indices hardcoderen). Overweeg: `DEFAULT()` = Beginner-template maken en de test-fixtures ontkoppelen (laten seeden i.p.v. op `DEFAULT()` leunen).
-- [ ] **Zwart/wit-kleurmode per skin.** Nu heeft elke skin (Modern/B&G/Raymarine/SPD-default) twee modes: kleur (dag) + rood/zwart (nacht). De derde mode uit het plan — zwart/wit (grijstinten, hoog contrast, geen kleur) — ontbreekt nog. Palet per skin definiëren en een derde toggle-stand toevoegen.
 - [ ] **Skins vs losse menu-layouts.** B&G/Raymarine/SPD-default zitten nu als skins binnen één paneel (matcht de Claude Design-handoff). Eerdere schets was 4 losse layouts in het menu. Afstemmen of dit zo blijft.
 
 ## Bugs — open (klein/laag)
@@ -17,6 +16,7 @@ Losse verbeter-/bugpunten. Afgevinkte items blijven staan met datum voor de hist
 
 ## Gerepareerd
 
+- [x] 2026-08-14 — **Zwart/wit-kleurmode** (3e mode naast dag-kleur en nacht-rood). De dag/nacht-icoonknop is nu een 3-standen-cyclus (Dag ☀ → Zwart/wit ◗ → Nacht ☾), per skin. Zwart/wit = licht monochroom, hoog contrast; zones onderscheidbaar via lightness (goed=donker). Palet per skin uit grijswaarden van het dag-palet + overrides. Migreert de oude `spd-night-v1` → nieuwe `spd-mode-v1`. Headless 169/169.
 - [x] 2026-08-14 — **Dashboard-templates + Modern-uitbreiding** (uit de bruikbaarheidstest, gegrond in SPD's eigen 16 pagina's — o.a. `perf-coach` met nu/doel/delta-triplets):
   - **Modern toont nu f2/f3/f4**: wind/koers-meters krijgen 4 hoekwaarden; getal/gen-tegels een doel-sub-regel. Zo werken doel-vs-werkelijk-paren in élke skin.
   - **Trimadvies-tegel** als coaching-blok (wrapt, gestapelde adviezen + boodschappen, min-grootte 2×2).
