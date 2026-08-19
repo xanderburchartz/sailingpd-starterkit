@@ -950,7 +950,7 @@ function renderStep7() {
     why(`<strong>Waarom dit?</strong> Zet hier het <strong>web-dashboard</strong> aan: dan bekijk je
          SailingPD in een browser op je telefoon, tablet of de computer zelf. Handig — en verplicht als je
          <em>headless</em> (zonder scherm) draait. De webserver draait standaard op poort <strong>9090</strong>;
-         je opent hem op <code>http://[ip-adres]:9090</code>.
+         op deze computer open je hem via <code>http://localhost:9090</code>, vanaf een ander apparaat via <code>http://[ip-adres]:9090</code>.
          <br><br>💡 <strong>IP-adres vinden:</strong> Windows → <code>ipconfig</code>; Linux/Raspberry Pi → <code>hostname -I</code>;
          of kijk in de apparatenlijst van je router. De opties onder <em>Geavanceerd</em> heb je meestal niet nodig.`) +
 
@@ -959,9 +959,9 @@ function renderStep7() {
       'Bekijk het dashboard in een browser op elk apparaat. Draai je headless (zonder scherm), dan is dít je enige dashboard — zet \'m dan zeker aan.') +
     `<div id="web-settings" class="${webOn?'':'opacity-50 pointer-events-none'}">` +
       numField('f-web-port','Poort', getW('Output','Webserverport','9090'), 1, 65535, 1,
-        'Standaard 9090 — prima laten staan. Je opent het dashboard dan op http://[ip-adres]:9090.') +
+        'Standaard 9090 — prima laten staan. Op deze computer zelf open je het dashboard op http://localhost:9090. Vanaf je telefoon of tablet gebruik je het IP-adres van deze computer: http://[ip-adres]:9090 (dat IP vind je met "ipconfig" op Windows of "hostname -I" op Linux/Pi).') +
       textField('f-web-ip','Bereikbaar op (bind-adres)', getW('Output','Webservername','0.0.0.0'),
-        'Op welke netwerkverbindingen de server luistert. 0.0.0.0 = overal op je netwerk bereikbaar — laat dit zo staan, tenzij je weet waarom niet.') +
+        'Op welke netwerkverbindingen de server luistert (dit is niet het adres dat je in de browser typt). 0.0.0.0 = luister overal — dan is het dashboard bereikbaar via localhost op deze computer én via het IP-adres vanaf je telefoon/tablet. Laat dit zo staan, tenzij je weet waarom niet.') +
     `</div>` +
 
     sectionHeader('Dashboard-menu') +

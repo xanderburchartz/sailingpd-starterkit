@@ -202,18 +202,45 @@ def get_config():
 STARTUPFILES_FILE = SYSTEMFILES_DIR / "startupfiles.ini"
 
 
-def _pick_file(dirpath: Path, prefer_non_example: bool = False) -> str:
-    """Kies een bestand uit een map; bij voorkeur niet een 'example ...'-bestand."""
+def _is_heeled_name(name: str) -> bool:
+    """Heuristiek: verwijst de bestandsnaam naar een 2D/hielafhankelijke tabel?"""
+    n = name.lower()
+    return "2d" in n or "with heel" in n or "heeled" in n
+
+
+def _pick_file(dirpath: Path, prefer_non_example: bool = False,
+               prefer_simple: bool = False) -> str:
+    """Kies een redelijke standaard uit een map met voorbeeldbestanden.
+
+    - US-formaat voorbeelden ('comma delimited and decimal point ...') en
+      'TEST ...'-bestanden worden vermeden: SailingPD verwacht standaard het
+      Europese CSV-formaat (';'-scheiding, ','-decimaal). Een US-bestand geeft
+      een delimiter-fout ("Deadly Error. ... Correct delimiter?").
+    - prefer_non_example: liever een eigen bestand dan een 'example ...'.
+    - prefer_simple: liever de eenvoudige (niet-hielafhankelijke) tabel; vermijd
+      2D/'with heel'-varianten. Voor deviatie/stw, zodat de 'heeled'-vlag klopt.
+    """
     if not dirpath.exists():
         return ""
     files = sorted(f for f in dirpath.glob("*.csv") if not f.name.startswith("."))
     if not files:
         return ""
+
+    def _native(f: Path) -> bool:
+        n = f.name.lower()
+        return ("comma delimited" not in n and "decimal point" not in n
+                and not n.startswith("test"))
+
+    pool = [f for f in files if _native(f)] or files
+    if prefer_simple:
+        pool = [f for f in pool if not _is_heeled_name(f.name)] or pool
+        voorkeur = [f for f in pool if "simple" in f.name.lower()]
+        pool = voorkeur or pool
     if prefer_non_example:
-        eigen = [f for f in files if not f.name.lower().startswith("example")]
+        eigen = [f for f in pool if not f.name.lower().startswith("example")]
         if eigen:
             return str(eigen[0])
-    return str(files[0])
+    return str(pool[0])
 
 
 def _ensure_startupfiles():
@@ -230,16 +257,38 @@ def _ensure_startupfiles():
         "boatfile":      str(BOATSPECIFICS_FILE),
         "polarfile":     _pick_file(POLARS_DIR, prefer_non_example=True),
         "heelpolarfile": _pick_file(HEELPOLARS_DIR),
-        "deviationfile": _pick_file(DEVIATION_DIR),
-        "stwcorrfile":   _pick_file(STWCORR_DIR),
+        "deviationfile": _pick_file(DEVIATION_DIR, prefer_simple=True),
+        "stwcorrfile":   _pick_file(STWCORR_DIR, prefer_simple=True),
     }
 
-    resultaat = {}
+    resultaat, was_default = {}, {}
     for sleutel, standaard in defaults.items():
         bestaand = huidig.get(sleutel, "").strip()
-        resultaat[sleutel] = bestaand if bestaand and Path(bestaand).exists() else standaard
+        if bestaand and Path(bestaand).exists():
+            resultaat[sleutel], was_default[sleutel] = bestaand, False
+        else:
+            resultaat[sleutel], was_default[sleutel] = standaard, True
 
     write_ini(STARTUPFILES_FILE, {"startupfiles": resultaat})
+
+    # Houd de 'heeled'-vlaggen consistent met de ingevulde bestanden. Vullen we
+    # automatisch een eenvoudige (niet-hielafhankelijke) deviatie-/stw-tabel in,
+    # dan moet de bijbehorende vlag op N — anders verwacht SailingPD een 2D-tabel
+    # en stopt met een Deadly Error. Juist een beginner loopt hierop vast, want
+    # de Correcties-stap (waar deze vlag staat) is optioneel en standaard
+    # verborgen. Een expliciete eigen keuze (bestand bleef staan) blijft ongemoeid.
+    koppeling = {"deviationfile": "heeled Dev", "stwcorrfile": "heeled STW"}
+    forceer_n = {vlag for sleutel, vlag in koppeling.items()
+                 if was_default[sleutel] and resultaat[sleutel]
+                 and not _is_heeled_name(Path(resultaat[sleutel]).name)}
+    if forceer_n:
+        bs = read_ini(BOATSPECIFICS_FILE)
+        inputfiles = bs.setdefault("Inputfiles", {})
+        if any(inputfiles.get(v, "").strip().upper() != "N" for v in forceer_n):
+            for vlag in forceer_n:
+                inputfiles[vlag] = "N"
+            write_ini(BOATSPECIFICS_FILE, bs)
+
     return resultaat
 
 
@@ -693,7 +742,11 @@ def test_nmea():
         if sid == "XDR":
             for i in range(1, len(fields), 4):
                 grp = fields[i:i + 4]
-                if len(grp) == 4 and grp[3].strip():
+                # Een XDR-groep = (transducer-type, meetwaarde, eenheid, label).
+                # Alleen type 'A' (angular displacement) is een hoeksensor voor
+                # slagzij/stamphoek; 'P' (druk/barometer), 'C' (temperatuur) enz.
+                # leveren geen bewegingsdata en horen niet in de invul-suggesties.
+                if len(grp) == 4 and grp[0].strip().upper() == "A" and grp[3].strip():
                     xdr_labels.add(grp[3].strip())
     return jsonify({
         "ok": True,
