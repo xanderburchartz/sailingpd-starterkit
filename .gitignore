@@ -8,5 +8,8 @@ config-wizard/.venv/
 *.bak-*
 *.log
 
+# macOS
+.DS_Store
+
 # Per-installatie SPD-logo (wordt bij menu-installatie gekopieerd, niet in de repo)
 web-menu/spd-icon.png
