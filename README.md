@@ -5,9 +5,9 @@
 Deze starter kit bundelt twee dingen die het opstarten met SailingPD een stuk eenvoudiger maken:
 
 1. **Config-wizard**: een browser-wizard die je stap voor stap door alle instellingen leidt, met uitleg in gewone taal, een woordenlijst, een "Test verbinding & detecteer sensoren"-knop, en een basismodus die alleen de essentiële stappen toont. Werkt op **Windows, Linux en Raspberry Pi**.
-2. **Dashboard-menu** op poort 9090. Naast alle **16 originele SailingPD-schermen** (elk met een thumbnail en korte toelichting) zit er een eigen, **configureerbaar dashboard**: de koers- en windmeter staan groot in het "hart" van het scherm, met het trimadvies en de wind-/stroomboodschap eronder en de overige waarden eromheen. Je kiest zelf een van **vier stijlen** (SPD-Default, Modern, Raymarine of B&G) en past de tegels zelf aan (per tegel: welk veld, meter/getal/balk, en de grootte). De wizard zet dit menu met één klik als startpagina.
+2. **Dashboard-menu** op poort 9090. Naast alle **16 originele SailingPD-schermen** (elk met een pictogram en korte toelichting) zit er een eigen, **configureerbaar dashboard**: de koers- en windmeter staan groot in het "hart" van het scherm, met het trimadvies en de wind-/stroomboodschap eronder en de overige waarden eromheen. Je kiest zelf een van **vier stijlen** (SPD-Default, Modern, Raymarine of B&G) en past de tegels zelf aan (per tegel: welk veld, meter/getal/balk, en de grootte). De wizard zet dit menu met één klik als startpagina.
 
-![Web-menu](docs/menu-screenshot.png)
+![Het pagina-overzicht met de originele SailingPD-schermen](docs/menu-screenshot.png)
 
 ![De config-wizard in de eenvoudige (basis)modus](docs/wizard-screenshot.png)
 
