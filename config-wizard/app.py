@@ -484,7 +484,7 @@ def image_info(name):
 
 
 # ─── dashboard-menu (web-menu) installeren in web_root ───────────────────────
-# Het meegeleverde menu (web-menu/index.html + thumbs) wordt de startpagina op
+# Het meegeleverde menu (web-menu/index.html) wordt de startpagina op
 # poort 9090. De originele SPA blijft bereikbaar als dials.html.
 MENU_MARKER = "sailingpd-starterkit-landing"   # marker-comment in onze landing (index.html → paneel)
 
@@ -532,13 +532,6 @@ def _install_webmenu():
         shutil.copy2(orig_bak, dials)
 
     shutil.copy2(src_index, dst_index)
-
-    src_thumbs = MENU_SRC_DIR / "thumbs"
-    if src_thumbs.is_dir():
-        dst_thumbs = WEB_ROOT_DIR / "thumbs"
-        dst_thumbs.mkdir(parents=True, exist_ok=True)
-        for jpg in src_thumbs.glob("*.jpg"):
-            shutil.copy2(jpg, dst_thumbs / jpg.name)
 
     # SPD's eigen logo meekopiëren zodat het menu (geserveerd door SPD op 9090)
     # hetzelfde logo toont als de wizard. Ontbreekt het? Dan valt het menu terug

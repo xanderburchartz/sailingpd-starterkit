@@ -77,9 +77,9 @@ Voor oude toestellen (bijvoorbeeld een iPad 2) is er een lichte "legacy"-versie;
 |-----------|--------|
 | `SailingPD instellen.exe` | De wizard als los Windows-programma (bevat het web-menu). Alleen in de release-download. |
 | `config-wizard/` | De broncode van de wizard (Flask) voor Linux/Pi en ontwikkelaars. |
-| `web-menu/` | De startpagina, het configureerbare dashboard (`panel.html`), het pagina-overzicht (`paginas.html`), de legacy-versie (`legacy.html`) en de thumbnails. De wizard plaatst deze in `web_root/`. |
+| `web-menu/` | De startpagina, het configureerbare dashboard (`panel.html`), het pagina-overzicht (`paginas.html`) en de legacy-versie (`legacy.html`). De wizard plaatst deze in `web_root/`. |
 
-De thumbnails in het menu zijn momentopnamen. Wijzigen de dashboardpagina's of wil je ze verversen met je eigen data? Maak nieuwe met een headless browser (bijv. `chromium --headless=new --screenshot=... http://localhost:9090/SPDfull.html`) en verklein ze naar ~480px breed in `web_root/thumbs/`.
+Het pagina-overzicht gebruikt pictogrammen, dus je hoeft niets te verversen als de dashboardpagina's wijzigen.
 
 ---
 
