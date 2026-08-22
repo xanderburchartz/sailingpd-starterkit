@@ -110,7 +110,10 @@ ALLOWED_TEXT_FILES = {
 def _display_mode():
     """Return 'screen' | 'web' | 'printer' based on systemfiles/headless.txt."""
     if not HEADLESS_FILE.exists():
-        return "screen"
+        # Nog geen keuze gemaakt: toon de aanbevolen standaard (headless → web)
+        # voorgeselecteerd in de wizard. Pas bij Opslaan wordt headless.txt
+        # geschreven. (SailingPD's eigen gedrag zonder dat bestand blijft 'scherm'.)
+        return "web"
     content = HEADLESS_FILE.read_text(encoding="utf-8", errors="replace").strip().lower()
     return "printer" if content == "printer" else "web"
 
@@ -483,7 +486,7 @@ def image_info(name):
 # ─── dashboard-menu (web-menu) installeren in web_root ───────────────────────
 # Het meegeleverde menu (web-menu/index.html + thumbs) wordt de startpagina op
 # poort 9090. De originele SPA blijft bereikbaar als dials.html.
-MENU_MARKER = "SailingPD — Pagina's"   # <title> van ons menu
+MENU_MARKER = "sailingpd-starterkit-landing"   # marker-comment in onze landing (index.html → paneel)
 
 
 def _webmenu_installed() -> bool:
@@ -544,12 +547,14 @@ def _install_webmenu():
     if spd_icon.exists():
         shutil.copy2(spd_icon, WEB_ROOT_DIR / "spd-icon.png")
 
-    # Het configureerbare prestatiepaneel meekopiëren (de standaard-dashboardkeuze).
-    panel = MENU_SRC_DIR / "panel.html"
-    if panel.exists():
-        shutil.copy2(panel, WEB_ROOT_DIR / "panel.html")
+    # De startpagina (index.html) verwijst naar het configureerbare paneel. Ook
+    # het paneel zelf, het pagina-overzicht en het legacy-dashboard meekopiëren.
+    for extra in ("panel.html", "paginas.html", "legacy.html"):
+        src = MENU_SRC_DIR / extra
+        if src.exists():
+            shutil.copy2(src, WEB_ROOT_DIR / extra)
 
-    return True, "Dashboard-menu geïnstalleerd als startpagina."
+    return True, "Dashboard (paneel) als startpagina geïnstalleerd; het pagina-overzicht staat onder 'Pagina's'."
 
 
 @app.route("/api/webmenu/install", methods=["POST"])
@@ -777,6 +782,41 @@ def _systemd_service_active():
         return False
 
 
+def _open_dashboard_when_ready():
+    """Open het web-dashboard in de standaardbrowser zodra SailingPD's webserver
+    luistert. SailingPD heeft na de start enkele seconden nodig, dus we pollen de
+    poort en openen de browser pas als hij reageert (geen 'kan geen verbinding
+    maken'-scherm). Doet niets als de webserver uit staat; faalt stil op een echt
+    schermloze machine (webbrowser.open geeft daar gewoon False)."""
+    try:
+        out = read_ini(SENDOVERWIFI_FILE).get("Output", {})
+    except Exception:
+        out = {}
+    if str(out.get("Webserver", "N")).strip().upper() != "Y":
+        return
+    try:
+        port = int(str(out.get("Webserverport", "9090")).strip() or "9090")
+    except (TypeError, ValueError):
+        port = 9090
+
+    import threading, socket, time, webbrowser
+
+    def _wait_and_open():
+        deadline = time.monotonic() + 25.0
+        while time.monotonic() < deadline:
+            try:
+                with socket.create_connection(("127.0.0.1", port), timeout=1):
+                    break
+            except OSError:
+                time.sleep(0.5)
+        try:
+            webbrowser.open(f"http://localhost:{port}/")
+        except Exception:
+            pass
+
+    threading.Thread(target=_wait_and_open, daemon=True).start()
+
+
 @app.route("/api/start", methods=["POST"])
 def start_sailingpd():
     import subprocess
@@ -789,6 +829,7 @@ def start_sailingpd():
             except Exception:
                 continue
             if r.returncode == 0:
+                _open_dashboard_when_ready()
                 return jsonify({"success": True,
                                 "message": "SailingPD-service herstart — hij komt op zodra er NMEA-data is."})
         return jsonify({"success": False,
@@ -813,6 +854,7 @@ def start_sailingpd():
             kwargs["start_new_session"] = True
 
         subprocess.Popen([str(exe)], **kwargs)
+        _open_dashboard_when_ready()
         return jsonify({"success": True, "message": "SailingPD wordt gestart…"})
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
@@ -843,5 +885,15 @@ if __name__ == "__main__":
         import threading, webbrowser
         threading.Timer(1.5, lambda: webbrowser.open(url)).start()
 
-    # [PERFORMANCE OPTIMIZATION]: Enable threaded=True om gelijktijdige browserverzoeken af te handelen
-    app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
+    # Start de webserver via Waitress: een echte, lichte WSGI-server. Dat haalt
+    # de verwarrende rode "development server"-waarschuwing én de per-verzoek-
+    # logregels uit het consolevenster (netter voor een beginner) en is stabieler.
+    # Valt terug op Flask's eigen server als Waitress niet is geïnstalleerd
+    # (bijv. broncode zonder de dependency).
+    import logging
+    logging.getLogger("waitress").setLevel(logging.WARNING)  # onderdruk de "Serving on"-inforegel
+    try:
+        from waitress import serve
+        serve(app, host="0.0.0.0", port=port, threads=8)
+    except ImportError:
+        app.run(host="0.0.0.0", port=port, debug=False, threaded=True)

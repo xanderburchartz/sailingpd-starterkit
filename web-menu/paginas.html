@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SailingPD — Oorspronkelijke SPD-pagina's</title>
+<style>
+  :root{ --bg:#eef2f7; --card:#ffffff; --ink:#1e293b; --sub:#64748b; --line:#dbe3ee; --accent:#2563eb; }
+  @media (prefers-color-scheme: dark){ :root{ --bg:#0b1220; --card:#131c2b; --ink:#e2e8f0; --sub:#93a3b8; --line:#243244; --accent:#60a5fa; } }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--ink);min-height:100vh;
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  .wrap{max-width:1120px;margin:0 auto;padding:1.1rem 1.1rem 2rem}
+  header{display:flex;align-items:center;gap:.9rem;margin:.2rem 0 1.2rem;flex-wrap:wrap}
+  .back{display:inline-flex;align-items:center;gap:.45rem;text-decoration:none;color:var(--accent);
+    border:1px solid var(--line);background:var(--card);border-radius:9px;padding:.55rem .95rem;
+    font-weight:700;font-size:.9rem;white-space:nowrap}
+  .back:hover{border-color:var(--accent)}
+  h1{font-size:1.15rem;margin:0;font-weight:800}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem}
+  @media (max-width:840px){ .grid{grid-template-columns:repeat(2,1fr)} }
+  @media (max-width:440px){ .grid{grid-template-columns:1fr} }
+  .card{display:flex;flex-direction:column;justify-content:center;gap:.35rem;text-decoration:none;color:inherit;
+    background:var(--card);border:1px solid var(--line);border-radius:12px;padding:1rem .95rem;min-height:104px;
+    transition:border-color .15s, transform .05s}
+  .card:hover{border-color:var(--accent)}
+  .card:active{transform:scale(.99)}
+  .ic{font-size:1.55rem;line-height:1}
+  .nm{font-weight:700;font-size:.95rem;line-height:1.2}
+  .fn{font-size:.72rem;color:var(--sub);font-family:ui-monospace,Menlo,Consolas,monospace}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <a class="back" href="panel.html">← Terug naar het paneel</a>
+      <h1>Oorspronkelijke SPD-pagina's</h1>
+    </header>
+    <div class="grid">
+      <a class="card" href="SPDfull.html"><span class="ic">🧭</span><span class="nm">Volledig dashboard</span><span class="fn">SPDfull.html</span></a>
+      <a class="card" href="SPDperfandadvice.html"><span class="ic">📈</span><span class="nm">Performance + advies</span><span class="fn">SPDperfandadvice.html</span></a>
+      <a class="card" href="SPDperfincldials.html"><span class="ic">📊</span><span class="nm">Performance + wijzers</span><span class="fn">SPDperfincldials.html</span></a>
+      <a class="card" href="SPDperfjustdials.html"><span class="ic">⏱️</span><span class="nm">Alleen performance-wijzers</span><span class="fn">SPDperfjustdials.html</span></a>
+      <a class="card" href="SPDadviceanddials.html"><span class="ic">💬</span><span class="nm">Advies + wijzers</span><span class="fn">SPDadviceanddials.html</span></a>
+      <a class="card" href="SPDdialsTWAUADA.html"><span class="ic">🎯</span><span class="nm">Wind- &amp; doelhoeken</span><span class="fn">SPDdialsTWAUADA.html</span></a>
+      <a class="card" href="SPDdoubledials.html"><span class="ic">🔵</span><span class="nm">Dubbele wijzers</span><span class="fn">SPDdoubledials.html</span></a>
+      <a class="card" href="dials.html"><span class="ic">✨</span><span class="nm">Dials-app (modern)</span><span class="fn">dials.html</span></a>
+      <a class="card" href="SPDdials_offline.html"><span class="ic">🕹️</span><span class="nm">Offline wijzers (basis)</span><span class="fn">SPDdials_offline.html</span></a>
+      <a class="card" href="SPD_32_dials_offline_voice.html"><span class="ic">🔊</span><span class="nm">32 wijzers + spraak</span><span class="fn">SPD_32_dials_offline_voice.html</span></a>
+      <a class="card" href="SPD_21_dials_offline.html"><span class="ic">🎛️</span><span class="nm">21 wijzers</span><span class="fn">SPD_21_dials_offline.html</span></a>
+      <a class="card" href="SPD_25_dials_offline.html"><span class="ic">🎛️</span><span class="nm">25 wijzers</span><span class="fn">SPD_25_dials_offline.html</span></a>
+      <a class="card" href="SPD_27_dials_offline.html"><span class="ic">🎛️</span><span class="nm">27 wijzers</span><span class="fn">SPD_27_dials_offline.html</span></a>
+      <a class="card" href="SPD_28_dials_offline.html"><span class="ic">🎛️</span><span class="nm">28 wijzers</span><span class="fn">SPD_28_dials_offline.html</span></a>
+      <a class="card" href="SPD_29_dials_offline.html"><span class="ic">🎛️</span><span class="nm">29 wijzers</span><span class="fn">SPD_29_dials_offline.html</span></a>
+      <a class="card" href="SPD_32_dials_offline.html"><span class="ic">🎛️</span><span class="nm">32 wijzers</span><span class="fn">SPD_32_dials_offline.html</span></a>
+    </div>
+  </div>
+</body>
+</html>

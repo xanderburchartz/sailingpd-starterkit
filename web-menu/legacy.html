@@ -8,146 +8,371 @@
 <style>
   * { margin:0; padding:0; -webkit-box-sizing:border-box; box-sizing:border-box; }
   html, body { height:100%; }
+  /* Hoogte-gefixeerd frame: balk (vast) / hart (vult de rest) / bedieningsbalk (vast).
+     Het scherm scrollt NIET — alles schaalt mee binnen de viewport. */
   body { background:#e9edf1; color:#14171c;
-    font-family:Helvetica,Arial,sans-serif; -webkit-text-size-adjust:100%; }
-  .bar { background:#1f2b3a; color:#fff; padding:8px 12px; }
+    font-family:Helvetica,Arial,sans-serif; -webkit-text-size-adjust:100%;
+    display:-webkit-box; display:-webkit-flex; display:flex;
+    -webkit-box-orient:vertical; -webkit-box-direction:normal;
+    -webkit-flex-direction:column; flex-direction:column; overflow:hidden; }
+  .bar { background:#1f2b3a; color:#fff; padding:6px 12px; -webkit-box-flex:0; -webkit-flex:none; flex:none; }
   .bar .b { font-size:16px; font-weight:bold; letter-spacing:.06em; }
   .bar .s { font-size:12px; color:#9fb0c4; }
-  .grid { display:-webkit-box; display:-webkit-flex; display:flex;
-    -webkit-flex-wrap:wrap; flex-wrap:wrap;
-    -webkit-align-items:flex-start; align-items:flex-start; padding:5px; }
-  .tile { background:#fff; border:1px solid #ccd2da;
-    -webkit-flex:1 1 14%; flex:1 1 14%; margin:4px; min-height:82px;
-    padding:6px 9px; position:relative; overflow:hidden; }
-  .tile.half { -webkit-flex-basis:22.5%; flex-basis:22.5%; }
-  .tile.wide { -webkit-flex-basis:98%; flex-basis:98%; border-left:6px solid #1f5fd0; }
-  .tile.tall { min-height:172px; }
-  .lbl { font-size:12px; font-weight:bold; text-transform:uppercase;
-    color:#3a4658; letter-spacing:.04em; }
-  .val { font-size:33px; font-weight:bold; line-height:1.03; margin-top:1px; }
-  .unit { font-size:15px; color:#3a4658; font-weight:normal; }
-  .sub { margin-top:5px; padding-top:5px; border-top:1px solid #e3e6ea; font-size:14px; color:#3a4658; }
-  .sub b { font-size:18px; color:#14171c; }
-  .advice { font-size:22px; font-weight:bold; line-height:1.32; margin-top:4px; }
-  .advice.empty { font-size:16px; font-weight:normal; font-style:italic; color:#8a94a2; }
-  .advice .n { display:inline-block; width:21px; height:21px; line-height:21px; text-align:center;
-    background:#1f5fd0; color:#fff; border-radius:11px; font-size:12px; margin-right:7px; }
-  .gwrap { text-align:center; }
-  svg { display:block; width:100%; height:168px; }
-  .gval { font-size:34px; font-weight:bold; margin-top:-38px; }
+  #grid { -webkit-box-flex:1; -webkit-flex:1 1 auto; flex:1 1 auto; min-height:0; overflow:hidden; }
+
+  /* ── Hart + ring (Fase 2), ES5/oud-Safari-vriendelijk: flexbox met -webkit- prefixes,
+        geen CSS-grid, geen container queries, geen clamp. Meters in het hart, coaching
+        eronder, de overige velden als ring in de rails links/rechts + onderrij. Alles
+        vult zijn flex-ruimte en schaalt mee, zodat het geheel in één scherm past. ── */
+  .hartwrap { height:100%; padding:5px;
+    display:-webkit-box; display:-webkit-flex; display:flex;
+    -webkit-box-orient:vertical; -webkit-box-direction:normal;
+    -webkit-flex-direction:column; flex-direction:column; }
+  .hartbody { -webkit-box-flex:1; -webkit-flex:1 1 auto; flex:1 1 auto; min-height:0;
+    display:-webkit-box; display:-webkit-flex; display:flex;
+    -webkit-box-align:stretch; -webkit-align-items:stretch; align-items:stretch; }
+  .hartrail { -webkit-flex:0 0 172px; flex:0 0 172px; width:172px; min-height:0;
+    display:-webkit-box; display:-webkit-flex; display:flex;
+    -webkit-box-orient:vertical; -webkit-box-direction:normal;
+    -webkit-flex-direction:column; flex-direction:column; padding:3px; }
+  .hartcenter { -webkit-box-flex:1; -webkit-flex:1 1 auto; flex:1 1 auto; min-width:0; min-height:0; padding:3px;
+    display:-webkit-box; display:-webkit-flex; display:flex;
+    -webkit-box-orient:vertical; -webkit-box-direction:normal;
+    -webkit-flex-direction:column; flex-direction:column; }
+  /* Meeschalend raster van 4 gelijke rijen (flex:1 1 0). Het midden beslaat exact 3 rijen
+     (meters, flex:3) + 1 rij (coaching, flex:1), zodat de trimadvies-rij precies uitlijnt met
+     de onderste rail-tegels. GEEN tussenruimte-marges tussen de rijen — met marges breekt de
+     uitlijning (de meters-blok mist dan de interne rij-marges) en oude Safari rekent %-hoogte
+     fout. De 1px-randen vormen de rasterlijnen. Zo past alles in élke viewporthoogte. */
+  .hartmeters { -webkit-box-flex:3; -webkit-flex:3 1 0; flex:3 1 0; min-height:0;
+    display:-webkit-box; display:-webkit-flex; display:flex; }
+  .hartcoach { -webkit-box-flex:1; -webkit-flex:1 1 0; flex:1 1 0; min-height:0;
+    display:-webkit-box; display:-webkit-flex; display:flex; }
+  .hartbottom { -webkit-flex:0 0 auto; flex:0 0 auto; min-height:0; margin-top:6px;
+    display:-webkit-box; display:-webkit-flex; display:flex; }
+
+  .tile { background:#fff; border:1px solid #ccd2da; position:relative; overflow:hidden; padding:4px 8px;
+    display:-webkit-box; display:-webkit-flex; display:flex;
+    -webkit-box-orient:vertical; -webkit-box-direction:normal;
+    -webkit-flex-direction:column; flex-direction:column; }
+  .hartrail > .tile { -webkit-box-flex:1; -webkit-flex:1 1 0; flex:1 1 0; min-height:0; margin:0; }
+  .hartmeters > .tile { -webkit-box-flex:1; -webkit-flex:1 1 0; flex:1 1 0; min-height:0; min-width:0; margin:0; }
+  .hartcoach > .tile, .hartbottom > .tile { -webkit-box-flex:1; -webkit-flex:1 1 0; flex:1 1 0;
+    min-height:0; min-width:0; margin:0; }
+  .hartmeters > .tile:first-child, .hartcoach > .tile:first-child, .hartbottom > .tile:first-child { margin-left:0; }
+  .hartmeters > .tile:last-child, .hartcoach > .tile:last-child, .hartbottom > .tile:last-child { margin-right:0; }
+
+  .lbl { font-size:12px; font-weight:bold; text-transform:uppercase; color:#3a4658; letter-spacing:.04em;
+    -webkit-box-flex:0; -webkit-flex:none; flex:none; }
+
+  /* Meter-tegel: kompas met open onderkant (getal in de opening), sub-waarden eronder.
+     Vaste SVG-hoogte i.p.v. height:100% — oude Safari negeert %-hoogte in flex en zou de
+     meter dan op breedte schalen (te klein/te groot). Tegelinhoud verticaal gecentreerd. */
+  .metertile { padding:5px 8px 6px; -webkit-box-pack:center; -webkit-justify-content:center; justify-content:center; }
+  .mrose { -webkit-box-flex:0; -webkit-flex:none; flex:none; text-align:center; }
+  .mrose svg { display:block; width:100%; height:300px; }
+  .msub { -webkit-box-flex:0; -webkit-flex:none; flex:none; margin-top:3px; padding-top:4px; border-top:1px solid #e3e6ea; }
+
+  /* Ring-/sub-rijen: label links, waarde rechts. Rijen gecentreerd in de tegel. */
+  .ringtile, .valtile { -webkit-box-pack:center; -webkit-justify-content:center; justify-content:center; }
+  .rrow { display:-webkit-box; display:-webkit-flex; display:flex;
+    -webkit-box-pack:justify; -webkit-justify-content:space-between; justify-content:space-between;
+    -webkit-box-align:baseline; -webkit-align-items:baseline; align-items:baseline;
+    padding:2px 0; border-bottom:1px solid #eef1f4; }
+  .rrow:last-child { border-bottom:none; }
+  .rl { font-size:12px; font-weight:bold; text-transform:uppercase; color:#5a6472;
+    letter-spacing:.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-right:6px; }
+  .rv { font-size:19px; font-weight:bold; color:#14171c; white-space:nowrap; }
+  .ru { font-size:12px; color:#5a6472; font-weight:normal; }
+  .ringtile .rrow:first-child .rv { font-size:22px; }
+
+  /* Generieke wijzerplaat (Performance / VMG): getal zit in de SVG. Vaste SVG-hoogte (geen %),
+     zodat oude Safari hem niet op breedte schaalt en klein/onderin de tegel laat staan. */
+  .gaugetile { -webkit-box-pack:center; -webkit-justify-content:center; justify-content:center; }
+  .gaugetile .gwrap { -webkit-box-flex:0; -webkit-flex:none; flex:none; text-align:center; }
+  .gaugetile .gwrap svg { display:block; width:100%; height:104px; }
+
+  /* Coaching-tegel: trimadvies + wind/stroom-boodschap. Bovenaan uitgelijnd (label + advies boven,
+     witruimte onder) i.p.v. gecentreerd — leest rustiger bij 1 adviesregel. */
+  .coachtile { -webkit-box-pack:start; -webkit-justify-content:flex-start; justify-content:flex-start; }
+  .advice { font-size:16px; font-weight:bold; line-height:1.25; margin-top:4px; }
+  .advice.empty { font-size:14px; font-weight:normal; font-style:italic; color:#8a94a2; }
+  .advice .n { display:inline-block; width:18px; height:18px; line-height:18px; text-align:center;
+    background:#1f5fd0; color:#fff; border-radius:9px; font-size:11px; margin-right:6px; }
+
+  .ctrlbar { display:-webkit-box; display:-webkit-flex; display:flex;
+    -webkit-flex-wrap:wrap; flex-wrap:wrap; -webkit-align-items:center; align-items:center;
+    background:#1f2b3a; padding:4px 9px; -webkit-box-flex:0; -webkit-flex:none; flex:none; }
+  .ctrlbar .cgrp { display:-webkit-box; display:-webkit-flex; display:flex;
+    -webkit-align-items:center; align-items:center; margin:2px 12px 2px 0; }
+  .ctrlbar .clbl { font-size:11px; font-weight:bold; text-transform:uppercase; color:#9fb0c4; margin-right:5px; }
+  .cbtn { background:#2c3a4e; border:1px solid #3f5069; color:#fff; font-size:14px; font-weight:bold;
+    padding:6px 10px; margin:2px 4px 2px 0; border-radius:5px; -webkit-appearance:none; appearance:none; }
+  .cbtn:active { background:#1f5fd0; }
+  .cval { color:#cdd7e3; font-weight:bold; font-size:14px; margin-left:5px; min-width:34px; text-align:center; }
+
+  /* Telefoon (<680px): geen vast frame — laat de pagina gewoon scrollen en de meters
+     op vaste hoogte staan. De no-scroll-eis geldt voor de iPad (>=768px). */
+  @media (max-width:680px){
+    body { display:block; overflow:auto; }
+    #grid { overflow:visible; }
+    .hartwrap { height:auto; }
+    .hartbody { -webkit-flex-wrap:wrap; flex-wrap:wrap;
+      -webkit-box-align:start; -webkit-align-items:flex-start; align-items:flex-start; }
+    .hartcenter { -webkit-box-ordinal-group:1; -webkit-order:-1; order:-1;
+      -webkit-flex:1 1 100%; flex:1 1 100%; }
+    .hartmeters { height:auto; -webkit-box-orient:vertical; -webkit-box-direction:normal;
+      -webkit-flex-direction:column; flex-direction:column; }
+    .hartmeters > .tile { -webkit-box-flex:0; -webkit-flex:none; flex:none; margin:0 0 8px 0; }
+    .mrose svg { height:260px; }
+    .hartcoach { -webkit-box-flex:0; -webkit-flex:1 1 100%; flex:1 1 100%; height:auto; }
+    .hartcoach > .tile { min-height:96px; }
+    .hartrail { -webkit-flex:1 1 100%; flex:1 1 100%; width:auto;
+      -webkit-box-orient:horizontal; -webkit-box-direction:normal;
+      -webkit-flex-direction:row; flex-direction:row; -webkit-flex-wrap:wrap; flex-wrap:wrap; }
+    .hartrail > .tile { height:auto; -webkit-flex:1 1 44%; flex:1 1 44%; margin:4px; min-width:150px; min-height:110px; }
+    .hartbottom > .tile { min-height:88px; }
+  }
 </style>
 </head>
 <body>
 <div class="bar"><span class="b" id="boat">SailingPD</span> &nbsp;&middot;&nbsp; <span class="s" id="status">verbinden&hellip;</span></div>
-<div class="grid" id="grid"></div>
+<div id="grid"></div>
+<div class="ctrlbar" id="ctrlbar">
+  <span class="cgrp"><button class="cbtn" data-cmd="newlog">Nieuw log</button><span class="cval" id="cv-log">--</span></span>
+  <span class="cgrp"><span class="clbl">shift</span><button class="cbtn" data-cmd="shiftthresup">&minus;</button><button class="cbtn" data-cmd="shiftthresdn">+</button><span class="cval" id="cv-shift">--</span></span>
+  <span class="cgrp"><span class="clbl">stroom</span><button class="cbtn" data-cmd="currthresup">&minus;</button><button class="cbtn" data-cmd="currthresdn">+</button><span class="cval" id="cv-curr">--</span></span>
+  <span class="cgrp"><span class="clbl">filter</span><button class="cbtn" data-cmd="filterdn">&minus;</button><button class="cbtn" data-cmd="filterup">+</button><span class="cval" id="cv-filt">--</span></span>
+  <span class="cgrp"><span class="clbl">perf</span><button class="cbtn" data-cmd="perffilterdn">&minus;</button><button class="cbtn" data-cmd="perffilterup">+</button><span class="cval" id="cv-pfilt">--</span></span>
+  <span class="cgrp"><span class="clbl">AW</span><button class="cbtn" data-cmd="AWfilterdn">&minus;</button><button class="cbtn" data-cmd="AWfilterup">+</button><span class="cval" id="cv-awfilt">--</span></span>
+</div>
 
 <script>
-/* ES5-only, geen container queries / clamp / arrow functions — werkt op oude Safari (iPad 2). */
-var DATA = {}, LIVE = false, LAST = 0;
+/* ES5-only, geen container queries / clamp / arrow functions — werkt op oude Safari (iPad 2).
+   Fase 2: hart + ring. Hart = koers- en windmeter (kompas met open onderkant) + coaching
+   (trimadvies, wind/stroom-boodschap). Ring = de overige velden in de rails + onderrij.
+   'medium' past volledig in één scherm (geen scrollen op de iPad); 'full' toont meer
+   velden maar scrollt. */
+var LAYOUT = 'medium';
+var DATA = {}, LIVE = false, LAST = 0, _ws = null;
 
-var TILES = [
-  { k:'text', f:'Trim-advice1', l:'Trimadvies & boodschappen', cls:'wide',
-    extra:['Trim-advice2','Trim-advice3','Wind-message','Current-message'],
-    empty:'Nog geen advies — verschijnt zodra je vaart' },
-  { k:'gauge', f:'Performance-waterspeed', l:'Performance (STW)', u:'%', min:60, max:115, zone:'up', cls:'half tall' },
-  { k:'gauge', f:'Performance-to-windward', l:'Perf. te loevaart', u:'%', min:60, max:115, zone:'up', cls:'half tall' },
-  { k:'pair', f:'STW-corrected', l:'Snelheid (STW)', u:'kn', d:1, f2:'Target-speed', l2:'doel' },
-  { k:'pair', f:'VMG', l:'VMG', u:'kn', d:1, f2:'Target-VMG', l2:'doel' },
-  { k:'pair', f:'Actual-heel', l:'Slagzij', u:'°', d:0, abs:true, f2:'Best-heel', l2:'doel' },
-  { k:'num', f:'SOG', l:'SOG', u:'kn', d:1 },
-  { k:'hdg', f:'HDG-corrected', l:'Koers', u:'°' },
-  { k:'hdg', f:'COG', l:'COG', u:'°' },
-  { k:'num', f:'Depth-avg', l:'Diepte', u:'m', d:1 },
-  { k:'num', f:'AWA', l:'AWA', u:'°', d:0, abs:true },
-  { k:'num', f:'TWA', l:'TWA', u:'°', d:0, abs:true },
-  { k:'num', f:'AWS', l:'AWS', u:'kn', d:1 },
-  { k:'num', f:'TWS', l:'TWS', u:'kn', d:1 },
-  { k:'hdg', f:'GEOWIND', l:'Ware wind', u:'°' },
-  { k:'num', f:'Actual-leeway', l:'Drift (leeway)', u:'°', d:0 },
-  { k:'num', f:'Upwind-angle', l:'Doelhoek op', u:'°', d:0 },
-  { k:'num', f:'Rate-of-Turn', l:'Draaisnelheid', u:'°/s', d:0 }
+/* Veld-info: label, eenheid, decimalen, en vlaggen (hdg=kompas 3-cijferig, abs=absolute waarde,
+   perf=performance-% met stilstand-gating, txt=tekst). */
+var FLD = {
+  'HDG-corrected':{l:'Koers',u:'°',hdg:1}, 'COG':{l:'COG',u:'°',hdg:1},
+  'GEOWIND':{l:'Ware wind',u:'°',hdg:1}, 'STW-corrected':{l:'STW',u:'kn',d:1},
+  'SOG':{l:'SOG',u:'kn',d:1}, 'SOG-forward':{l:'SOG voor',u:'kn',d:1},
+  'Speed-sideways':{l:'Zijwaarts',u:'kn',d:1}, 'Speed-shortage':{l:'Tekort',u:'kn',d:1},
+  'Target-speed':{l:'Doel',u:'kn',d:1},
+  'TWA':{l:'TWA',u:'°',d:0,abs:1}, 'TWS':{l:'TWS',u:'kn',d:1}, 'TWS-avg':{l:'TWS gem.',u:'kn',d:1},
+  'TWS-trend':{l:'TWS-trend',u:'kn',d:1}, 'AWA':{l:'AWA',u:'°',d:0,abs:1}, 'AWS':{l:'AWS',u:'kn',d:1},
+  'Windshift-deg':{l:'Windshift',u:'°',d:0}, 'Upwash':{l:'Upwash',u:'°',d:0},
+  'GEOWIND-TWS':{l:'Geo-TWS',u:'kn',d:1}, 'GEOWIND-TWS-avg':{l:'Geo-TWS gem.',u:'kn',d:1},
+  'GEOWIND-TWS-trend':{l:'Geo-TWS trend',u:'kn',d:1},
+  'VMG':{l:'VMG',u:'kn',d:1}, 'VMG-to-WP':{l:'VMG→WP',u:'kn',d:1},
+  'Performance-SOG':{l:'Performance',u:'%',d:0,perf:1}, 'Performance-waterspeed':{l:'Perf. STW',u:'%',d:0,perf:1},
+  'Performance-incl-current':{l:'Perf. +stroom',u:'%',d:0,perf:1}, 'Performance-to-windward':{l:'Perf. loef',u:'%',d:0,perf:1},
+  'Performance-to-WP':{l:'Perf.→WP',u:'%',d:0,perf:1}, 'Performance-filter':{l:'Perf-filter',u:''},
+  'Upwind-angle':{l:'Doelhoek loef',u:'°',d:0}, 'Downwind-angle':{l:'Doelhoek lij',u:'°',d:0},
+  'UA-error':{l:'Fout loef',u:'°',d:0}, 'DA-error':{l:'Fout lij',u:'°',d:0},
+  'Actual-leeway':{l:'Leeway',u:'°',d:0}, 'Expected-leeway':{l:'Leeway verw.',u:'°',d:0},
+  'Actual-heel':{l:'Slagzij',u:'°',d:0,abs:1}, 'Best-heel':{l:'Doelslagzij',u:'°',d:0},
+  'Actual-pitch':{l:'Stamp',u:'°',d:1}, 'Actual-yaw':{l:'Gier',u:'°',d:1}, 'Rudder-angle':{l:'Roer',u:'°',d:0},
+  'Heave-vertical':{l:'Heave',u:'m',d:1}, 'Shift-limit':{l:'Shift-limit',u:'°',d:0},
+  'Current-kts':{l:'Stroom',u:'kn',d:1}, 'Current-to-degrees':{l:'Stroom naar',u:'°',hdg:1},
+  'Current-degrees-relative':{l:'Stroom rel.',u:'°',d:0}, 'Current-limit-kts':{l:'Stroom-limiet',u:'kn',d:1},
+  'Depth-avg':{l:'Diepte',u:'m',d:1}, 'Depth-change':{l:'Verloop',u:'m',d:1},
+  'BTW':{l:'Peiling WP',u:'°',hdg:1}, 'DTW':{l:'Afstand WP',u:'nm',d:1}, 'TWA-to-WP':{l:'TWA→WP',u:'',txt:1},
+  'Waypoint':{l:'Waypoint',u:'',txt:1}, 'BOW':{l:'BOW',u:'',txt:1},
+  'Distance-layline':{l:'Afst. layline',u:'',txt:1}, 'Time-layline':{l:'Tijd layline',u:'',txt:1},
+  'GPS-RMC-time':{l:'GPS-tijd',u:'',txt:1}, 'SPD-Version':{l:'SPD-versie',u:'',txt:1},
+  'Log-nr':{l:'Log-nr',u:''}, 'Records-filter':{l:'Filter',u:''}
+};
+
+/* Hart: 2 meters (koers + wind). main = naald-hoek, sec = tweede markering, subs = 3 sub-waarden. */
+var METERS = [
+  { crs:true,  main:'HDG-corrected', sec:'COG', subs:['COG','GEOWIND','STW-corrected'], l:'Koers' },
+  { crs:false, main:'TWA',           sec:'AWA', subs:['TWS','AWA','AWS'],                l:'TWA'   }
 ];
+var COACH = [
+  { f:'Trim-advice1', extra:['Trim-advice2','Trim-advice3'], l:'Trimadvies',
+    empty:'Nog geen advies — verschijnt zodra je vaart' },
+  { f:'Wind-message', extra:['Current-message'], l:'Wind & stroom', empty:'Nog geen melding' }
+];
+
+/* Ring + generieke meters per LAYOUT. */
+var SETS = {
+  full: {
+    gauges: [
+      {f:'Performance-SOG', l:'Performance', u:'%', min:60, max:115, zone:'up', perf:1},
+      {f:'Actual-heel',     l:'Slagzij',     u:'°', min:0,  max:45,  zone:'none', abs:1}
+    ],
+    ring: [
+      ['Performance-waterspeed','Performance-incl-current','Performance-to-windward','Performance-filter'],
+      ['VMG','Performance-to-WP','VMG-to-WP'],
+      ['SOG','STW-corrected','SOG-forward','Speed-sideways'],
+      ['Speed-shortage','Target-speed'],
+      ['TWS-avg','TWS-trend','Windshift-deg','Upwash'],
+      ['GEOWIND-TWS','GEOWIND-TWS-avg','GEOWIND-TWS-trend'],
+      ['Upwind-angle','UA-error','Downwind-angle','DA-error'],
+      ['Actual-leeway','Expected-leeway'],
+      ['Best-heel','Actual-pitch','Actual-yaw','Rudder-angle'],
+      ['Heave-vertical','Shift-limit'],
+      ['Current-kts','Current-to-degrees','Current-degrees-relative','Current-limit-kts'],
+      ['Depth-avg','Depth-change'],
+      ['BTW','DTW','TWA-to-WP'],
+      ['Waypoint','BOW','Distance-layline','Time-layline'],
+      ['GPS-RMC-time','SPD-Version','Log-nr','Records-filter']
+    ]
+  },
+  medium: {
+    gauges: [
+      {f:'Performance-SOG', l:'Performance', u:'%', min:60, max:115, zone:'up', perf:1},
+      {f:'VMG',             l:'VMG',         u:'kn', min:0, max:10,  zone:'up'}
+    ],
+    // 6 vier-waarde-tegels (3 per rail) — vullen de tegelhoogte, geen onderrij nodig.
+    ring: [
+      ['Actual-heel','Best-heel','Actual-pitch','Rudder-angle'],
+      ['Current-kts','Current-to-degrees','Depth-avg','Depth-change'],
+      ['SOG','STW-corrected','SOG-forward','Speed-sideways'],
+      ['VMG-to-WP','Performance-to-WP','BTW','DTW'],
+      ['Upwind-angle','Downwind-angle','Windshift-deg','TWS-trend'],
+      ['Actual-leeway','Expected-leeway','TWS-avg','Current-degrees-relative']
+    ]
+  }
+};
 
 function numOf(x){ var y = parseFloat(x); return isNaN(y) ? null : y; }
 function fmt(v, dec){ if (v == null) return '--'; return (v < 0 ? '-' : '') + Math.abs(v).toFixed(dec); }
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
-function isPerf(k){ return /^Performance-(SOG|waterspeed|incl-current|to-)/.test(k); }
 function perfVal(f){ var p = numOf(DATA[f]), s = numOf(DATA['SOG']);
   if (p == null || p > 150 || (s != null && s < 0.4)) return null; return p; }
+
+/* Toon-waarde van één veld volgens FLD-vlaggen. */
+function valDisp(f){
+  var info = FLD[f] || {u:''}, raw = DATA[f];
+  if (info.txt){ return (raw == null || String(raw).replace(/\s/g,'') === '') ? '--' : String(raw); }
+  if (info.hdg){ var v = numOf(raw); return (v == null) ? '--' : ('00' + ((Math.round(v) % 360 + 360) % 360)).slice(-3); }
+  if (info.perf){ var p = perfVal(f); return (p == null) ? '--' : fmt(p, 0); }
+  var vv = numOf(raw); if (info.abs && vv != null) vv = Math.abs(vv);
+  return fmt(vv, info.d == null ? 1 : info.d);
+}
 
 function polar(cx, cy, r, a){ var rad = (a - 90) * Math.PI / 180; return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)]; }
 function arc(cx, cy, r, a0, a1){
   var p0 = polar(cx, cy, r, a0), p1 = polar(cx, cy, r, a1), big = Math.abs(a1 - a0) > 180 ? 1 : 0;
   return 'M' + p0[0].toFixed(1) + ' ' + p0[1].toFixed(1) + ' A' + r + ' ' + r + ' 0 ' + big + ' 1 ' + p1[0].toFixed(1) + ' ' + p1[1].toFixed(1);
 }
-function gaugeSVG(val, min, max, zone){
+
+/* Kompasmeter met open onderkant (270°): schaal boven+zijkanten, opening onderaan met het getal.
+   Naald wijst naar 'main' (koers of TWA), een blauwe streep markeert 'sec' (COG of AWA). */
+function roseSVG(main, sec, isCrs, bigTxt, lbl){
+  var A = [-135, -90, -45, 0, 45, 90, 135], i, out = '';
+  out += '<circle cx="50" cy="50" r="47" fill="#ffffff" stroke="#ccd2da" stroke-width="1"/>';
+  // Gekleurde band (rood/amber/groen), zoals de originele SPD-/paneelmeters — 270°, open onderaan.
+  out += '<path d="' + arc(50, 50, 34, -135, -45) + '" fill="none" stroke="#d0342b" stroke-width="6"/>';
+  out += '<path d="' + arc(50, 50, 34, -45, 45) + '" fill="none" stroke="#e0982a" stroke-width="6"/>';
+  out += '<path d="' + arc(50, 50, 34, 45, 135) + '" fill="none" stroke="#189a4b" stroke-width="6"/>';
+  for (i = 0; i < A.length; i++){ var a = A[i];
+    var p0 = polar(50, 50, 37, a), p1 = polar(50, 50, 31, a), pn = polar(50, 50, 43, a);
+    var lab = isCrs ? ('00' + ((Math.round(a) % 360 + 360) % 360)).slice(-3) : String(Math.abs(Math.round(a)));
+    out += '<line x1="' + p0[0].toFixed(1) + '" y1="' + p0[1].toFixed(1) + '" x2="' + p1[0].toFixed(1) + '" y2="' + p1[1].toFixed(1) + '" stroke="#9aa3af" stroke-width="0.8"/>';
+    out += '<text x="' + pn[0].toFixed(1) + '" y="' + (pn[1] + 2).toFixed(1) + '" text-anchor="middle" font-size="6" fill="#5a6472">' + lab + '</text>';
+  }
+  var nrot = 'rotate(' + (main == null ? 0 : main).toFixed(1) + ' 50 50)';
+  out += '<line x1="50" y1="50" x2="50" y2="20" stroke="#14171c" stroke-width="2" stroke-linecap="round" transform="' + nrot + '"/>';
+  out += '<circle cx="50" cy="50" r="3.2" fill="#14171c"/>';
+  out += '<text x="50" y="70" text-anchor="middle" font-size="5.5" font-weight="bold" fill="#5a6472">' + esc(lbl) + '</text>';
+  out += '<text x="50" y="82" text-anchor="middle" font-size="14" font-weight="bold" fill="#14171c">' + esc(bigTxt) + '</text>';
+  return '<svg viewBox="0 0 100 92" preserveAspectRatio="xMidYMid meet">' + out + '</svg>';
+}
+
+function gaugeSVG(val, min, max, zone, disp){
   var frac = (val == null) ? 0 : Math.max(0, Math.min(1, (val - min) / (max - min)));
-  function A(fr){ return -135 + 270 * fr; }
+  function AA(fr){ return -135 + 270 * fr; }
   var bands = zone === 'up'   ? [[0,.33,'#d0342b'],[.33,.66,'#e0982a'],[.66,1,'#189a4b']]
             : zone === 'down' ? [[0,.33,'#189a4b'],[.33,.66,'#e0982a'],[.66,1,'#d0342b']]
             : [[0,1,'#c6ccd4']];
   var rim = '', i;
   for (i = 0; i < bands.length; i++){
-    rim += '<path d="' + arc(50, 50, 40, A(bands[i][0]), A(bands[i][1])) + '" fill="none" stroke="' + bands[i][2] + '" stroke-width="8"/>';
+    rim += '<path d="' + arc(50, 50, 40, AA(bands[i][0]), AA(bands[i][1])) + '" fill="none" stroke="' + bands[i][2] + '" stroke-width="8"/>';
   }
-  var ticks = '', mk;
-  for (i = 0; i <= 4; i++){ var pn = polar(50, 50, 30, A(i / 4)); var t0 = polar(50, 50, 45, A(i / 4)), t1 = polar(50, 50, 51, A(i / 4));
+  var ticks = '';
+  for (i = 0; i <= 4; i++){ var pn = polar(50, 50, 30, AA(i / 4)), t0 = polar(50, 50, 45, AA(i / 4)), t1 = polar(50, 50, 51, AA(i / 4));
     var lv = Math.round(min + (max - min) * i / 4);
     ticks += '<line x1="' + t0[0].toFixed(1) + '" y1="' + t0[1].toFixed(1) + '" x2="' + t1[0].toFixed(1) + '" y2="' + t1[1].toFixed(1) + '" stroke="#9aa3af" stroke-width="1"/>';
     ticks += '<text x="' + pn[0].toFixed(1) + '" y="' + (pn[1] + 2).toFixed(1) + '" text-anchor="middle" font-size="7" fill="#5a6472">' + lv + '</text>';
   }
   var needle = 'rotate(' + (-135 + 270 * frac).toFixed(1) + ' 50 50)';
-  return '<svg viewBox="0 0 100 78" preserveAspectRatio="xMidYMid meet">' +
-    rim + ticks +
+  // viewBox iets hoger dan de tekening (ondermarge) zodat de open onderkant + het getal
+  // op oude Safari niet tegen de tegelrand klemmen (het "afgekapte" effect).
+  return '<svg viewBox="0 0 100 86" preserveAspectRatio="xMidYMid meet">' + rim + ticks +
     '<line x1="50" y1="50" x2="50" y2="18" stroke="#14171c" stroke-width="2.4" transform="' + needle + '"/>' +
-    '<circle cx="50" cy="50" r="3.4" fill="#14171c"/></svg>';
+    '<circle cx="50" cy="50" r="3.4" fill="#14171c"/>' +
+    '<text x="50" y="72" text-anchor="middle" font-size="16" font-weight="bold" fill="#14171c">' + esc(disp == null ? '--' : disp) + '</text></svg>';
 }
 
-function tileHTML(t){
-  var cls = 'tile' + (t.cls ? ' ' + t.cls : '');
-  var head = '<div class="lbl">' + esc(t.l) + '</div>';
-  if (t.k === 'gauge'){
-    var pv = isPerf(t.f) ? perfVal(t.f) : numOf(DATA[t.f]);
-    var vt = (pv == null) ? '--' : fmt(pv, 0);
-    return '<div class="' + cls + '"><div class="lbl">' + esc(t.l) + ' &middot; ' + t.u + '</div>' +
-      '<div class="gwrap">' + gaugeSVG(pv, t.min, t.max, t.zone) +
-      '<div class="gval">' + vt + '</div></div></div>';
+function rowsHTML(fields){
+  var out = '', i;
+  for (i = 0; i < fields.length; i++){ var f = fields[i], info = FLD[f] || {l:f,u:''};
+    out += '<div class="rrow"><span class="rl">' + esc(info.l) + '</span>' +
+      '<span class="rv">' + valDisp(f) + (info.u ? '<span class="ru"> ' + info.u + '</span>' : '') + '</span></div>';
   }
-  if (t.k === 'text'){
-    var lines = [], v1 = DATA[t.f];
-    if (v1 != null && String(v1).replace(/\s/g,'') !== '') lines.push(String(v1));
-    if (t.extra){ for (var j = 0; j < t.extra.length; j++){ var e = DATA[t.extra[j]];
-      if (e != null && String(e).replace(/\s/g,'') !== '') lines.push(String(e)); } }
-    var body, m;
-    if (!lines.length){
-      body = '<div class="advice empty">' + esc(t.empty || '—') + '</div>';
-    } else {
-      body = '';
-      for (m = 0; m < lines.length; m++){
-        body += '<div class="advice">' + (lines.length > 1 ? '<span class="n">' + (m + 1) + '</span>' : '') + esc(lines[m]) + '</div>';
-      }
-    }
-    return '<div class="' + cls + '">' + head + body + '</div>';
-  }
-  // num / pair / hdg
-  var raw = DATA[t.f], v = numOf(raw), disp;
-  if (t.k === 'hdg'){ disp = (v == null) ? '--' : ('00' + ((Math.round(v) % 360 + 360) % 360)).slice(-3); }
-  else if (isPerf(t.f)){ var pp = perfVal(t.f); disp = (pp == null) ? '--' : fmt(pp, 0); }
-  else { disp = fmt(t.abs && v != null ? Math.abs(v) : v, t.d == null ? 1 : t.d); }
-  var sub = '';
-  if (t.k === 'pair' && t.f2){ var v2 = numOf(DATA[t.f2]); sub = '<div class="sub">' + esc(t.l2) + ' <b>' + fmt(v2, t.d == null ? 1 : t.d) + '</b> ' + t.u + '</div>'; }
-  return '<div class="' + cls + '">' + head +
-    '<div class="val">' + disp + '<span class="unit"> ' + t.u + '</span></div>' + sub + '</div>';
+  return out;
 }
+
+function meterHTML(m){
+  var mainV = numOf(DATA[m.main]), secV = numOf(DATA[m.sec]);
+  // Bij (bijna) stilliggen is COG betekenisloos → leg de COG-markering op de koers.
+  if (m.crs && m.sec === 'COG'){ var s = numOf(DATA['SOG']); if (s != null && s < 0.4) secV = mainV; }
+  return '<div class="tile metertile"><div class="mrose">' +
+    roseSVG(mainV, secV, m.crs, valDisp(m.main), m.l) + '</div>' +
+    '<div class="msub">' + rowsHTML(m.subs) + '</div></div>';
+}
+
+function gaugeTileHTML(g){
+  var val = g.perf ? perfVal(g.f) : (function(){ var v = numOf(DATA[g.f]); return (g.abs && v != null) ? Math.abs(v) : v; })();
+  return '<div class="tile gaugetile"><div class="lbl">' + esc(g.l) + ' &middot; ' + g.u + '</div>' +
+    '<div class="gwrap">' + gaugeSVG(val, g.min, g.max, g.zone, (val == null ? '--' : fmt(val, 0))) + '</div></div>';
+}
+
+function coachHTML(c){
+  var lines = [], v1 = DATA[c.f], j;
+  if (v1 != null && String(v1).replace(/\s/g,'') !== '') lines.push(String(v1));
+  for (j = 0; j < c.extra.length; j++){ var e = DATA[c.extra[j]];
+    if (e != null && String(e).replace(/\s/g,'') !== '') lines.push(String(e)); }
+  var body, m;
+  if (!lines.length){ body = '<div class="advice empty">' + esc(c.empty) + '</div>'; }
+  else { body = ''; for (m = 0; m < lines.length; m++){
+    body += '<div class="advice">' + (lines.length > 1 ? '<span class="n">' + (m + 1) + '</span>' : '') + esc(lines[m]) + '</div>'; } }
+  return '<div class="tile coachtile"><div class="lbl">' + esc(c.l) + '</div>' + body + '</div>';
+}
+
+function ringHTML(fields){ return '<div class="tile ringtile">' + rowsHTML(fields) + '</div>'; }
 
 function render(){
   document.getElementById('boat').innerHTML = DATA['Boatname'] ? esc(String(DATA['Boatname'])) : 'SailingPD';
   var stale = LIVE && (+new Date() - LAST) > 5000;
   document.getElementById('status').innerHTML = (LIVE && !stale ? 'LIVE' : 'geen data') +
     ' &middot; ' + (DATA['GPS-RMC-time'] ? esc(String(DATA['GPS-RMC-time'])) : '--:--:--');
-  var html = '', i;
-  for (i = 0; i < TILES.length; i++){ html += tileHTML(TILES[i]); }
-  document.getElementById('grid').innerHTML = html;
+
+  var set = SETS[LAYOUT] || SETS.full, ring = set.ring, gauges = set.gauges;
+  var left = gaugeTileHTML(gauges[0]), right = gaugeTileHTML(gauges[1]), bottom = '';
+  var cap = 4, leftN = 1, rightN = 1, i;
+  for (i = 0; i < ring.length; i++){ var h = ringHTML(ring[i]);
+    if (leftN < cap){ left += h; leftN++; }
+    else if (rightN < cap){ right += h; rightN++; }
+    else bottom += h;
+  }
+  var center = '<div class="hartmeters">' + meterHTML(METERS[0]) + meterHTML(METERS[1]) + '</div>' +
+    '<div class="hartcoach">' + coachHTML(COACH[0]) + coachHTML(COACH[1]) + '</div>';
+
+  document.getElementById('grid').innerHTML =
+    '<div class="hartwrap"><div class="hartbody">' +
+      '<div class="hartrail">' + left + '</div>' +
+      '<div class="hartcenter">' + center + '</div>' +
+      '<div class="hartrail">' + right + '</div>' +
+    '</div>' + (bottom ? '<div class="hartbottom">' + bottom + '</div>' : '') + '</div>';
 }
 
 function connect(){
@@ -155,8 +380,9 @@ function connect(){
   var ws;
   try { ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws'); }
   catch (e){ setTimeout(connect, 4000); return; }
+  _ws = ws;
   ws.onmessage = function(ev){ try { DATA = JSON.parse(ev.data); LIVE = true; LAST = +new Date(); } catch (e){} };
-  ws.onclose = function(){ LIVE = false; setTimeout(connect, 4000); };
+  ws.onclose = function(){ LIVE = false; _ws = null; setTimeout(connect, 4000); };
   ws.onerror = function(){ try { ws.close(); } catch (e){} };
 }
 
@@ -166,21 +392,53 @@ function demo(){
   if (LIVE) return;
   sim += 0.2; var t = sim, sin = Math.sin;
   var tws = 9.6 + 1.5 * sin(t / 17), tgt = 6.35 + 0.16 * (tws - 9.6), stw = tgt * (0.955 + 0.045 * sin(t / 9));
+  var perf = stw / tgt * 100;
   DATA = { 'Boatname':'Penny Lane', 'GPS-RMC-time':'demo',
-    'SOG': stw + 0.3, 'STW-corrected': stw, 'Target-speed': tgt, 'TWS': tws, 'TWA': -42,
-    'AWA': -26, 'AWS': tws * 1.35, 'HDG-corrected': (72 + 6 * sin(t / 11) + 360) % 360,
-    'COG': (76 + 6 * sin(t / 11) + 360) % 360, 'GEOWIND': (135 + 4 * sin(t / 23) + 360) % 360,
-    'Depth-avg': 6.2 + 0.4 * sin(t / 11), 'Depth-change': 0.1, 'Actual-heel': 20 + 2 * sin(t / 6), 'Best-heel': 18,
-    'Actual-leeway': -4 + 0.6 * sin(t / 8), 'Upwind-angle': 42, 'Rate-of-Turn': 2 * sin(t / 4),
-    'VMG': stw * 0.72, 'Target-VMG': tgt * 0.74,
-    'Performance-waterspeed': stw / tgt * 100, 'Performance-to-windward': stw / tgt * 100 - 1.5,
+    'SOG': stw + 0.3, 'SOG-forward': stw + 0.2, 'STW-corrected': stw, 'Target-speed': tgt,
+    'Speed-sideways': -0.3, 'Speed-shortage': tgt - stw,
+    'TWS': tws, 'TWS-avg': tws, 'TWS-trend': 0.2 * sin(t / 7), 'TWA': -42,
+    'AWA': -26, 'AWS': tws * 1.35, 'Upwash': 3,
+    'HDG-corrected': (72 + 6 * sin(t / 11) + 360) % 360, 'COG': (76 + 6 * sin(t / 11) + 360) % 360,
+    'GEOWIND': (135 + 4 * sin(t / 23) + 360) % 360, 'GEOWIND-TWS': tws, 'GEOWIND-TWS-avg': tws, 'GEOWIND-TWS-trend': 0.2,
+    'Windshift-deg': 4 * sin(t / 19), 'Depth-avg': 6.2 + 0.4 * sin(t / 11), 'Depth-change': 0.1,
+    'Actual-heel': 20 + 2 * sin(t / 6), 'Best-heel': 18, 'Actual-pitch': 1.5, 'Actual-yaw': 0.6, 'Rudder-angle': -3,
+    'Heave-vertical': 0.3, 'Shift-limit': 5,
+    'Actual-leeway': -4 + 0.6 * sin(t / 8), 'Expected-leeway': -4, 'Upwind-angle': 42, 'Downwind-angle': 150,
+    'UA-error': 1, 'DA-error': -2, 'Rate-of-Turn': 2 * sin(t / 4),
+    'VMG': stw * 0.72, 'VMG-to-WP': stw * 0.7,
+    'Performance-SOG': perf, 'Performance-waterspeed': perf, 'Performance-incl-current': perf - 1,
+    'Performance-to-windward': perf - 1.5, 'Performance-to-WP': perf - 2, 'Performance-filter': 20,
+    'Current-kts': 0.6, 'Current-to-degrees': 210, 'Current-degrees-relative': -30, 'Current-limit-kts': 1,
+    'BTW': 118, 'DTW': 3.4, 'TWA-to-WP': '42° P', 'Waypoint': 'Buoy 3', 'BOW': 'SB',
+    'Distance-layline': '0.6 nm', 'Time-layline': '4:12', 'Log-nr': 7, 'Records-filter': 12, 'SPD-Version': 'demo',
     'Trim-advice1': '(demo) less twist', 'Trim-advice2':'(demo) ease outer sheet',
     'Wind-message':'(demo) lift', 'Current-message':'(demo) current to leeward' };
 }
 
+// Bedieningsbalk: huidige waarden tonen + commando's naar SailingPD sturen (zelfde WebSocket).
+function ctrlVal(id, key, suf){ var el = document.getElementById(id); if (!el) return;
+  var v = DATA[key]; el.innerHTML = (v == null || String(v) === '' ? '--' : esc(String(v))) + (suf || ''); }
+function updateCtrl(){
+  ctrlVal('cv-log', 'Log-nr', '');
+  ctrlVal('cv-shift', 'Shift-limit', '&deg;');
+  var ck = DATA['Current-limit-kts'], cd = DATA['Current-limit-degrees'], cvc = document.getElementById('cv-curr');
+  if (cvc) cvc.innerHTML = (ck == null ? '--' : esc(String(ck))) + ' kn / ' + (cd == null ? '--' : esc(String(cd))) + '&deg;';
+  ctrlVal('cv-filt', 'Records-filter', '');
+  ctrlVal('cv-pfilt', 'Performance-filter', '');
+  ctrlVal('cv-awfilt', 'App Wind-filter', '');
+}
+(function(){ var bar = document.getElementById('ctrlbar'); if (!bar) return;
+  var btns = bar.getElementsByTagName('button'), i;
+  for (i = 0; i < btns.length; i++){ (function(b){
+    b.onclick = function(){ var cmd = b.getAttribute('data-cmd');
+      if (_ws && _ws.readyState === 1){ try { _ws.send(cmd); } catch (e){} }
+    };
+  })(btns[i]); }
+})();
+
 connect();
-setInterval(function(){ demo(); render(); }, 1000);
-render();
+setInterval(function(){ demo(); render(); updateCtrl(); }, 1000);
+render(); updateCtrl();
 </script>
 </body>
 </html>

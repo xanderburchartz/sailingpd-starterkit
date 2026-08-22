@@ -4,8 +4,8 @@ Losse verbeter-/bugpunten. Afgevinkte items blijven staan met datum voor de hist
 
 ## Features / nog te bouwen
 
+- [ ] **Uniforme offline neurale stem (spraak) — nader te onderzoeken.** De voice-knop gebruikt nu de browser-`speechSynthesis`, die per apparaat een andere stem pakt. Wens: iedereen dezelfde, goede, neurale stem, offline. Google-natural-stemmen zijn cloud/betaald → *Google + offline + uniform kan niet*. Te onderzoeken: open-source **Piper** — (A) in de browser via **WASM** (uniform, offline, op het kijk-apparaat; nadeel: stemmodel ~20–60 MB, zwaardere integratie) of (B) **centraal op de boot-computer** (simpeler, maar geluid uit de boot-computer i.p.v. je telefoon). Uitzoeken: modelgrootte, NL/EN-stem, en of het in de exe/legacy past.
 - [ ] **Eigen templates opslaan.** De 3 vaste templates staan er (zie Gerepareerd); nog te doen: "huidige indeling opslaan als template" + beheren.
-- [ ] **Beginner-template als eerste-start-default?** Nu is de eerste-start-indeling nog de oude (om test-fixtures niet te breken die de default-indices hardcoderen). Overweeg: `DEFAULT()` = Beginner-template maken en de test-fixtures ontkoppelen (laten seeden i.p.v. op `DEFAULT()` leunen).
 - [ ] **Skins vs losse menu-layouts.** B&G/Raymarine/SPD-default zitten nu als skins binnen één paneel (matcht de Claude Design-handoff). Eerdere schets was 4 losse layouts in het menu. Afstemmen of dit zo blijft.
 
 ## Bugs — open (klein/laag)
@@ -16,6 +16,7 @@ Losse verbeter-/bugpunten. Afgevinkte items blijven staan met datum voor de hist
 
 ## Gerepareerd
 
+- [x] 2026-08-22 — **Fase 2 "hart + ring"-dashboard + verse-start-default (v1.2.0).** Koers/windmeter als hart, trimadvies/boodschap als coaching, overige velden als ring eromheen (ontdubbeld); nieuwe Modern/SPD-meters; Basic ⊆ Medium ⊆ Full. **Verse start toont nu de Medium hart-template** i.p.v. de oude losse tegels (lost het eerdere "eerste-start-default"-punt op), en het paneel **stapelt onder ~900 px** i.p.v. te overlappen. `legacy.html` volledig herbouwd naar hart+ring (één-scherm, robuust op oude Safari/iPad 2). Wizard op **Waitress** + auto-open browser. Zie de v1.2.0-changelog in `config-wizard/README.md`.
 - [x] 2026-08-14 — **Zwart/wit-kleurmode** (3e mode naast dag-kleur en nacht-rood). De dag/nacht-icoonknop is nu een 3-standen-cyclus (Dag ☀ → Zwart/wit ◗ → Nacht ☾), per skin. Zwart/wit = licht monochroom, hoog contrast; zones onderscheidbaar via lightness (goed=donker). Palet per skin uit grijswaarden van het dag-palet + overrides. Migreert de oude `spd-night-v1` → nieuwe `spd-mode-v1`. Headless 169/169.
 - [x] 2026-08-14 — **Dashboard-templates + Modern-uitbreiding** (uit de bruikbaarheidstest, gegrond in SPD's eigen 16 pagina's — o.a. `perf-coach` met nu/doel/delta-triplets):
   - **Modern toont nu f2/f3/f4**: wind/koers-meters krijgen 4 hoekwaarden; getal/gen-tegels een doel-sub-regel. Zo werken doel-vs-werkelijk-paren in élke skin.
